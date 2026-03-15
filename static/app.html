@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal AI - Dashboard</title>
+    <title>Legal AI - Trợ lý pháp lý thông minh</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
@@ -13,23 +16,34 @@
         }
 
         :root {
-            --primary: #667eea;
-            --primary-dark: #5a67d8;
-            --sidebar-bg: #1a1a2e;
-            --bg: #f7fafc;
-            --text: #2d3748;
-            --text-light: #718096;
-            --border: #e2e8f0;
-            --success: #48bb78;
-            --danger: #f56565;
-            --warning: #ed8936;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #ffffff;
+            --sidebar: #0f172a;
+            --sidebar-text: #94a3b8;
+            --sidebar-active: #6366f1;
+            --card-border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-gray: #f8fafc;
         }
 
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-gray);
         }
+
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
+        h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+        .hidden { display: none !important; }
 
         /* Auth Pages */
         .auth-container {
@@ -37,263 +51,515 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
-            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
         }
 
         .auth-box {
             background: white;
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 3rem;
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        .auth-box h1 {
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .auth-box p {
-            color: var(--text-light);
+        .auth-logo {
+            text-align: center;
             margin-bottom: 2rem;
         }
 
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            display: block;
+        .auth-logo-icon {
+            font-size: 3rem;
             margin-bottom: 0.5rem;
-            font-weight: 500;
+        }
+
+        .auth-logo-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .auth-logo-tagline {
             font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
         }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--card-border);
+            border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.2s;
+            font-family: inherit;
+            transition: all 0.2s ease;
         }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
+        .form-input:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .btn-primary {
             background: var(--primary);
             color: white;
-            width: 100%;
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .btn-secondary {
-            background: var(--border);
-            color: var(--text);
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
         }
 
         .btn-secondary:hover {
-            background: #cbd5e0;
+            background: var(--primary);
+            color: white;
         }
 
-        .btn-small {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .auth-toggle {
+        .auth-switch {
             text-align: center;
             margin-top: 1.5rem;
-            color: var(--text-light);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
         }
 
-        .auth-toggle a {
+        .auth-switch a {
             color: var(--primary);
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
         }
 
         /* Dashboard Layout */
         .dashboard {
             display: flex;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
         }
 
         .sidebar {
             width: 260px;
-            background: var(--sidebar-bg);
-            color: white;
+            background: var(--sidebar);
+            color: var(--sidebar-text);
             display: flex;
             flex-direction: column;
-            flex-shrink: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
         }
 
-        .sidebar-header {
+        .sidebar-logo {
             padding: 1.5rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .sidebar-header h2 {
+        .sidebar-logo-title {
             font-size: 1.25rem;
-            margin-bottom: 0.25rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .sidebar-header p {
-            font-size: 0.875rem;
-            opacity: 0.7;
+        .sidebar-logo-subtitle {
+            font-size: 0.75rem;
+            color: var(--sidebar-text);
+            margin-top: 0.25rem;
         }
 
         .sidebar-nav {
             flex: 1;
             padding: 1rem 0;
-            overflow-y: auto;
         }
 
         .nav-item {
             padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            color: var(--sidebar-text);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--sidebar-active);
+            color: white;
+        }
+
+        .sidebar-user {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             gap: 0.75rem;
         }
 
-        .nav-item:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .nav-item.active {
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             background: var(--primary);
-            border-left: 3px solid white;
-        }
-
-        .main-content {
-            flex: 1;
             display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .header {
-            background: white;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
         }
 
         .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .content {
             flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
+            overflow: hidden;
         }
 
-        /* Chat Interface */
-        .chat-container {
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--sidebar-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        /* Page Container */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Chat Page */
+        .chat-layout {
             display: flex;
-            height: 100%;
-            gap: 1rem;
+            height: 100vh;
         }
 
         .chat-sidebar {
             width: 280px;
             background: white;
-            border-radius: 8px;
-            padding: 1rem;
+            border-right: 1px solid var(--card-border);
             display: flex;
             flex-direction: column;
+        }
+
+        .chat-sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .chat-history-item {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-history-item:hover {
+            background: var(--bg-gray);
+        }
+
+        .chat-history-item.active {
+            background: var(--primary);
+            color: white;
         }
 
         .chat-main {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
+            background: var(--bg);
         }
 
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .chat-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .chat-empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .chat-empty-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
         }
 
         .message {
-            margin-bottom: 1.5rem;
             display: flex;
-            gap: 0.75rem;
+            gap: 1rem;
         }
 
-        .message.user {
+        .message-user {
             flex-direction: row-reverse;
         }
 
-        .message-bubble {
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+        }
+
+        .message-content {
+            flex: 1;
             max-width: 70%;
-            padding: 1rem;
+        }
+
+        .message-user .message-content {
+            background: var(--bg-gray);
+            padding: 1rem 1.25rem;
             border-radius: 12px;
         }
 
-        .message.user .message-bubble {
-            background: var(--primary);
-            color: white;
+        .message-ai .message-content {
+            background: white;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .message.assistant .message-bubble {
-            background: #f7fafc;
-            border: 1px solid var(--border);
+        .message-text {
+            line-height: 1.7;
         }
 
-        .citations {
-            margin-top: 1rem;
+        .message-text p {
+            margin-bottom: 0.75rem;
+        }
+
+        .message-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-text ul, .message-text ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .message-text code {
+            background: rgba(0,0,0,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .message-text pre {
+            background: #1e293b;
+            color: #e2e8f0;
             padding: 1rem;
-            background: #f7fafc;
             border-radius: 8px;
-            border-left: 3px solid var(--primary);
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+
+        .message-text pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .message-citations {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .citations-header {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .citations-list {
+            margin-top: 0.75rem;
+            padding-left: 1.5rem;
         }
 
         .citation-item {
-            margin-bottom: 0.5rem;
             font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+            padding: 1rem 1.25rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-4px); }
         }
 
         .chat-input-container {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
             background: white;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
         }
 
         .chat-input-wrapper {
@@ -302,1015 +568,1493 @@
             align-items: flex-end;
         }
 
-        .chat-input {
+        .chat-input-box {
             flex: 1;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: var(--bg-gray);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input-box:focus-within {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .chat-input {
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-family: inherit;
             resize: none;
-            max-height: 120px;
+            outline: none;
+            min-height: 24px;
+            max-height: 200px;
+        }
+
+        .chat-input-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .chat-input-icon {
+            cursor: pointer;
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .chat-input-icon:hover {
+            color: var(--primary);
+        }
+
+        .send-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Templates Page */
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .page-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .page-content {
+            padding: 2rem;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .template-card {
+            background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .template-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .template-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .template-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .template-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .template-btn {
+            width: 100%;
+            padding: 0.625rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .template-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Contracts Page */
+        .page-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            font-size: 0.875rem;
             font-family: inherit;
         }
 
-        .chat-history-item {
-            padding: 0.75rem;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
+        .contracts-filters {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            font-size: 0.875rem;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .chat-history-item:hover {
-            background: var(--bg);
-        }
-
-        .chat-history-item.active {
+        .filter-pill:hover, .filter-pill.active {
+            border-color: var(--primary);
             background: var(--primary);
             color: white;
         }
 
-        /* Search Page */
-        .search-container {
-            max-width: 900px;
+        .contracts-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .search-box {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--bg-gray);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid var(--card-border);
+            font-size: 0.875rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .status-expired {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .table-actions {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-gray);
+            color: var(--primary);
+        }
+
+        /* Search Page */
+        .search-header {
+            background: white;
+            padding: 2rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .search-input-wrapper {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .search-input-box {
+            display: flex;
+            gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
-        .search-box input {
+        .search-input-large {
             flex: 1;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .search-input-large:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-btn {
+            padding: 1rem 2rem;
+        }
+
+        .domain-pills {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .domain-pill {
+            padding: 0.5rem 1.25rem;
+            background: white;
+            border: 2px solid var(--card-border);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .domain-pill:hover, .domain-pill.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .search-results {
+            padding: 2rem;
         }
 
         .result-card {
             background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
             padding: 1.5rem;
-            border-radius: 8px;
             margin-bottom: 1rem;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: box-shadow 0.2s;
+            transition: all 0.2s ease;
         }
 
         .result-card:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .result-card h3 {
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .result-card .meta {
-            font-size: 0.875rem;
-            color: var(--text-light);
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 0.75rem;
         }
 
-        .result-card .content {
-            line-height: 1.6;
+        .result-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
-        .score-badge {
-            display: inline-block;
+        .result-article {
+            font-size: 0.875rem;
+            color: var(--primary);
+            font-weight: 600;
+            background: rgba(99, 102, 241, 0.1);
             padding: 0.25rem 0.75rem;
             border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            background: var(--primary);
-            color: white;
         }
 
-        /* Review & Draft Pages */
-        .tool-container {
-            max-width: 1000px;
+        .result-excerpt {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1rem;
         }
 
-        .tool-form {
+        .result-full {
+            border-top: 1px solid var(--card-border);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* API Page */
+        .api-section {
             background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .tool-result {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        textarea {
-            min-height: 200px;
-        }
-
-        /* API Keys Page */
-        .key-list {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .key-item {
+            border-radius: 12px;
             padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .api-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .api-keys-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .api-key-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1rem;
+            background: var(--bg-gray);
+            border-radius: 8px;
         }
 
-        .key-item:last-child {
-            border-bottom: none;
-        }
-
-        .key-value {
+        .api-key-value {
             font-family: 'Courier New', monospace;
-            background: var(--bg);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .code-example {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-example pre {
+            margin: 0;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
             padding: 0.5rem 1rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-
-        /* Usage Page */
-        .usage-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .usage-bar {
-            background: var(--border);
-            height: 30px;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-top: 1rem;
-        }
-
-        .usage-bar-fill {
-            background: linear-gradient(90deg, var(--primary), #764ba2);
-            height: 100%;
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: rgba(255,255,255,0.1);
             color: white;
-            font-weight: 500;
-            font-size: 0.875rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        /* Toast Notifications */
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .code-tabs {
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            z-index: 1000;
-            animation: slideIn 0.3s;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        .code-tab {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
         }
 
-        .toast.success { border-left: 4px solid var(--success); }
-        .toast.error { border-left: 4px solid var(--danger); }
-        .toast.warning { border-left: 4px solid var(--warning); }
-
-        /* Loading Spinner */
-        .spinner {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
+        .code-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Settings Page */
+        .settings-grid {
+            display: grid;
+            gap: 1.5rem;
+            max-width: 800px;
         }
 
-        /* Utility Classes */
-        .hidden { display: none !important; }
-        .mt-1 { margin-top: 1rem; }
-        .mb-1 { margin-bottom: 1rem; }
-        .text-center { text-align: center; }
+        .settings-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .settings-card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
-                width: 100%;
-                position: fixed;
-                z-index: 100;
                 transform: translateX(-100%);
-                transition: transform 0.3s;
+                transition: transform 0.3s ease;
             }
 
             .sidebar.open {
                 transform: translateX(0);
             }
 
-            .chat-container {
-                flex-direction: column;
+            .main-content {
+                margin-left: 0;
             }
 
             .chat-sidebar {
-                width: 100%;
-                max-height: 200px;
+                position: absolute;
+                z-index: 10;
+                height: 100%;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
             }
 
-            .message-bubble {
-                max-width: 85%;
+            .chat-sidebar.open {
+                transform: translateX(0);
             }
+
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Drag and Drop */
+        .chat-main.dragover {
+            background: rgba(99, 102, 241, 0.05);
+            border: 2px dashed var(--primary);
+        }
+
+        .drop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(99, 102, 241, 0.1);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .chat-main.dragover .drop-overlay {
+            display: flex;
         }
     </style>
 </head>
 <body>
-
-<!-- Auth Container -->
-<div id="authContainer" class="auth-container">
-    <!-- Login Form -->
-    <div id="loginForm" class="auth-box">
-        <h1>🦾 Legal AI</h1>
-        <p>Đăng nhập vào tài khoản của bạn</p>
-        <form id="loginFormElement">
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="loginEmail" required placeholder="bi@hrvn.vn">
+    <!-- Login Page -->
+    <div id="loginPage" class="auth-container">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">⚖️</div>
+                <div class="auth-logo-text">Legal AI</div>
+                <div class="auth-logo-tagline">Trợ lý pháp lý thông minh cho doanh nghiệp</div>
             </div>
-            <div class="form-group">
-                <label>Mật khẩu</label>
-                <input type="password" id="loginPassword" required placeholder="••••••••">
+            <form class="auth-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" placeholder="your@email.com" required id="loginEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" class="form-input" placeholder="••••••••" required id="loginPassword">
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            </form>
+            <div class="auth-switch">
+                Chưa có tài khoản? <a href="#" onclick="showRegister(); return false;">Đăng ký ngay</a>
             </div>
-            <button type="submit" class="btn btn-primary">Đăng nhập</button>
-        </form>
-        <div class="auth-toggle">
-            Chưa có tài khoản? <a href="#" onclick="showRegister(); return false;">Đăng ký ngay</a>
         </div>
     </div>
 
-    <!-- Register Form -->
-    <div id="registerForm" class="auth-box hidden">
-        <h1>🦾 Legal AI</h1>
-        <p>Tạo tài khoản mới</p>
-        <form id="registerFormElement">
-            <div class="form-group">
-                <label>Họ và tên</label>
-                <input type="text" id="regFullName" required placeholder="Nguyễn Văn A">
+    <!-- Register Page -->
+    <div id="registerPage" class="auth-container hidden">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">⚖️</div>
+                <div class="auth-logo-text">Legal AI</div>
+                <div class="auth-logo-tagline">Tạo tài khoản mới</div>
             </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="regEmail" required placeholder="email@company.com">
+            <form class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">Tên công ty</label>
+                    <input type="text" class="form-input" placeholder="Công ty TNHH ABC" required id="registerCompany">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" placeholder="your@email.com" required id="registerEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" class="form-input" placeholder="••••••••" required id="registerPassword">
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng ký</button>
+            </form>
+            <div class="auth-switch">
+                Đã có tài khoản? <a href="#" onclick="showLogin(); return false;">Đăng nhập</a>
             </div>
-            <div class="form-group">
-                <label>Tên công ty</label>
-                <input type="text" id="regCompany" required placeholder="CÔNG TY TNHH ABC">
-            </div>
-            <div class="form-group">
-                <label>Mật khẩu</label>
-                <input type="password" id="regPassword" required placeholder="••••••••">
-            </div>
-            <button type="submit" class="btn btn-primary">Đăng ký</button>
-        </form>
-        <div class="auth-toggle">
-            Đã có tài khoản? <a href="#" onclick="showLogin(); return false;">Đăng nhập</a>
-        </div>
-    </div>
-</div>
-
-<!-- Dashboard Container -->
-<div id="dashboardContainer" class="dashboard hidden">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>🦾 Legal AI</h2>
-            <p id="companyName">...</p>
-        </div>
-        <div class="sidebar-nav">
-            <div class="nav-item active" onclick="navigateTo('chat')">💬 Chat</div>
-            <div class="nav-item" onclick="navigateTo('search')">🔍 Tìm kiếm</div>
-            <div class="nav-item" onclick="navigateTo('review')">📋 Rà soát HĐ</div>
-            <div class="nav-item" onclick="navigateTo('draft')">✍️ Soạn thảo</div>
-            <div class="nav-item" onclick="navigateTo('keys')">🔑 API Keys</div>
-            <div class="nav-item" onclick="navigateTo('usage')">📊 Sử dụng</div>
-            <div class="nav-item" onclick="navigateTo('settings')">⚙️ Cài đặt</div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="header">
-            <div>
-                <h2 id="pageTitle">Chat</h2>
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-title">
+                    <span>⚖️</span>
+                    <span>Legal AI</span>
+                </div>
+                <div class="sidebar-logo-subtitle">Trợ lý pháp lý AI</div>
             </div>
-            <div class="user-info">
-                <span id="userName">...</span>
-                <button class="btn btn-secondary btn-small" onclick="logout()">Đăng xuất</button>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="showPage('chat')">
+                    <span>💬</span>
+                    <span>Chat</span>
+                </div>
+                <div class="nav-item" onclick="showPage('templates')">
+                    <span>📋</span>
+                    <span>Mẫu văn bản</span>
+                </div>
+                <div class="nav-item" onclick="showPage('contracts')">
+                    <span>📁</span>
+                    <span>Hợp đồng</span>
+                </div>
+                <div class="nav-item" onclick="showPage('search')">
+                    <span>🔍</span>
+                    <span>Tra cứu</span>
+                </div>
+                <div class="nav-item" onclick="showPage('api')">
+                    <span>🔑</span>
+                    <span>API & Tích hợp</span>
+                </div>
+                <div class="nav-item" onclick="showPage('settings')">
+                    <span>⚙️</span>
+                    <span>Cài đặt</span>
+                </div>
+            </nav>
+            <div class="sidebar-user">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">User</div>
+                    <div class="user-email" id="userEmail">user@example.com</div>
+                </div>
             </div>
-        </div>
+        </aside>
 
-        <div class="content">
+        <!-- Main Content -->
+        <main class="main-content">
             <!-- Chat Page -->
-            <div id="chatPage" class="page">
-                <div class="chat-container">
+            <div id="chatPage" class="page active">
+                <div class="chat-layout">
                     <div class="chat-sidebar">
-                        <button class="btn btn-primary mb-1" onclick="newChat()">+ Trò chuyện mới</button>
-                        <div id="chatHistory" style="overflow-y: auto; flex: 1;"></div>
+                        <div class="chat-sidebar-header">
+                            <button class="new-chat-btn" onclick="createNewChat()">
+                                <span>➕</span>
+                                <span>Cuộc trò chuyện mới</span>
+                            </button>
+                        </div>
+                        <div class="chat-history" id="chatHistory">
+                            <!-- Chat history items will be populated here -->
+                        </div>
                     </div>
-                    <div class="chat-main">
-                        <div id="chatMessages" class="chat-messages"></div>
-                        <div class="chat-input-container">
-                            <div class="chat-input-wrapper">
-                                <textarea id="chatInput" class="chat-input" placeholder="Nhập câu hỏi của bạn..." rows="1"></textarea>
-                                <button class="btn btn-primary" onclick="sendMessage()">Gửi</button>
+                    <div class="chat-main" id="chatMain">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="chat-empty">
+                                <div class="chat-empty-icon">⚖️</div>
+                                <div class="chat-empty-title">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+                                <div>Hỏi bất kỳ câu hỏi pháp luật nào, soạn thảo văn bản, hoặc rà soát hợp đồng</div>
                             </div>
                         </div>
+                        <div class="chat-input-container">
+                            <div class="quick-actions">
+                                <div class="quick-action" onclick="fillQuickAction('Soạn hợp đồng lao động')">📄 Soạn HĐLĐ</div>
+                                <div class="quick-action" onclick="fillQuickAction('Rà soát hợp đồng')">🔍 Rà soát hợp đồng</div>
+                                <div class="quick-action" onclick="fillQuickAction('Tra cứu luật')">📋 Tra cứu luật</div>
+                            </div>
+                            <div class="chat-input-wrapper">
+                                <div class="chat-input-box">
+                                    <textarea 
+                                        class="chat-input" 
+                                        id="chatInput"
+                                        placeholder="Hỏi bất kỳ câu hỏi pháp luật nào..."
+                                        rows="1"
+                                        onkeydown="handleInputKeydown(event)"
+                                    ></textarea>
+                                    <div class="chat-input-actions">
+                                        <input type="file" id="fileInput" style="display: none;" onchange="handleFileUpload(event)">
+                                        <span class="chat-input-icon" onclick="document.getElementById('fileInput').click()">📎</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary send-btn" onclick="sendMessage()" id="sendBtn">Gửi</button>
+                            </div>
+                        </div>
+                        <div class="drop-overlay">📎 Thả file để tải lên</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Page -->
+            <div id="templatesPage" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Mẫu văn bản</h1>
+                    <p class="page-description">Chọn mẫu văn bản để tạo tài liệu pháp lý chuyên nghiệp</p>
+                </div>
+                <div class="page-content">
+                    <div class="templates-grid" id="templatesGrid"></div>
+                </div>
+            </div>
+
+            <!-- Contracts Page -->
+            <div id="contractsPage" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Quản lý hợp đồng</h1>
+                    <p class="page-description">Quản lý và theo dõi tất cả hợp đồng của công ty</p>
+                </div>
+                <div class="page-content">
+                    <div class="page-actions">
+                        <input type="text" class="search-box" placeholder="🔍 Tìm kiếm hợp đồng..." onkeyup="filterContracts(this.value)">
+                        <button class="btn btn-primary" onclick="uploadContract()">📤 Tải lên hợp đồng</button>
+                    </div>
+                    <div class="contracts-filters">
+                        <div class="filter-pill active" data-filter="all" onclick="filterContractsByStatus('all')">Tất cả</div>
+                        <div class="filter-pill" data-filter="active" onclick="filterContractsByStatus('active')">Đang hiệu lực</div>
+                        <div class="filter-pill" data-filter="pending" onclick="filterContractsByStatus('pending')">Sắp hết hạn</div>
+                        <div class="filter-pill" data-filter="expired" onclick="filterContractsByStatus('expired')">Hết hạn</div>
+                    </div>
+                    <div class="contracts-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tên hợp đồng</th>
+                                    <th>Loại</th>
+                                    <th>Bên liên quan</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contractsTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <!-- Search Page -->
-            <div id="searchPage" class="page hidden">
-                <div class="search-container">
-                    <h2 class="mb-1">Tìm kiếm văn bản pháp luật</h2>
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Nhập từ khóa tìm kiếm...">
-                        <select id="searchDomain">
-                            <option value="">Tất cả lĩnh vực</option>
-                            <option value="lao_dong">Lao động</option>
-                            <option value="doanh_nghiep">Doanh nghiệp</option>
-                            <option value="dan_su">Dân sự</option>
-                            <option value="thuong_mai">Thương mại</option>
-                            <option value="thue">Thuế</option>
-                            <option value="dat_dai">Đất đai</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="performSearch()">Tìm kiếm</button>
-                    </div>
-                    <div id="searchResults"></div>
-                </div>
-            </div>
-
-            <!-- Review Page -->
-            <div id="reviewPage" class="page hidden">
-                <div class="tool-container">
-                    <h2 class="mb-1">Rà soát hợp đồng</h2>
-                    <div class="tool-form">
-                        <div class="form-group">
-                            <label>Loại rà soát</label>
-                            <select id="reviewType">
-                                <option value="general">Tổng quan</option>
-                                <option value="risk">Phân tích rủi ro</option>
-                                <option value="compliance">Tuân thủ pháp luật</option>
-                            </select>
+            <div id="searchPage" class="page">
+                <div class="search-header">
+                    <div class="search-input-wrapper">
+                        <div class="search-input-box">
+                            <input 
+                                type="text" 
+                                class="search-input-large" 
+                                placeholder="🔍 Tìm kiếm điều luật, nghị định, thông tư..."
+                                id="searchInput"
+                                onkeydown="if(event.key==='Enter') performSearch()"
+                            >
+                            <button class="btn btn-primary search-btn" onclick="performSearch()">Tìm kiếm</button>
                         </div>
-                        <div class="form-group">
-                            <label>Nội dung hợp đồng</label>
-                            <textarea id="contractText" placeholder="Dán nội dung hợp đồng vào đây..."></textarea>
-                        </div>
-                        <button class="btn btn-primary" onclick="reviewContract()">Rà soát</button>
-                    </div>
-                    <div id="reviewResult" class="tool-result hidden"></div>
-                </div>
-            </div>
-
-            <!-- Draft Page -->
-            <div id="draftPage" class="page hidden">
-                <div class="tool-container">
-                    <h2 class="mb-1">Soạn thảo văn bản</h2>
-                    <div class="tool-form">
-                        <div class="form-group">
-                            <label>Loại văn bản</label>
-                            <select id="docType" onchange="updateDraftFields()">
-                                <option value="hop_dong_lao_dong">Hợp đồng lao động</option>
-                                <option value="quyet_dinh">Quyết định</option>
-                                <option value="cong_van">Công văn</option>
-                                <option value="noi_quy">Nội quy</option>
-                                <option value="hop_dong_mua_ban">Hợp đồng mua bán</option>
-                            </select>
-                        </div>
-                        <div id="draftFields"></div>
-                        <button class="btn btn-primary" onclick="generateDraft()">Tạo văn bản</button>
-                    </div>
-                    <div id="draftResult" class="tool-result hidden"></div>
-                </div>
-            </div>
-
-            <!-- API Keys Page -->
-            <div id="keysPage" class="page hidden">
-                <div class="tool-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2>API Keys</h2>
-                        <button class="btn btn-primary btn-small" onclick="createApiKey()">+ Tạo key mới</button>
-                    </div>
-                    <div id="keysList" class="key-list"></div>
-                </div>
-            </div>
-
-            <!-- Usage Page -->
-            <div id="usagePage" class="page hidden">
-                <div class="tool-container">
-                    <h2 class="mb-1">Thống kê sử dụng</h2>
-                    <div class="usage-card">
-                        <h3>Tháng này</h3>
-                        <p class="text-light" id="usageText">...</p>
-                        <div class="usage-bar">
-                            <div id="usageBarFill" class="usage-bar-fill" style="width: 0%">0%</div>
+                        <div class="domain-pills">
+                            <div class="domain-pill active" data-domain="all" onclick="selectDomain('all')">Tất cả</div>
+                            <div class="domain-pill" data-domain="labor" onclick="selectDomain('labor')">Lao động</div>
+                            <div class="domain-pill" data-domain="enterprise" onclick="selectDomain('enterprise')">Doanh nghiệp</div>
+                            <div class="domain-pill" data-domain="civil" onclick="selectDomain('civil')">Dân sự</div>
+                            <div class="domain-pill" data-domain="tax" onclick="selectDomain('tax')">Thuế</div>
+                            <div class="domain-pill" data-domain="land" onclick="selectDomain('land')">Đất đai</div>
                         </div>
                     </div>
-                    <div class="usage-card">
-                        <h3>Thông tin gói</h3>
-                        <p id="planInfo">...</p>
+                </div>
+                <div class="search-results" id="searchResults"></div>
+            </div>
+
+            <!-- API Page -->
+            <div id="apiPage" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">API & Tích hợp</h1>
+                    <p class="page-description">Tích hợp Legal AI vào ứng dụng của bạn</p>
+                </div>
+                <div class="page-content">
+                    <div class="api-section">
+                        <h2 class="api-section-title">API Keys</h2>
+                        <div class="api-keys-list" id="apiKeysList"></div>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="createApiKey()">➕ Tạo API Key mới</button>
+                    </div>
+
+                    <div class="api-section">
+                        <h2 class="api-section-title">Ví dụ sử dụng</h2>
+                        <div class="code-tabs">
+                            <button class="code-tab active" onclick="showCodeExample('curl')">cURL</button>
+                            <button class="code-tab" onclick="showCodeExample('python')">Python</button>
+                            <button class="code-tab" onclick="showCodeExample('javascript')">JavaScript</button>
+                        </div>
+                        <div id="codeExampleCurl" class="code-example">
+                            <button class="copy-btn" onclick="copyCode('curl')">📋 Copy</button>
+                            <pre><code>curl -X POST https://api.legalai.vn/v1/legal/ask \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Thời hạn thử việc tối đa là bao nhiêu?"
+  }'</code></pre>
+                        </div>
+                        <div id="codeExamplePython" class="code-example hidden">
+                            <button class="copy-btn" onclick="copyCode('python')">📋 Copy</button>
+                            <pre><code>import requests
+
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+data = {
+    "question": "Thời hạn thử việc tối đa là bao nhiêu?"
+}
+
+response = requests.post(
+    "https://api.legalai.vn/v1/legal/ask",
+    headers=headers,
+    json=data
+)
+
+print(response.json())</code></pre>
+                        </div>
+                        <div id="codeExampleJavascript" class="code-example hidden">
+                            <button class="copy-btn" onclick="copyCode('javascript')">📋 Copy</button>
+                            <pre><code>const response = await fetch('https://api.legalai.vn/v1/legal/ask', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    question: 'Thời hạn thử việc tối đa là bao nhiêu?'
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-section">
+                        <h2 class="api-section-title">Thống kê sử dụng</h2>
+                        <p style="color: var(--text-secondary);">Tháng này: <strong>1,247</strong> requests | Còn lại: <strong>8,753</strong> requests</p>
                     </div>
                 </div>
             </div>
 
             <!-- Settings Page -->
-            <div id="settingsPage" class="page hidden">
-                <div class="tool-container">
-                    <h2 class="mb-1">Cài đặt</h2>
-                    <div class="tool-form">
-                        <h3>Thông tin tài khoản</h3>
-                        <div class="form-group">
-                            <label>Họ và tên</label>
-                            <input type="text" id="settingsName" readonly>
+            <div id="settingsPage" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Cài đặt</h1>
+                    <p class="page-description">Quản lý thông tin tài khoản và cài đặt</p>
+                </div>
+                <div class="page-content">
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h3 class="settings-card-title">Thông tin cá nhân</h3>
+                            <form class="settings-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Họ tên</label>
+                                        <input type="text" class="form-input" id="settingsName">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-input" id="settingsEmail" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tên công ty</label>
+                                    <input type="text" class="form-input" id="settingsCompany">
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="saveSettings()">💾 Lưu thay đổi</button>
+                            </form>
                         </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="settingsEmail" readonly>
+
+                        <div class="settings-card">
+                            <h3 class="settings-card-title">Gói dịch vụ</h3>
+                            <p><strong>Gói hiện tại:</strong> Professional</p>
+                            <p style="color: var(--text-secondary); margin-top: 0.5rem;">10,000 requests/tháng • Hỗ trợ ưu tiên</p>
+                            <button class="btn btn-secondary" style="margin-top: 1rem;">⬆️ Nâng cấp gói</button>
                         </div>
-                        <div class="form-group">
-                            <label>Công ty</label>
-                            <input type="text" id="settingsCompany" readonly>
+
+                        <div class="settings-card">
+                            <h3 class="settings-card-title">Bảo mật</h3>
+                            <button class="btn btn-secondary" onclick="logout()">🚪 Đăng xuất</button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
-</div>
 
-<script>
-const API_BASE = 'http://localhost:8080';
-let currentUser = null;
-let currentApiKey = null;
-let currentChatId = null;
-let chats = [];
+    <script>
+        // Global state
+        let currentUser = null;
+        let currentChatId = null;
+        let selectedDomain = 'all';
+        let currentContractFilter = 'all';
 
-// === Auth Functions ===
-function showLogin() {
-    document.getElementById('loginForm').classList.remove('hidden');
-    document.getElementById('registerForm').classList.add('hidden');
-}
+        // Templates data
+        const templates = [
+            { id: 1, icon: '📝', title: 'Hợp đồng lao động', description: 'Mẫu hợp đồng lao động theo Bộ luật Lao động 2019', prompt: 'Soạn hợp đồng lao động với các thông tin sau:' },
+            { id: 2, icon: '🤝', title: 'Hợp đồng dịch vụ', description: 'Hợp đồng cung cấp dịch vụ chuyên nghiệp', prompt: 'Soạn hợp đồng dịch vụ với các thông tin sau:' },
+            { id: 3, icon: '👔', title: 'Quyết định bổ nhiệm', description: 'Quyết định bổ nhiệm vị trí quản lý', prompt: 'Soạn quyết định bổ nhiệm với các thông tin sau:' },
+            { id: 4, icon: '📄', title: 'Công văn', description: 'Mẫu công văn hành chính', prompt: 'Soạn công văn với các thông tin sau:' },
+            { id: 5, icon: '📋', title: 'Nội quy công ty', description: 'Nội quy lao động theo luật định', prompt: 'Soạn nội quy công ty với các thông tin sau:' },
+            { id: 6, icon: '📝', title: 'Biên bản họp', description: 'Biên bản cuộc họp chính thức', prompt: 'Soạn biên bản họp với các thông tin sau:' },
+            { id: 7, icon: '📢', title: 'Thông báo nội bộ', description: 'Thông báo gửi nhân viên', prompt: 'Soạn thông báo nội bộ với các thông tin sau:' },
+            { id: 8, icon: '🏠', title: 'Hợp đồng thuê nhà', description: 'Hợp đồng thuê nhà ở/văn phòng', prompt: 'Soạn hợp đồng thuê nhà với các thông tin sau:' }
+        ];
 
-function showRegister() {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('registerForm').classList.remove('hidden');
-}
+        // Sample contracts data
+        const sampleContracts = [
+            { id: 1, name: 'HĐLĐ - Nguyễn Văn A', type: 'Hợp đồng lao động', parties: 'Công ty ABC', startDate: '2024-01-01', endDate: '2025-01-01', status: 'active' },
+            { id: 2, name: 'HĐ Dịch vụ - Công ty XYZ', type: 'Hợp đồng dịch vụ', parties: 'Công ty XYZ', startDate: '2024-06-01', endDate: '2024-12-31', status: 'pending' },
+            { id: 3, name: 'HĐLĐ - Trần Thị B', type: 'Hợp đồng lao động', parties: 'Công ty ABC', startDate: '2023-01-01', endDate: '2024-01-01', status: 'expired' }
+        ];
 
-document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+        // Init
+        window.onload = function() {
+            checkAuth();
+            setupDragDrop();
+            renderTemplates();
+            renderContracts();
+        };
 
-    try {
-        const res = await fetch(`${API_BASE}/v1/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
+        // Auth functions
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                fetchUserProfile(token);
+            } else {
+                showLogin();
+            }
+        }
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Đăng nhập thất bại');
+        async function fetchUserProfile(token) {
+            try {
+                const response = await fetch('/v1/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data;
+                    showDashboard();
+                    updateUserUI();
+                } else {
+                    localStorage.removeItem('token');
+                    showLogin();
+                }
+            } catch (error) {
+                console.error('Failed to fetch profile:', error);
+                showLogin();
+            }
+        }
 
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
-        if (data.api_key) localStorage.setItem('api_key', data.api_key);
-        
-        await initDashboard();
-        showToast('Đăng nhập thành công!', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
-});
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
 
-document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
-    const full_name = document.getElementById('regFullName').value;
-    const company_name = document.getElementById('regCompany').value;
+            try {
+                const response = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
-    try {
-        const res = await fetch(`${API_BASE}/v1/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, full_name, company_name })
-        });
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.access_token);
+                    currentUser = data.user;
+                    showDashboard();
+                    updateUserUI();
+                } else {
+                    alert('Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            }
+        }
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Đăng ký thất bại');
+        async function handleRegister(event) {
+            event.preventDefault();
+            const company = document.getElementById('registerCompany').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
 
-        if (data.api_key) localStorage.setItem('api_key', data.api_key);
-            showToast('Đăng ký thành công! Vui lòng đăng nhập.', 'success');
-        showLogin();
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
-});
+            try {
+                const response = await fetch('/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company, email, password })
+                });
 
-async function initDashboard() {
-    try {
-        // Get user info
-        const userRes = await apiCall('/v1/auth/me');
-        currentUser = userRes;
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.access_token);
+                    currentUser = data.user;
+                    showDashboard();
+                    updateUserUI();
+                } else {
+                    alert('Đăng ký thất bại. Email có thể đã được sử dụng.');
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            }
+        }
 
-        // Get API keys
-        // API keys loaded on demand in Keys page
-        // Legal endpoints now accept Bearer token too
-        currentApiKey = 'bearer-auth';
+        function showLogin() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('registerPage').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
 
-        // Update UI
-        document.getElementById('userName').textContent = currentUser.full_name;
-        document.getElementById('companyName').textContent = currentUser.company ? currentUser.company.name : '';
-        document.getElementById('settingsName').value = currentUser.full_name;
-        document.getElementById('settingsEmail').value = currentUser.email;
-        document.getElementById('settingsCompany').value = currentUser.company ? currentUser.company.name : '';
+        function showRegister() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('registerPage').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
 
-        // Show dashboard
-        document.getElementById('authContainer').classList.add('hidden');
-        document.getElementById('dashboardContainer').classList.remove('hidden');
+        function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('registerPage').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+        }
 
-        // Load initial data
-        await loadChatHistory();
-        await loadUsageStats();
-    } catch (err) {
-        showToast('Không thể tải dữ liệu. Vui lòng đăng nhập lại.', 'error');
-        logout();
-    }
-}
+        function updateUserUI() {
+            if (currentUser) {
+                const avatar = currentUser.name ? currentUser.name[0].toUpperCase() : 'U';
+                document.getElementById('userAvatar').textContent = avatar;
+                document.getElementById('userName').textContent = currentUser.name || 'User';
+                document.getElementById('userEmail').textContent = currentUser.email || '';
+                document.getElementById('settingsEmail').value = currentUser.email || '';
+                document.getElementById('settingsName').value = currentUser.name || '';
+                document.getElementById('settingsCompany').value = currentUser.company || '';
+            }
+        }
 
-function logout() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    currentUser = null;
-    currentApiKey = null;
-    document.getElementById('authContainer').classList.remove('hidden');
-    document.getElementById('dashboardContainer').classList.add('hidden');
-    showLogin();
-}
+        function logout() {
+            localStorage.removeItem('token');
+            currentUser = null;
+            showLogin();
+        }
 
-async function apiCall(endpoint, options = {}) {
-    const token = localStorage.getItem('access_token');
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers
-    };
+        // Navigation
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById(pageName + 'Page').classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+        }
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers
-    });
-
-    if (res.status === 401) {
-        logout();
-        throw new Error('Session expired');
-    }
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'API Error');
-    
-    return data;
-}
-
-// === Navigation ===
-function navigateTo(page) {
-    // Update sidebar
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
-
-    // Hide all pages
-    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-
-    // Show selected page
-    const pageMap = {
-        'chat': { id: 'chatPage', title: 'Chat' },
-        'search': { id: 'searchPage', title: 'Tìm kiếm' },
-        'review': { id: 'reviewPage', title: 'Rà soát hợp đồng' },
-        'draft': { id: 'draftPage', title: 'Soạn thảo văn bản' },
-        'keys': { id: 'keysPage', title: 'API Keys' },
-        'usage': { id: 'usagePage', title: 'Thống kê sử dụng' },
-        'settings': { id: 'settingsPage', title: 'Cài đặt' }
-    };
-
-    const pageInfo = pageMap[page];
-    document.getElementById(pageInfo.id).classList.remove('hidden');
-    document.getElementById('pageTitle').textContent = pageInfo.title;
-
-    // Load page-specific data
-    if (page === 'keys') loadApiKeys();
-    if (page === 'usage') loadUsageStats();
-    if (page === 'draft') updateDraftFields();
-}
-
-// === Chat Functions ===
-async function loadChatHistory() {
-    try {
-        chats = await apiCall('/v1/chats');
-        const historyDiv = document.getElementById('chatHistory');
-        historyDiv.innerHTML = chats.map(chat => `
-            <div class="chat-history-item ${chat.id === currentChatId ? 'active' : ''}" onclick="loadChat('${chat.id}')">
-                <div style="font-weight: 500; margin-bottom: 0.25rem;">${chat.title || 'Trò chuyện mới'}</div>
-                <div style="font-size: 0.75rem; opacity: 0.7;">${new Date(chat.created_at).toLocaleDateString('vi-VN')}</div>
-            </div>
-        `).join('');
-    } catch (err) {
-        console.error('Failed to load chat history:', err);
-    }
-}
-
-async function loadChat(chatId) {
-    try {
-        currentChatId = chatId;
-        const chat = await apiCall(`/v1/chats/${chatId}`);
-        
-        const messagesDiv = document.getElementById('chatMessages');
-        messagesDiv.innerHTML = chat.messages.map(msg => {
-            const isUser = msg.role === 'user';
-            return `
-                <div class="message ${isUser ? 'user' : 'assistant'}">
-                    <div class="message-bubble">
-                        ${isUser ? msg.content : marked.parse(msg.content)}
-                        ${!isUser && msg.citations ? renderCitations(msg.citations) : ''}
-                    </div>
+        // Chat functions
+        function createNewChat() {
+            currentChatId = Date.now();
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="chat-empty">
+                    <div class="chat-empty-icon">⚖️</div>
+                    <div class="chat-empty-title">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+                    <div>Hỏi bất kỳ câu hỏi pháp luật nào, soạn thảo văn bản, hoặc rà soát hợp đồng</div>
                 </div>
             `;
-        }).join('');
+        }
 
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        loadChatHistory(); // Refresh sidebar
-    } catch (err) {
-        showToast('Không thể tải trò chuyện', 'error');
-    }
-}
+        function fillQuickAction(text) {
+            document.getElementById('chatInput').value = text;
+            document.getElementById('chatInput').focus();
+        }
 
-function newChat() {
-    currentChatId = null;
-    document.getElementById('chatMessages').innerHTML = '';
-    loadChatHistory();
-}
-
-async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const question = input.value.trim();
-    if (!question) return;
-
-    // Add user message to UI
-    const messagesDiv = document.getElementById('chatMessages');
-    messagesDiv.innerHTML += `
-        <div class="message user">
-            <div class="message-bubble">${question}</div>
-        </div>
-    `;
-
-    // Add loading indicator
-    messagesDiv.innerHTML += `
-        <div class="message assistant" id="loadingMsg">
-            <div class="message-bubble">
-                <div class="spinner"></div> Đang tra cứu...
-            </div>
-        </div>
-    `;
-
-    input.value = '';
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-    try {
-        const res = await fetch(`${API_BASE}/v1/legal/ask`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
-            body: JSON.stringify({ question })
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail);
-
-        // Update current chat ID if new
-        if (data.chat_id) currentChatId = data.chat_id;
-
-        // Remove loading, add response
-        document.getElementById('loadingMsg').remove();
-        messagesDiv.innerHTML += `
-            <div class="message assistant">
-                <div class="message-bubble">
-                    ${marked.parse(data.answer)}
-                    ${data.citations ? renderCitations(data.citations) : ''}
-                </div>
-            </div>
-        `;
-
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        await loadChatHistory();
-    } catch (err) {
-        document.getElementById('loadingMsg').remove();
-        showToast(err.message, 'error');
-    }
-}
-
-function renderCitations(citations) {
-    if (!citations || citations.length === 0) return '';
-    
-    return `
-        <div class="citations">
-            <strong>📚 Nguồn tham chiếu:</strong>
-            ${citations.map((c, i) => `
-                <div class="citation-item">
-                    [${i + 1}] ${c.law_name || 'Văn bản pháp luật'} - ${c.article || ''}<br>
-                    <span style="opacity: 0.8; font-size: 0.8em;">${c.content?.substring(0, 150)}...</span>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-// Auto-resize chat input
-document.getElementById('chatInput').addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-});
-
-// === Search Functions ===
-async function performSearch() {
-    const query = document.getElementById('searchInput').value.trim();
-    const domain = document.getElementById('searchDomain').value;
-    
-    if (!query) {
-        showToast('Vui lòng nhập từ khóa', 'warning');
-        return;
-    }
-
-    try {
-        const url = `/v1/legal/search?q=${encodeURIComponent(query)}&limit=10${domain ? '&domain=' + domain : ''}`;
-        const results = await fetch(`${API_BASE}${url}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-        }).then(r => r.json());
-
-        const resultsDiv = document.getElementById('searchResults');
-        resultsDiv.innerHTML = results.map(r => `
-            <div class="result-card" onclick="this.querySelector('.content').classList.toggle('hidden')">
-                <h3>${r.law_name || 'Văn bản pháp luật'}</h3>
-                <div class="meta">
-                    ${r.article || ''} • 
-                    <span class="score-badge">Độ phù hợp: ${(r.score * 100).toFixed(0)}%</span>
-                </div>
-                <div class="content hidden">${r.content}</div>
-                <div style="margin-top: 0.5rem; color: var(--primary); font-size: 0.875rem;">
-                    ${r._expanded ? '▲ Thu gọn' : '▼ Xem chi tiết'}
-                </div>
-            </div>
-        `).join('');
-    } catch (err) {
-        showToast('Tìm kiếm thất bại', 'error');
-    }
-}
-
-// === Review Functions ===
-async function reviewContract() {
-    const text = document.getElementById('contractText').value.trim();
-    const reviewType = document.getElementById('reviewType').value;
-
-    if (!text) {
-        showToast('Vui lòng nhập nội dung hợp đồng', 'warning');
-        return;
-    }
-
-    try {
-        const result = await fetch(`${API_BASE}/v1/legal/review`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
-            body: JSON.stringify({ contract_text: text, review_type: reviewType })
-        }).then(r => r.json());
-
-        document.getElementById('reviewResult').classList.remove('hidden');
-        document.getElementById('reviewResult').innerHTML = marked.parse(result.review);
-    } catch (err) {
-        showToast('Rà soát thất bại', 'error');
-    }
-}
-
-// === Draft Functions ===
-function updateDraftFields() {
-    const docType = document.getElementById('docType').value;
-    const fieldsDiv = document.getElementById('draftFields');
-    
-    const fields = {
-        hop_dong_lao_dong: [
-            { label: 'Tên người lao động', id: 'employee_name' },
-            { label: 'Chức danh', id: 'position' },
-            { label: 'Mức lương', id: 'salary' },
-            { label: 'Thời hạn hợp đồng', id: 'duration' }
-        ],
-        quyet_dinh: [
-            { label: 'Số quyết định', id: 'decision_number' },
-            { label: 'Về việc', id: 'subject' },
-            { label: 'Nội dung', id: 'content', type: 'textarea' }
-        ],
-        cong_van: [
-            { label: 'Số công văn', id: 'doc_number' },
-            { label: 'Về việc', id: 'subject' },
-            { label: 'Nội dung', id: 'content', type: 'textarea' }
-        ],
-        noi_quy: [
-            { label: 'Tên nội quy', id: 'title' },
-            { label: 'Phạm vi áp dụng', id: 'scope' }
-        ],
-        hop_dong_mua_ban: [
-            { label: 'Bên mua', id: 'buyer' },
-            { label: 'Bên bán', id: 'seller' },
-            { label: 'Hàng hóa', id: 'goods' },
-            { label: 'Giá trị', id: 'value' }
-        ]
-    };
-
-    fieldsDiv.innerHTML = (fields[docType] || []).map(f => `
-        <div class="form-group">
-            <label>${f.label}</label>
-            ${f.type === 'textarea' 
-                ? `<textarea id="draft_${f.id}" style="min-height: 100px;"></textarea>`
-                : `<input type="text" id="draft_${f.id}">`
-            }
-        </div>
-    `).join('');
-}
-
-async function generateDraft() {
-    const docType = document.getElementById('docType').value;
-    const params = {};
-    
-    document.querySelectorAll('#draftFields input, #draftFields textarea').forEach(input => {
-        const key = input.id.replace('draft_', '');
-        params[key] = input.value;
-    });
-
-    try {
-        const result = await fetch(`${API_BASE}/v1/legal/draft`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
-            body: JSON.stringify({ doc_type: docType, parameters: params })
-        }).then(r => r.json());
-
-        document.getElementById('draftResult').classList.remove('hidden');
-        document.getElementById('draftResult').innerHTML = `
-            ${marked.parse(result.document)}
-            <button class="btn btn-secondary mt-1" onclick="downloadDraft()">📥 Tải xuống</button>
-        `;
-    } catch (err) {
-        showToast('Soạn thảo thất bại', 'error');
-    }
-}
-
-function downloadDraft() {
-    const content = document.getElementById('draftResult').innerText;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'van-ban.txt';
-    a.click();
-}
-
-// === API Keys Functions ===
-async function loadApiKeys() {
-    try {
-        const keys = await apiCall('/v1/keys');
-        const listDiv = document.getElementById('keysList');
-        
-        listDiv.innerHTML = keys.map(k => `
-            <div class="key-item">
-                <div>
-                    <div style="font-weight: 500; margin-bottom: 0.25rem;">${k.name}</div>
-                    <div class="key-value">${k.key_prefix}...${k.key_suffix}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">
-                        Tạo: ${new Date(k.created_at).toLocaleDateString('vi-VN')}
-                    </div>
-                </div>
-                <button class="btn btn-secondary btn-small" onclick="copyKey('${k.key}')">📋 Copy</button>
-            </div>
-        `).join('');
-    } catch (err) {
-        showToast('Không thể tải API keys', 'error');
-    }
-}
-
-async function createApiKey() {
-    const name = prompt('Tên API key:');
-    if (!name) return;
-
-    try {
-        const newKey = await apiCall('/v1/keys', {
-            method: 'POST',
-            body: JSON.stringify({ name })
-        });
-
-        showToast('Tạo API key thành công!', 'success');
-        
-        // Show full key once
-        alert(`API Key (chỉ hiển thị 1 lần):\n\n${newKey.key}`);
-        
-        await loadApiKeys();
-    } catch (err) {
-        showToast('Không thể tạo API key', 'error');
-    }
-}
-
-function copyKey(key) {
-    navigator.clipboard.writeText(key);
-    showToast('Đã copy vào clipboard', 'success');
-}
-
-// === Usage Functions ===
-async function loadUsageStats() {
-    try {
-        const usage = await apiCall('/v1/usage');
-        
-        const percent = (usage.current_usage / usage.quota_limit * 100).toFixed(1);
-        document.getElementById('usageText').textContent = 
-            `${usage.current_usage.toLocaleString()} / ${usage.quota_limit.toLocaleString()} requests`;
-        document.getElementById('usageBarFill').style.width = percent + '%';
-        document.getElementById('usageBarFill').textContent = percent + '%';
-        
-        document.getElementById('planInfo').innerHTML = `
-            <strong>Gói:</strong> ${usage.plan || 'Free'}<br>
-            <strong>Hạn mức:</strong> ${usage.quota_limit.toLocaleString()} requests/tháng
-        `;
-    } catch (err) {
-        console.error('Failed to load usage:', err);
-    }
-}
-
-// === Toast Notifications ===
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <span>${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span>
-        <span>${message}</span>
-    `;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.remove(), 3000);
-}
-
-// === Init ===
-window.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-        initDashboard();
-    }
-});
-
-// Enter to send message
-document.addEventListener('DOMContentLoaded', () => {
-    const chatInput = document.getElementById('chatInput');
-    if (chatInput) {
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+        function handleInputKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendMessage();
             }
-        });
-    }
-});
-</script>
+        }
 
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Clear empty state
+            const messagesContainer = document.getElementById('chatMessages');
+            if (messagesContainer.querySelector('.chat-empty')) {
+                messagesContainer.innerHTML = '';
+            }
+
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Send to API
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/legal/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: message })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    removeTypingIndicator();
+                    addMessage('ai', data.answer, data.citations);
+                } else {
+                    removeTypingIndicator();
+                    addMessage('ai', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                removeTypingIndicator();
+                addMessage('ai', 'Xin lỗi, không thể kết nối đến server.');
+            }
+        }
+
+        function addMessage(type, text, citations = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            
+            const avatar = type === 'user' 
+                ? (currentUser?.name?.[0] || 'U')
+                : '⚖️';
+
+            let citationsHtml = '';
+            if (citations && citations.length > 0) {
+                citationsHtml = `
+                    <div class="message-citations">
+                        <div class="citations-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                            📚 ${citations.length} nguồn tham khảo
+                        </div>
+                        <div class="citations-list hidden">
+                            ${citations.map((c, i) => `<div class="citation-item">${i + 1}. ${c}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-text">${type === 'ai' ? marked.parse(text) : text}</div>
+                    ${citationsHtml}
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = `
+                <div class="message-avatar">⚖️</div>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            messagesContainer.appendChild(indicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const message = `Rà soát hợp đồng: ${file.name}`;
+                fillQuickAction(message);
+                // In production, upload file to server here
+            }
+        }
+
+        function setupDragDrop() {
+            const chatMain = document.getElementById('chatMain');
+            
+            chatMain.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                chatMain.classList.add('dragover');
+            });
+
+            chatMain.addEventListener('dragleave', () => {
+                chatMain.classList.remove('dragover');
+            });
+
+            chatMain.addEventListener('drop', (e) => {
+                e.preventDefault();
+                chatMain.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const message = `Rà soát hợp đồng: ${files[0].name}`;
+                    fillQuickAction(message);
+                }
+            });
+        }
+
+        // Templates
+        function renderTemplates() {
+            const grid = document.getElementById('templatesGrid');
+            grid.innerHTML = templates.map(t => `
+                <div class="template-card" onclick="useTemplate(${t.id})">
+                    <div class="template-icon">${t.icon}</div>
+                    <div class="template-title">${t.title}</div>
+                    <div class="template-description">${t.description}</div>
+                    <button class="template-btn">Sử dụng</button>
+                </div>
+            `).join('');
+        }
+
+        function useTemplate(id) {
+            const template = templates.find(t => t.id === id);
+            if (template) {
+                showPage('chat');
+                fillQuickAction(template.prompt);
+            }
+        }
+
+        // Contracts
+        function renderContracts() {
+            const tbody = document.getElementById('contractsTableBody');
+            tbody.innerHTML = sampleContracts.map(c => `
+                <tr data-status="${c.status}">
+                    <td>${c.name}</td>
+                    <td>${c.type}</td>
+                    <td>${c.parties}</td>
+                    <td>${c.startDate}</td>
+                    <td>${c.endDate}</td>
+                    <td><span class="status-badge status-${c.status}">${getStatusText(c.status)}</span></td>
+                    <td class="table-actions">
+                        <button class="btn-icon" title="Xem">👁️</button>
+                        <button class="btn-icon" title="Rà soát" onclick="reviewContract(${c.id})">🔍</button>
+                        <button class="btn-icon" title="Xóa">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const map = {
+                'active': 'Đang hiệu lực',
+                'expired': 'Hết hạn',
+                'pending': 'Sắp hết hạn'
+            };
+            return map[status] || status;
+        }
+
+        function filterContracts(query) {
+            const rows = document.querySelectorAll('#contractsTableBody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        function filterContractsByStatus(status) {
+            currentContractFilter = status;
+            
+            // Update pills
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.classList.toggle('active', pill.dataset.filter === status);
+            });
+
+            // Filter rows
+            const rows = document.querySelectorAll('#contractsTableBody tr');
+            rows.forEach(row => {
+                row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+            });
+        }
+
+        function reviewContract(id) {
+            const contract = sampleContracts.find(c => c.id === id);
+            if (contract) {
+                showPage('chat');
+                fillQuickAction(`Rà soát hợp đồng: ${contract.name}`);
+            }
+        }
+
+        function uploadContract() {
+            alert('Chức năng tải lên hợp đồng sẽ sớm được cập nhật!');
+        }
+
+        // Search
+        function selectDomain(domain) {
+            selectedDomain = domain;
+            document.querySelectorAll('.domain-pill').forEach(pill => {
+                pill.classList.toggle('active', pill.dataset.domain === domain);
+            });
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Đang tìm kiếm...</p>';
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/legal/search?q=${encodeURIComponent(query)}&limit=10`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const results = await response.json();
+                    displaySearchResults(results);
+                } else {
+                    resultsContainer.innerHTML = '<p style="text-align:center; color: var(--danger);">Có lỗi xảy ra. Vui lòng thử lại.</p>';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsContainer.innerHTML = '<p style="text-align:center; color: var(--danger);">Không thể kết nối đến server.</p>';
+            }
+        }
+
+        function displaySearchResults(results) {
+            const container = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Không tìm thấy kết quả nào.</p>';
+                return;
+            }
+
+            container.innerHTML = results.map((r, i) => `
+                <div class="result-card" id="result-${i}">
+                    <div class="result-header">
+                        <div class="result-title">${r.title || 'Văn bản pháp luật'}</div>
+                        <div class="result-article">${r.article || 'Điều ' + (i + 1)}</div>
+                    </div>
+                    <div class="result-excerpt">${r.excerpt || r.content?.substring(0, 200) + '...'}</div>
+                    <div class="result-full hidden">${r.content || ''}</div>
+                    <div class="result-actions">
+                        <button class="btn btn-secondary btn-small" onclick="toggleResultFull(${i})">📖 Xem toàn bộ</button>
+                        <button class="btn btn-primary btn-small" onclick="askAIAboutResult('${r.title}')">💬 Hỏi AI về điều này</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleResultFull(index) {
+            const card = document.getElementById(`result-${index}`);
+            const full = card.querySelector('.result-full');
+            full.classList.toggle('hidden');
+            const btn = card.querySelector('.result-actions button');
+            btn.textContent = full.classList.contains('hidden') ? '📖 Xem toàn bộ' : '📖 Thu gọn';
+        }
+
+        function askAIAboutResult(title) {
+            showPage('chat');
+            fillQuickAction(`Giải thích về: ${title}`);
+        }
+
+        // API
+        async function loadApiKeys() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/keys', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayApiKeys(data.keys || []);
+                }
+            } catch (error) {
+                console.error('Failed to load API keys:', error);
+            }
+        }
+
+        function displayApiKeys(keys) {
+            const container = document.getElementById('apiKeysList');
+            if (keys.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">Chưa có API key nào.</p>';
+                return;
+            }
+
+            container.innerHTML = keys.map(k => `
+                <div class="api-key-item">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${k.name}</div>
+                        <div class="api-key-value">${k.key}</div>
+                    </div>
+                    <button class="btn-icon" onclick="deleteApiKey('${k.id}')">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        async function createApiKey() {
+            const name = prompt('Tên API key:');
+            if (!name) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/keys', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name })
+                });
+
+                if (response.ok) {
+                    loadApiKeys();
+                } else {
+                    alert('Không thể tạo API key.');
+                }
+            } catch (error) {
+                console.error('Create API key error:', error);
+            }
+        }
+
+        async function deleteApiKey(id) {
+            if (!confirm('Xóa API key này?')) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                await fetch(`/v1/keys/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadApiKeys();
+            } catch (error) {
+                console.error('Delete API key error:', error);
+            }
+        }
+
+        function showCodeExample(lang) {
+            document.querySelectorAll('.code-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase() === lang.toLowerCase());
+            });
+            document.querySelectorAll('.code-example').forEach(ex => ex.classList.add('hidden'));
+            document.getElementById(`codeExample${lang.charAt(0).toUpperCase() + lang.slice(1)}`).classList.remove('hidden');
+        }
+
+        function copyCode(lang) {
+            const code = document.querySelector(`#codeExample${lang.charAt(0).toUpperCase() + lang.slice(1)} pre code`).textContent;
+            navigator.clipboard.writeText(code);
+            alert('Đã copy!');
+        }
+
+        // Settings
+        async function saveSettings() {
+            const name = document.getElementById('settingsName').value;
+            const company = document.getElementById('settingsCompany').value;
+
+            // In production, send to API
+            alert('Đã lưu cài đặt!');
+        }
+    </script>
 </body>
 </html>
