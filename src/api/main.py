@@ -123,6 +123,7 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
     """Call Claude via OAuth token"""
     headers = {
         "Authorization": f"Bearer {CLAUDE_OAUTH_TOKEN}",
+        "anthropic-beta": "oauth-2025-04-20",
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
