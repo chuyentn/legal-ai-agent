@@ -174,6 +174,7 @@ class LegalQuery(BaseModel):
     domains: Optional[List[str]] = Field(None, description="Lĩnh vực: lao_dong, doanh_nghiep, dan_su, thue, dat_dai...")
     max_sources: int = Field(10, ge=1, le=30, description="Số nguồn tham chiếu tối đa")
     stream: bool = Field(False, description="Stream response")
+    session_id: Optional[str] = Field(None, description="Chat session ID for multi-turn conversation")
 
 class ContractReview(BaseModel):
     contract_text: str = Field(..., min_length=50, max_length=100000, description="Nội dung hợp đồng cần rà soát")
@@ -191,6 +192,7 @@ class LegalResponse(BaseModel):
     confidence: float
     tokens_used: int
     model: str
+    session_id: Optional[str] = None
 
 # ============================================
 # Claude OAuth Integration
@@ -200,8 +202,8 @@ CLAUDE_OAUTH_TOKEN = os.getenv("CLAUDE_OAUTH_TOKEN", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
 
-async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4096) -> dict:
-    """Call Claude via OAuth token or API key"""
+async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4096, history: list = None) -> dict:
+    """Call Claude via OAuth token or API key, with optional conversation history"""
     api_key = ANTHROPIC_API_KEY
     oauth_token = CLAUDE_OAUTH_TOKEN
     
@@ -211,7 +213,6 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
     }
     
     if oauth_token:
-        # OAuth token uses Bearer auth
         headers["Authorization"] = f"Bearer {oauth_token}"
         headers["anthropic-beta"] = "oauth-2025-04-20"
     elif api_key:
@@ -219,11 +220,18 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
     else:
         raise ValueError("No Claude API key or OAuth token configured")
     
+    # Build messages with history for multi-turn conversations
+    messages = []
+    if history:
+        for msg in history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": user_message})
+    
     payload = {
         "model": "claude-sonnet-4-20250514",
         "max_tokens": max_tokens,
         "system": system_prompt,
-        "messages": [{"role": "user", "content": user_message}]
+        "messages": messages
     }
     
     async with httpx.AsyncClient(timeout=120) as client:
@@ -695,12 +703,16 @@ KHI TRẢ LỜI CÂU HỎI:
 - Kết thúc bằng LƯU Ý thực tiễn (nếu có)
 
 KHI SOẠN THẢO VĂN BẢN:
-- Soạn HOÀN CHỈNH, chuyên nghiệp, đúng chuẩn pháp lý Việt Nam
-- Đánh dấu chỗ cần điền thông tin bằng [THÔNG TIN CẦN ĐIỀN] hoặc [...]
+- TRƯỚC KHI SOẠN: Hỏi người dùng các thông tin cần thiết (kiểu brainstorm)
+  + Ví dụ: "Để soạn hợp đồng lao động, tôi cần biết: 1) Tên công ty? 2) Tên nhân viên? 3) Vị trí? 4) Mức lương? 5) Thời hạn?"
+  + Hỏi TỐI ĐA 1 lần, liệt kê TẤT CẢ thông tin cần trong 1 câu hỏi
+  + Nếu user trả lời thiếu, dùng [THÔNG TIN CẦN ĐIỀN] cho phần thiếu
+- SAU KHI CÓ THÔNG TIN: Soạn HOÀN CHỈNH, chuyên nghiệp, đúng chuẩn pháp lý VN
 - Tuân thủ đúng quy định pháp luật hiện hành (trích dẫn điều luật áp dụng)
 - Bao gồm đầy đủ các điều khoản bắt buộc theo luật
 - Format rõ ràng: tiêu đề, các điều khoản đánh số, chữ ký
 - Nếu người dùng cung cấp thông tin cụ thể (tên, địa chỉ...), ĐIỀN LUÔN vào văn bản
+- Nếu user nói "soạn luôn" hoặc "không cần hỏi", soạn ngay với [PLACEHOLDER]
 
 ĐỊNH DẠNG:
 - Dùng heading ## cho các phần chính
@@ -723,35 +735,54 @@ CÁC NGUỒN LUẬT LIÊN QUAN (dùng làm tham chiếu):
 
 Hãy thực hiện yêu cầu trên. Nếu là câu hỏi thì trả lời. Nếu là yêu cầu soạn thảo thì soạn văn bản hoàn chỉnh."""
 
-    result = await call_claude(system_prompt, user_message, max_tokens=8192)
-    
-    # Chat history auto-save (if user_id exists from Bearer token)
+    # Load chat history for multi-turn conversation
+    chat_history = []
     session_id = None
     user_id = company.get("user_id")
+    
+    if query.session_id and user_id:
+        try:
+            with get_db() as conn:
+                cur = conn.cursor(cursor_factory=RealDictCursor)
+                cur.execute("""
+                    SELECT role, content FROM messages
+                    WHERE session_id = %s AND company_id = %s
+                    ORDER BY created_at ASC
+                    LIMIT 20
+                """, (query.session_id, company["company_id"]))
+                rows = cur.fetchall()
+                for row in rows:
+                    chat_history.append({"role": row["role"], "content": row["content"]})
+                session_id = query.session_id
+        except Exception as e:
+            print(f"Error loading chat history: {e}")
+    
+    result = await call_claude(system_prompt, user_message, max_tokens=8192, history=chat_history)
     
     if user_id:
         with get_db() as conn:
             cur = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Get or create active session for this user
-            cur.execute("""
-                SELECT id FROM chat_sessions
-                WHERE user_id = %s AND company_id = %s AND agent_type = 'qa' AND status = 'active'
-                ORDER BY last_message_at DESC NULLS LAST
-                LIMIT 1
-            """, (user_id, company["company_id"]))
-            
-            session = cur.fetchone()
-            if session:
-                session_id = session["id"]
-            else:
-                # Create new session
+            if not session_id:
+                # Get or create active session for this user
                 cur.execute("""
-                    INSERT INTO chat_sessions (company_id, user_id, agent_type, title, status)
-                    VALUES (%s, %s, 'qa', %s, 'active')
-                    RETURNING id
-                """, (company["company_id"], user_id, f"Q&A - {query.question[:50]}..."))
-                session_id = cur.fetchone()["id"]
+                    SELECT id FROM chat_sessions
+                    WHERE user_id = %s AND company_id = %s AND agent_type = 'qa' AND status = 'active'
+                    ORDER BY last_message_at DESC NULLS LAST
+                    LIMIT 1
+                """, (user_id, company["company_id"]))
+                
+                session = cur.fetchone()
+                if session:
+                    session_id = session["id"]
+                else:
+                    # Create new session
+                    cur.execute("""
+                        INSERT INTO chat_sessions (company_id, user_id, agent_type, title, status)
+                        VALUES (%s, %s, 'qa', %s, 'active')
+                        RETURNING id
+                    """, (company["company_id"], user_id, f"Q&A - {query.question[:50]}..."))
+                    session_id = cur.fetchone()["id"]
             
             # Save user question
             cur.execute("""
@@ -799,7 +830,8 @@ Hãy thực hiện yêu cầu trên. Nếu là câu hỏi thì trả lời. Nế
         citations=citations,
         confidence=0.85 if sources else 0.5,
         tokens_used=result["input_tokens"] + result["output_tokens"],
-        model=result["model"]
+        model=result["model"],
+        session_id=str(session_id) if session_id else None
     )
 
 @app.post("/v1/legal/review")
