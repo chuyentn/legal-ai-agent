@@ -5,7 +5,7 @@ Legal AI Agent API
 - Multi-tenant API key authentication
 - User authentication and management
 """
-from fastapi import FastAPI, HTTPException, Depends, Header, Request, Query
+from fastapi import FastAPI, HTTPException, Depends, Header, Request, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -202,12 +202,18 @@ async def verify_api_key(
 # Models
 # ============================================
 
+class FileContext(BaseModel):
+    filename: str
+    content: str
+    file_type: str
+
 class LegalQuery(BaseModel):
     question: str = Field(..., min_length=5, max_length=2000, description="Câu hỏi pháp luật")
     domains: Optional[List[str]] = Field(None, description="Lĩnh vực: lao_dong, doanh_nghiep, dan_su, thue, dat_dai...")
     max_sources: int = Field(10, ge=1, le=30, description="Số nguồn tham chiếu tối đa")
     stream: bool = Field(False, description="Stream response")
     session_id: Optional[str] = Field(None, description="Chat session ID for multi-turn conversation")
+    file_context: Optional[FileContext] = Field(None, description="File content uploaded in chat")
 
 class ContractReview(BaseModel):
     contract_text: str = Field(..., min_length=50, max_length=100000, description="Nội dung hợp đồng cần rà soát")
@@ -846,6 +852,47 @@ async def health():
         status["status"] = "degraded"
     return status
 
+@app.post("/v1/chat/upload")
+async def chat_upload_file(file: UploadFile = File(...), company: dict = Depends(verify_api_key)):
+    """Upload file in chat - extracts text and returns it"""
+    from .routes.contracts import extract_file_text
+    import tempfile
+
+    # Validate file type
+    filename = file.filename or "unknown"
+    file_ext = os.path.splitext(filename)[1].lower()
+    allowed = {".pdf", ".docx", ".doc", ".txt"}
+    if file_ext not in allowed:
+        raise HTTPException(status_code=400, detail=f"Loại file không hỗ trợ: {file_ext}. Chỉ chấp nhận: {', '.join(allowed)}")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10MB
+        raise HTTPException(status_code=400, detail="File quá lớn. Tối đa 10MB.")
+
+    # Extract text
+    extracted_text = None
+    if file_ext == ".txt":
+        extracted_text = content.decode('utf-8', errors='ignore')
+    else:
+        # Write to temp file for extraction
+        with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        try:
+            extracted_text = extract_file_text(tmp_path, file_ext, content)
+        finally:
+            os.unlink(tmp_path)
+
+    if not extracted_text or len(extracted_text.strip()) < 10:
+        raise HTTPException(status_code=422, detail="Không thể trích xuất nội dung từ file. Vui lòng thử file khác.")
+
+    return {
+        "filename": filename,
+        "content": extracted_text,
+        "file_type": file_ext
+    }
+
+
 @app.post("/v1/legal/ask", response_model=LegalResponse)
 async def legal_ask(query: LegalQuery, company: dict = Depends(verify_api_key)):
     """Tư vấn pháp luật - Legal Q&A (Agent-based with tool use)"""
@@ -873,9 +920,19 @@ async def legal_ask(query: LegalQuery, company: dict = Depends(verify_api_key)):
         except Exception as e:
             print(f"Error loading chat history: {e}")
     
+    # Augment question with file context if provided
+    actual_question = query.question
+    if query.file_context:
+        actual_question = f"""[Người dùng đã upload file: {query.file_context.filename}]
+
+NỘI DUNG FILE:
+{query.file_context.content[:30000]}
+
+CÂU HỎI: {query.question}"""
+
     # Run the agent
     result = await legal_agent.run_agent(
-        question=query.question,
+        question=actual_question,
         company_id=str(company["company_id"]),
         user_id=str(user_id) if user_id else None,
         session_id=str(session_id) if session_id else None,
@@ -982,6 +1039,16 @@ async def legal_ask_stream(query: LegalQuery, company: dict = Depends(verify_api
         except Exception as e:
             print(f"Error loading chat history: {e}")
 
+    # Augment question with file context if provided
+    actual_question = query.question
+    if query.file_context:
+        actual_question = f"""[Người dùng đã upload file: {query.file_context.filename}]
+
+NỘI DUNG FILE:
+{query.file_context.content[:30000]}
+
+CÂU HỎI: {query.question}"""
+
     company_id_str = str(company["company_id"])
 
     async def sse_generator():
@@ -991,7 +1058,7 @@ async def legal_ask_stream(query: LegalQuery, company: dict = Depends(verify_api
 
         try:
             async for event_str in legal_agent.run_agent_stream_final_text(
-                question=query.question,
+                question=actual_question,
                 company_id=company_id_str,
                 user_id=str(user_id) if user_id else None,
                 session_id=str(session_id) if session_id else None,
