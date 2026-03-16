@@ -981,6 +981,155 @@ async def create_company(name: str, slug: str, plan: str = "trial"):
             "warning": "Save this API key - it cannot be retrieved later"
         }
 
+# ============================================
+# Export to DOCX
+# ============================================
+
+class ExportRequest(BaseModel):
+    content: str  # Markdown content from AI response
+    filename: Optional[str] = "legal-document"
+
+@app.post("/v1/legal/export-docx")
+async def export_docx(req: ExportRequest):
+    """Convert markdown content to a professional .docx file"""
+    import io
+    import re
+    from docx import Document
+    from docx.shared import Pt, Inches, Cm, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+    
+    doc = Document()
+    
+    # Page margins
+    for section in doc.sections:
+        section.top_margin = Cm(2.5)
+        section.bottom_margin = Cm(2.5)
+        section.left_margin = Cm(3)
+        section.right_margin = Cm(2)
+    
+    # Default font
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Times New Roman'
+    font.size = Pt(13)
+    
+    # Heading styles
+    for level in range(1, 4):
+        h_style = doc.styles[f'Heading {level}']
+        h_font = h_style.font
+        h_font.name = 'Times New Roman'
+        h_font.bold = True
+        h_font.color.rgb = RGBColor(0, 0, 0)
+        if level == 1:
+            h_font.size = Pt(16)
+        elif level == 2:
+            h_font.size = Pt(14)
+        else:
+            h_font.size = Pt(13)
+    
+    lines = req.content.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].rstrip()
+        
+        # Skip empty lines
+        if not line:
+            i += 1
+            continue
+        
+        # Headings
+        if line.startswith('### '):
+            text = line[4:].strip().strip('*')
+            doc.add_heading(text, level=3)
+        elif line.startswith('## '):
+            text = line[3:].strip().strip('*')
+            doc.add_heading(text, level=2)
+        elif line.startswith('# '):
+            text = line[2:].strip().strip('*')
+            doc.add_heading(text, level=1)
+        elif line.startswith('---'):
+            # Horizontal rule - add thin line
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = p.add_run('─' * 50)
+            run.font.size = Pt(8)
+            run.font.color.rgb = RGBColor(150, 150, 150)
+        elif line.startswith('- ') or line.startswith('* '):
+            # Bullet list
+            text = line[2:].strip()
+            p = doc.add_paragraph(style='List Bullet')
+            _add_formatted_text(p, text)
+        elif re.match(r'^\d+[\.\)] ', line):
+            # Numbered list
+            text = re.sub(r'^\d+[\.\)] ', '', line).strip()
+            p = doc.add_paragraph(style='List Number')
+            _add_formatted_text(p, text)
+        else:
+            # Normal paragraph
+            p = doc.add_paragraph()
+            _add_formatted_text(p, line)
+        
+        i += 1
+    
+    # Save to bytes
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    
+    safe_name = re.sub(r'[^\w\-]', '_', req.filename)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}.docx"'
+        }
+    )
+
+def _add_formatted_text(paragraph, text: str):
+    """Parse markdown bold/italic and add formatted runs to paragraph"""
+    import re
+    from docx.shared import Pt
+    
+    # Split by **bold** and *italic* patterns
+    parts = re.split(r'(\*\*.*?\*\*|\*.*?\*)', text)
+    for part in parts:
+        if part.startswith('**') and part.endswith('**'):
+            run = paragraph.add_run(part[2:-2])
+            run.bold = True
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(13)
+        elif part.startswith('*') and part.endswith('*'):
+            run = paragraph.add_run(part[1:-1])
+            run.italic = True
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(13)
+        elif part.startswith('[') and ']' in part:
+            # Placeholder like [TÊN CÔNG TY] - highlight it
+            run = paragraph.add_run(part)
+            run.bold = True
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(13)
+            from docx.shared import RGBColor
+            run.font.color.rgb = RGBColor(200, 0, 0)  # Red for placeholders
+        else:
+            # Check for [PLACEHOLDER] within normal text
+            sub_parts = re.split(r'(\[.*?\])', part)
+            for sp in sub_parts:
+                if sp.startswith('[') and sp.endswith(']'):
+                    run = paragraph.add_run(sp)
+                    run.bold = True
+                    run.font.name = 'Times New Roman'
+                    run.font.size = Pt(13)
+                    from docx.shared import RGBColor
+                    run.font.color.rgb = RGBColor(200, 0, 0)
+                else:
+                    run = paragraph.add_run(sp)
+                    run.font.name = 'Times New Roman'
+                    run.font.size = Pt(13)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)

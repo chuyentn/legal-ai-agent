@@ -3591,6 +3591,9 @@ console.log(data);</code></pre>
                 </div>
             `;
 
+            // Store raw markdown for Word export
+            msg.dataset.rawMarkdown = text;
+
             container.appendChild(msg);
             container.scrollTop = container.scrollHeight;
 
@@ -3711,6 +3714,7 @@ console.log(data);</code></pre>
             actions.className = 'message-actions';
             actions.innerHTML = `
                 <button class="message-action-btn" onclick="copyMessageText(this)" title="Copy">📋</button>
+                <button class="message-action-btn" onclick="exportToWord(this)" title="Tải file Word">📥</button>
                 <button class="message-action-btn" onclick="regenerateResponse(this)" title="Regenerate">🔄</button>
             `;
             content.appendChild(actions);
@@ -3743,6 +3747,44 @@ console.log(data);</code></pre>
 
         function regenerateResponse(btn) {
             showToast('Tính năng đang được phát triển', 'info');
+        }
+
+        async function exportToWord(btn) {
+            const msg = btn.closest('.message');
+            const textEl = msg.querySelector('.message-text');
+            // Get the raw markdown (stored in dataset) or innerHTML
+            const markdown = msg.dataset.rawMarkdown || textEl.innerText;
+            
+            btn.textContent = '⏳';
+            try {
+                const response = await fetch('/v1/legal/export-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: markdown,
+                        filename: 'van-ban-phap-ly'
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'van-ban-phap-ly.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('Đã tải file Word thành công!', 'success');
+                } else {
+                    showToast('Lỗi khi xuất file Word', 'error');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('Không thể xuất file. Vui lòng thử lại.', 'error');
+            }
+            btn.textContent = '📥';
         }
 
         function toggleFeedback(btn, type) {
