@@ -1,6 +1,8 @@
 """
 Document management endpoints
 - Upload, list, get, delete documents
+- OCR/Text extraction (PDF, DOCX)
+- AI document analysis and comparison
 """
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
 from pydantic import BaseModel
@@ -8,9 +10,14 @@ from typing import Optional, List
 from psycopg2.extras import RealDictCursor
 import os
 import uuid
+import json
 from pathlib import Path
+from datetime import datetime
+import PyPDF2
+import docx
 
 from ..middleware.auth import get_db, get_current_user, require_role
+from ..main import call_claude
 
 router = APIRouter(prefix="/v1/documents", tags=["Documents"])
 
@@ -58,6 +65,39 @@ def save_upload_file(upload_file: UploadFile, company_id: str) -> tuple[str, int
     
     return str(file_path.relative_to(UPLOAD_DIR)), file_size
 
+def extract_text_from_pdf(file_path: Path) -> tuple[str, int]:
+    """Extract text from PDF and return (text, page_count)"""
+    try:
+        with open(file_path, 'rb') as f:
+            pdf_reader = PyPDF2.PdfReader(f)
+            page_count = len(pdf_reader.pages)
+            
+            text_parts = []
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                if text:
+                    text_parts.append(text)
+            
+            extracted_text = "\n\n".join(text_parts)
+            return extracted_text, page_count
+    except Exception as e:
+        print(f"PDF extraction error: {e}")
+        return "", 0
+
+def extract_text_from_docx(file_path: Path) -> str:
+    """Extract text from DOCX file"""
+    try:
+        doc = docx.Document(file_path)
+        text_parts = []
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                text_parts.append(paragraph.text)
+        
+        return "\n\n".join(text_parts)
+    except Exception as e:
+        print(f"DOCX extraction error: {e}")
+        return ""
+
 # ============================================
 # Endpoints
 # ============================================
@@ -68,24 +108,51 @@ async def upload_document(
     doc_type: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload a document"""
+    """Upload a document with automatic text extraction"""
     # Validate file type
     allowed_types = [
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/plain"
+        "text/plain",
+        "image/jpeg",
+        "image/png",
+        "image/jpg"
     ]
     
     if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=400,
-            detail=f"File type not supported. Allowed: PDF, DOC, DOCX, TXT"
+            detail=f"File type not supported. Allowed: PDF, DOC, DOCX, TXT, JPG, PNG"
         )
     
     try:
         # Save file
         file_path, file_size = save_upload_file(file, str(current_user["company_id"]))
+        full_path = UPLOAD_DIR / file_path
+        
+        # Extract text based on file type
+        extracted_text = None
+        page_count = None
+        status = 'uploaded'
+        
+        if file.content_type == "application/pdf":
+            extracted_text, page_count = extract_text_from_pdf(full_path)
+            status = 'processed'
+        
+        elif file.content_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]:
+            extracted_text = extract_text_from_docx(full_path)
+            status = 'processed'
+        
+        elif file.content_type == "text/plain":
+            with open(full_path, 'r', encoding='utf-8') as f:
+                extracted_text = f.read()
+            status = 'processed'
+        
+        elif file.content_type in ["image/jpeg", "image/png", "image/jpg"]:
+            # Image files need OCR (Tesseract not available in production)
+            status = 'pending_ocr'
+            extracted_text = "⚠️ OCR requires Tesseract (not available in production yet). Image file saved but text extraction pending."
         
         # Insert into database
         with get_db() as conn:
@@ -93,9 +160,9 @@ async def upload_document(
             
             cur.execute("""
                 INSERT INTO documents 
-                (company_id, uploaded_by, name, file_path, file_size, mime_type, doc_type, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s::doc_type, 'uploaded'::doc_status)
-                RETURNING id, name, file_path, file_size, mime_type, doc_type, status, created_at
+                (company_id, uploaded_by, name, file_path, file_size, mime_type, doc_type, status, extracted_text, page_count)
+                VALUES (%s, %s, %s, %s, %s, %s, %s::doc_type, %s::doc_status, %s, %s)
+                RETURNING id, name, file_path, file_size, mime_type, doc_type, status, page_count, created_at
             """, (
                 current_user["company_id"],
                 current_user["id"],
@@ -103,14 +170,17 @@ async def upload_document(
                 file_path,
                 file_size,
                 file.content_type,
-                doc_type
+                doc_type,
+                status,
+                extracted_text,
+                page_count
             ))
             
             document = dict(cur.fetchone())
             conn.commit()
         
         return {
-            "message": "Document uploaded successfully",
+            "message": "Document uploaded and processed successfully",
             "document": {
                 "id": str(document["id"]),
                 "name": document["name"],
@@ -118,6 +188,7 @@ async def upload_document(
                 "mime_type": document["mime_type"],
                 "doc_type": document["doc_type"],
                 "status": document["status"],
+                "page_count": document["page_count"],
                 "created_at": document["created_at"].isoformat()
             }
         }
@@ -369,3 +440,179 @@ async def download_document(
         "mime_type": document["mime_type"],
         "note": "In production, use signed URLs or direct file serving"
     }
+
+@router.post("/{document_id}/analyze")
+async def analyze_document(
+    document_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """AI Document Analysis - analyze document and extract key information"""
+    # Get document and its extracted text
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        cur.execute("""
+            SELECT id, name, extracted_text, mime_type, status
+            FROM documents
+            WHERE id = %s AND company_id = %s
+        """, (document_id, current_user["company_id"]))
+        
+        document = cur.fetchone()
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        if not document["extracted_text"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Document has no extracted text. Please upload a text-based document (PDF, DOCX, TXT)."
+            )
+        
+        # Claude prompt for analysis
+        system_prompt = "Bạn là chuyên gia phân tích văn bản pháp lý Việt Nam."
+        
+        user_message = f"""Phân tích văn bản sau và trả về JSON với các trường:
+{{
+  "doc_type": "loại văn bản (hợp đồng/quyết định/công văn/biên bản/...)",
+  "summary": "tóm tắt ngắn gọn (2-3 câu)",
+  "parties": ["các bên liên quan"],
+  "key_dates": [{{"label": "mô tả", "date": "ngày"}}],
+  "key_amounts": [{{"label": "mô tả", "amount": "số tiền"}}],
+  "key_terms": ["các điều khoản quan trọng"],
+  "risks": [{{"level": "high/medium/low", "description": "mô tả rủi ro"}}],
+  "risk_score": 0-100,
+  "recommendations": ["khuyến nghị"]
+}}
+
+CHỈ trả về JSON, không giải thích thêm.
+
+VĂN BẢN:
+{document['extracted_text'][:30000]}"""
+        
+        # Call Claude for analysis
+        try:
+            result = await call_claude(system_prompt, user_message, max_tokens=4096)
+            
+            # Parse JSON response
+            try:
+                analysis = json.loads(result["content"])
+            except:
+                # If Claude didn't return pure JSON, try to extract it
+                content = result["content"]
+                if "```json" in content:
+                    json_str = content.split("```json")[1].split("```")[0].strip()
+                    analysis = json.loads(json_str)
+                elif "{" in content and "}" in content:
+                    # Extract JSON from response
+                    start = content.find("{")
+                    end = content.rfind("}") + 1
+                    analysis = json.loads(content[start:end])
+                else:
+                    analysis = {"error": "Could not parse analysis", "raw": content}
+            
+            # Update document with analysis
+            cur.execute("""
+                UPDATE documents
+                SET analysis = %s,
+                    risk_score = %s,
+                    issues_count = %s,
+                    analyzed_at = now(),
+                    status = 'analyzed'::doc_status
+                WHERE id = %s
+            """, (
+                json.dumps(analysis),
+                analysis.get("risk_score", 0),
+                len(analysis.get("risks", [])),
+                document_id
+            ))
+            conn.commit()
+            
+            return {
+                "message": "Document analyzed successfully",
+                "analysis": analysis,
+                "tokens_used": result["input_tokens"] + result["output_tokens"],
+                "model": result["model"]
+            }
+        
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@router.post("/compare")
+async def compare_documents(
+    doc1_id: str = Query(..., description="First document ID"),
+    doc2_id: str = Query(..., description="Second document ID"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Compare two documents and identify similarities, differences, and risk changes"""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Get both documents
+        cur.execute("""
+            SELECT id, name, extracted_text
+            FROM documents
+            WHERE id IN (%s, %s) AND company_id = %s
+        """, (doc1_id, doc2_id, current_user["company_id"]))
+        
+        docs = cur.fetchall()
+        
+        if len(docs) != 2:
+            raise HTTPException(status_code=404, detail="One or both documents not found")
+        
+        doc1 = docs[0] if str(docs[0]["id"]) == doc1_id else docs[1]
+        doc2 = docs[1] if str(docs[1]["id"]) == doc2_id else docs[0]
+        
+        if not doc1["extracted_text"] or not doc2["extracted_text"]:
+            raise HTTPException(status_code=400, detail="Both documents must have extracted text")
+        
+        # Claude prompt for comparison
+        system_prompt = "Bạn là chuyên gia so sánh văn bản pháp lý Việt Nam."
+        
+        user_message = f"""So sánh hai văn bản sau và trả về JSON với các trường:
+{{
+  "similarities": ["các điểm giống nhau"],
+  "differences": [{{"aspect": "khía cạnh", "doc1": "nội dung văn bản 1", "doc2": "nội dung văn bản 2", "significance": "high/medium/low"}}],
+  "risk_changes": [{{"change": "thay đổi", "risk_impact": "tăng/giảm/không đổi", "description": "mô tả"}}],
+  "recommendation": "Nên chọn văn bản nào và tại sao",
+  "summary": "Tóm tắt so sánh"
+}}
+
+CHỈ trả về JSON, không giải thích thêm.
+
+VĂN BẢN 1 ({doc1['name']}):
+{doc1['extracted_text'][:15000]}
+
+VĂN BẢN 2 ({doc2['name']}):
+{doc2['extracted_text'][:15000]}"""
+        
+        try:
+            result = await call_claude(system_prompt, user_message, max_tokens=4096)
+            
+            # Parse JSON response
+            try:
+                comparison = json.loads(result["content"])
+            except:
+                content = result["content"]
+                if "```json" in content:
+                    json_str = content.split("```json")[1].split("```")[0].strip()
+                    comparison = json.loads(json_str)
+                elif "{" in content and "}" in content:
+                    start = content.find("{")
+                    end = content.rfind("}") + 1
+                    comparison = json.loads(content[start:end])
+                else:
+                    comparison = {"error": "Could not parse comparison", "raw": content}
+            
+            return {
+                "message": "Documents compared successfully",
+                "documents": {
+                    "doc1": {"id": str(doc1["id"]), "name": doc1["name"]},
+                    "doc2": {"id": str(doc2["id"]), "name": doc2["name"]}
+                },
+                "comparison": comparison,
+                "tokens_used": result["input_tokens"] + result["output_tokens"],
+                "model": result["model"]
+            }
+        
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")

@@ -929,11 +929,36 @@
             padding: 1.5rem;
             transition: all 0.15s ease;
             cursor: pointer;
+            position: relative;
         }
 
         .template-card:hover {
             border-color: var(--accent);
-            box-shadow: 0 0 0 4px var(--accent-bg);
+            box-shadow: 0 0 20px rgba(129, 140, 248, 0.2);
+        }
+
+        .template-category {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .template-category.hop_dong {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .template-category.hanh_chinh {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .template-category.noi_bo {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
         }
 
         .template-icon {
@@ -952,6 +977,236 @@
             font-size: 0.875rem;
             color: var(--text-muted);
             line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .template-usage {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2rem;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-bg);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .document-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-size: 0.875rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-item {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .tab-item:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-item.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .doc-list-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .doc-list-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.15);
+        }
+
+        .doc-info {
+            flex: 1;
+        }
+
+        .doc-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .doc-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .doc-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.15s ease;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
         }
 
         /* ===== CONTRACTS PAGE ===== */
@@ -1081,6 +1336,92 @@
         .table-actions {
             display: flex;
             gap: 0.5rem;
+        }
+
+        /* ===== DOCUMENTS PAGE ===== */
+        .upload-zone {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .document-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.15s ease;
+        }
+
+        .document-card:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-secondary);
+        }
+
+        .document-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        .document-icon {
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .document-meta {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .doc-action-btn {
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .doc-action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         /* ===== SEARCH PAGE ===== */
@@ -1700,6 +2041,10 @@
                     <span class="nav-item-icon">📁</span>
                     <span>Hợp đồng</span>
                 </div>
+                <div class="nav-item" onclick="showPage('documents')">
+                    <span class="nav-item-icon">📂</span>
+                    <span>Văn bản</span>
+                </div>
                 <div class="nav-item" onclick="showPage('search')">
                     <span class="nav-item-icon">🔍</span>
                     <span>Tra cứu</span>
@@ -1778,8 +2123,21 @@
                     <div class="page-description">Chọn mẫu văn bản để tạo tài liệu pháp lý chuyên nghiệp</div>
                 </div>
                 <div class="page-content">
-                    <div class="templates-grid" id="templatesGrid">
-                        <!-- Templates will be rendered here -->
+                    <div class="tab-nav">
+                        <div class="tab-item active" onclick="switchTemplateTab('templates')">Mẫu văn bản</div>
+                        <div class="tab-item" onclick="switchTemplateTab('generated')">Văn bản đã tạo</div>
+                    </div>
+                    
+                    <div id="templatesTab" class="tab-content active">
+                        <div class="templates-grid" id="templatesGrid">
+                            <div class="loading-spinner">⚖️ Đang tải mẫu văn bản...</div>
+                        </div>
+                    </div>
+                    
+                    <div id="generatedTab" class="tab-content">
+                        <div id="generatedDocsList">
+                            <div class="loading-spinner">⚖️ Đang tải văn bản...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1820,6 +2178,53 @@
                                 <!-- Contracts will be rendered here -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== DOCUMENTS PAGE ===== -->
+            <div id="documentsPage" class="page page-container">
+                <div class="page-header">
+                    <div class="page-title">📂 Quản lý văn bản</div>
+                    <div class="page-description">Quản lý tất cả văn bản pháp lý (PDF, DOCX, ảnh scan) với phân tích AI</div>
+                </div>
+                <div class="page-content">
+                    <!-- Upload Zone -->
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('documentUpload').click()">
+                        <div style="font-size: 3rem; margin-bottom: 0.5rem;">📤</div>
+                        <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.25rem;">Kéo thả file hoặc bấm để upload</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">PDF, DOCX, TXT, JPG, PNG • Tối đa 10MB</div>
+                        <input type="file" id="documentUpload" style="display: none" accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png" onchange="uploadDocument(event)">
+                    </div>
+
+                    <!-- Filters and Actions -->
+                    <div class="page-actions" style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="filter-pill active" onclick="filterDocuments('all')">Tất cả</button>
+                            <button class="filter-pill" onclick="filterDocuments('pdf')">PDF</button>
+                            <button class="filter-pill" onclick="filterDocuments('docx')">DOCX</button>
+                            <button class="filter-pill" onclick="filterDocuments('image')">Ảnh</button>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select class="form-input" style="width: auto; padding: 0.5rem;" onchange="sortDocuments(this.value)">
+                                <option value="newest">Mới nhất</option>
+                                <option value="name">Tên</option>
+                                <option value="size">Kích thước</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="selectAllDocuments()" id="selectAllBtn">Chọn tất cả</button>
+                            <button class="btn btn-secondary hidden" onclick="batchDelete()" id="batchDeleteBtn">🗑️ Xóa đã chọn</button>
+                            <button class="btn btn-primary hidden" onclick="batchAnalyze()" id="batchAnalyzeBtn">🔍 Phân tích đã chọn</button>
+                        </div>
+                    </div>
+
+                    <!-- Documents List -->
+                    <div id="documentsContainer" style="display: grid; gap: 1rem; margin-top: 1.5rem;">
+                        <!-- Documents will be rendered here -->
+                    </div>
+
+                    <!-- Stats -->
+                    <div id="documentsStats" style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; font-size: 0.875rem; color: var(--text-secondary);">
+                        📊 Tổng: <span id="totalDocs">0</span> văn bản | <span id="totalSize">0</span> MB
                     </div>
                 </div>
             </div>
@@ -2060,16 +2465,21 @@ console.log(data);</code></pre>
         let chatSessions = [];
 
         // ===== TEMPLATES DATA =====
-        const templates = [
-            { id: 1, icon: '📝', title: 'Hợp đồng lao động', description: 'Mẫu hợp đồng lao động theo Bộ luật Lao động 2019', prompt: 'Soạn hợp đồng lao động với các thông tin sau:\n- Tên công ty:\n- Tên nhân viên:\n- Vị trí:\n- Mức lương:\n- Thời hạn hợp đồng:' },
-            { id: 2, icon: '🤝', title: 'Hợp đồng dịch vụ', description: 'Hợp đồng cung cấp dịch vụ chuyên nghiệp', prompt: 'Soạn hợp đồng dịch vụ với các thông tin sau:\n- Bên cung cấp:\n- Bên sử dụng:\n- Loại dịch vụ:\n- Giá trị hợp đồng:' },
-            { id: 3, icon: '📋', title: 'Quyết định', description: 'Quyết định bổ nhiệm, khen thưởng, kỷ luật', prompt: 'Soạn quyết định với các thông tin sau:\n- Loại quyết định:\n- Đối tượng:\n- Lý do:' },
-            { id: 4, icon: '📄', title: 'Công văn', description: 'Mẫu công văn hành chính', prompt: 'Soạn công văn với các thông tin sau:\n- Người gửi:\n- Người nhận:\n- Nội dung:' },
-            { id: 5, icon: '📖', title: 'Nội quy công ty', description: 'Nội quy lao động theo luật định', prompt: 'Soạn nội quy công ty với các thông tin sau:\n- Tên công ty:\n- Ngành nghề:\n- Quy mô:' },
-            { id: 6, icon: '✍️', title: 'Biên bản họp', description: 'Biên bản cuộc họp chính thức', prompt: 'Soạn biên bản họp với các thông tin sau:\n- Chủ đề cuộc họp:\n- Người chủ trì:\n- Thành phần tham gia:' },
-            { id: 7, icon: '📢', title: 'Thông báo', description: 'Thông báo nội bộ cho nhân viên', prompt: 'Soạn thông báo với các thông tin sau:\n- Nội dung thông báo:\n- Đối tượng nhận:' },
-            { id: 8, icon: '🏠', title: 'Hợp đồng thuê nhà', description: 'Hợp đồng thuê nhà ở/văn phòng', prompt: 'Soạn hợp đồng thuê nhà với các thông tin sau:\n- Bên cho thuê:\n- Bên thuê:\n- Địa chỉ nhà:\n- Giá thuê:\n- Thời hạn:' }
-        ];
+        let allTemplates = [];
+        let allGeneratedDocs = [];
+        let currentTemplate = null;
+        
+        const categoryIcons = {
+            'hop_dong': '📝',
+            'hanh_chinh': '📄',
+            'noi_bo': '📋'
+        };
+        
+        const categoryNames = {
+            'hop_dong': 'Hợp đồng',
+            'hanh_chinh': 'Hành chính',
+            'noi_bo': 'Nội bộ'
+        };
 
         // ===== GLOBAL CONTRACTS DATA =====
         let allContracts = [];
@@ -2078,7 +2488,7 @@ console.log(data);</code></pre>
         // ===== INIT =====
         window.onload = function() {
             checkAuth();
-            renderTemplates();
+            loadTemplates();
             setupDropZone();
         };
 
@@ -2401,6 +2811,8 @@ console.log(data);</code></pre>
             // Load data for specific pages
             if (pageName === 'contracts') {
                 loadContracts();
+            } else if (pageName === 'documents') {
+                loadDocuments();
             } else if (pageName === 'search') {
                 showSearchEmptyState();
             }
@@ -2632,25 +3044,311 @@ console.log(data);</code></pre>
         }
 
         // ===== TEMPLATES =====
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/v1/templates');
+                if (response.ok) {
+                    const data = await response.json();
+                    allTemplates = data.templates;
+                    renderTemplates();
+                } else {
+                    console.error('Failed to load templates');
+                }
+            } catch (error) {
+                console.error('Load templates error:', error);
+            }
+        }
+
         function renderTemplates() {
             const grid = document.getElementById('templatesGrid');
-            grid.innerHTML = templates.map(t => `
-                <div class="template-card" onclick="useTemplate(${t.id})">
-                    <div class="template-icon">${t.icon}</div>
-                    <div class="template-title">${t.title}</div>
+            if (!allTemplates.length) {
+                grid.innerHTML = '<div class="loading-spinner">Không có mẫu văn bản nào</div>';
+                return;
+            }
+            
+            grid.innerHTML = allTemplates.map(t => `
+                <div class="template-card" onclick="openTemplateForm('${t.template_id}')">
+                    <div class="template-category ${t.category}">${categoryNames[t.category] || t.category}</div>
+                    <div class="template-icon">${categoryIcons[t.category] || '📄'}</div>
+                    <div class="template-title">${t.name}</div>
                     <div class="template-description">${t.description}</div>
+                    <div class="template-usage">📊 Đã sử dụng: ${t.usage_count || 0} lần</div>
                 </div>
             `).join('');
         }
 
-        function useTemplate(id) {
-            const template = templates.find(t => t.id === id);
-            if (template) {
-                // Start new chat with template
-                startNewChat();
-                setTimeout(() => {
-                    useSuggestion(template.prompt);
-                }, 100);
+        function openTemplateForm(templateId) {
+            const template = allTemplates.find(t => t.template_id === templateId);
+            if (!template) return;
+            
+            currentTemplate = template;
+            const variables = template.variables;
+            
+            // Build form fields
+            let formHTML = '';
+            for (const [varName, varConfig] of Object.entries(variables)) {
+                const required = varConfig.required ? 'required' : '';
+                const requiredClass = varConfig.required ? 'required' : '';
+                
+                formHTML += `<div class="form-group">`;
+                formHTML += `<label class="form-label ${requiredClass}">${varConfig.label}</label>`;
+                
+                if (varConfig.type === 'textarea') {
+                    formHTML += `<textarea class="form-input form-textarea" id="var_${varName}" ${required}></textarea>`;
+                } else if (varConfig.type === 'select') {
+                    formHTML += `<select class="form-input" id="var_${varName}" ${required}>`;
+                    formHTML += `<option value="">-- Chọn --</option>`;
+                    varConfig.options.forEach(opt => {
+                        formHTML += `<option value="${opt}">${opt}</option>`;
+                    });
+                    formHTML += `</select>`;
+                } else if (varConfig.type === 'number') {
+                    formHTML += `<input type="number" class="form-input" id="var_${varName}" ${required}>`;
+                } else if (varConfig.type === 'date') {
+                    formHTML += `<input type="date" class="form-input" id="var_${varName}" ${required}>`;
+                } else {
+                    formHTML += `<input type="text" class="form-input" id="var_${varName}" ${required}>`;
+                }
+                
+                formHTML += `</div>`;
+            }
+            
+            const modalHTML = `
+                <div class="modal-backdrop" id="templateFormModal" onclick="closeModalOnBackdrop(event)">
+                    <div class="modal" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <div class="modal-title">${template.name}</div>
+                            <button class="modal-close" onclick="closeTemplateForm()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="templateForm" onsubmit="generateDocument(event)">
+                                ${formHTML}
+                            </form>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeTemplateForm()">Hủy</button>
+                            <button type="submit" form="templateForm" class="btn btn-primary">⚖️ Tạo văn bản</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function closeTemplateForm() {
+            const modal = document.getElementById('templateFormModal');
+            if (modal) modal.remove();
+            currentTemplate = null;
+        }
+
+        function closeModalOnBackdrop(event) {
+            if (event.target.classList.contains('modal-backdrop')) {
+                closeTemplateForm();
+            }
+        }
+
+        async function generateDocument(event) {
+            event.preventDefault();
+            
+            if (!currentTemplate) return;
+            
+            // Collect form values
+            const variables = {};
+            for (const varName of Object.keys(currentTemplate.variables)) {
+                const input = document.getElementById(`var_${varName}`);
+                if (input) {
+                    variables[varName] = input.value;
+                }
+            }
+            
+            // Show loading
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '⚖️ Đang soạn thảo...';
+            submitBtn.disabled = true;
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/templates/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        template_id: currentTemplate.template_id,
+                        variables: variables
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    closeTemplateForm();
+                    showGeneratedDocument(data);
+                } else {
+                    const error = await response.json();
+                    alert(`Lỗi: ${error.detail || 'Không thể tạo văn bản'}`);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Generate document error:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function showGeneratedDocument(data) {
+            const modalHTML = `
+                <div class="modal-backdrop" id="generatedDocModal" onclick="closeGeneratedDocModal(event)">
+                    <div class="modal" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <div class="modal-title">✅ ${data.document_name}</div>
+                            <button class="modal-close" onclick="closeGeneratedDoc()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="document-content" id="documentContent">${escapeHTML(data.content)}</div>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" onclick="copyToClipboard('${data.document_id}')">📋 Sao chép</button>
+                            <button class="btn btn-primary" onclick="closeGeneratedDoc(); switchTemplateTab('generated'); loadGeneratedDocs()">📂 Xem văn bản đã tạo</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function closeGeneratedDoc() {
+            const modal = document.getElementById('generatedDocModal');
+            if (modal) modal.remove();
+        }
+
+        function closeGeneratedDocModal(event) {
+            if (event.target.classList.contains('modal-backdrop')) {
+                closeGeneratedDoc();
+            }
+        }
+
+        function copyToClipboard(docId) {
+            const content = document.getElementById('documentContent').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('✅ Đã sao chép văn bản vào clipboard');
+            });
+        }
+
+        function escapeHTML(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
+        function switchTemplateTab(tab) {
+            // Update tab nav
+            document.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            if (tab === 'templates') {
+                document.getElementById('templatesTab').classList.add('active');
+                if (!allTemplates.length) loadTemplates();
+            } else if (tab === 'generated') {
+                document.getElementById('generatedTab').classList.add('active');
+                loadGeneratedDocs();
+            }
+        }
+
+        async function loadGeneratedDocs() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/templates/generated/list', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    allGeneratedDocs = data.documents;
+                    renderGeneratedDocs();
+                } else {
+                    console.error('Failed to load generated docs');
+                }
+            } catch (error) {
+                console.error('Load generated docs error:', error);
+            }
+        }
+
+        function renderGeneratedDocs() {
+            const container = document.getElementById('generatedDocsList');
+            
+            if (!allGeneratedDocs.length) {
+                container.innerHTML = '<div class="loading-spinner">Chưa có văn bản nào được tạo</div>';
+                return;
+            }
+            
+            container.innerHTML = allGeneratedDocs.map(doc => {
+                const date = new Date(doc.created_at).toLocaleString('vi-VN');
+                return `
+                    <div class="doc-list-item">
+                        <div class="doc-info">
+                            <div class="doc-name">${doc.name}</div>
+                            <div class="doc-meta">
+                                <span class="template-category ${doc.category}">${doc.template_name || 'Mẫu'}</span>
+                                · ${date}
+                            </div>
+                        </div>
+                        <div class="doc-actions">
+                            <button class="btn-icon" onclick="viewGeneratedDoc('${doc.id}')" title="Xem">👁️</button>
+                            <button class="btn-icon" onclick="deleteGeneratedDoc('${doc.id}')" title="Xóa">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function viewGeneratedDoc(docId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/templates/generated/${docId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const doc = await response.json();
+                    showGeneratedDocument({
+                        document_id: doc.id,
+                        document_name: doc.name,
+                        content: doc.content
+                    });
+                }
+            } catch (error) {
+                console.error('View doc error:', error);
+            }
+        }
+
+        async function deleteGeneratedDoc(docId) {
+            if (!confirm('Bạn có chắc muốn xóa văn bản này?')) return;
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/templates/generated/${docId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    loadGeneratedDocs();
+                }
+            } catch (error) {
+                console.error('Delete doc error:', error);
             }
         }
 
@@ -3042,6 +3740,488 @@ console.log(data);</code></pre>
             } catch (error) {
                 console.error('Upload contract error:', error);
                 alert('Có lỗi xảy ra');
+            }
+        }
+
+        // ===== DOCUMENTS =====
+        let allDocuments = [];
+        let selectedDocuments = new Set();
+        let currentDocFilter = 'all';
+
+        async function loadDocuments() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/documents?limit=100', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    allDocuments = data.documents || [];
+                    renderDocuments();
+                    updateDocumentsStats();
+                } else {
+                    console.error('Failed to load documents');
+                }
+            } catch (error) {
+                console.error('Load documents error:', error);
+            }
+        }
+
+        function renderDocuments() {
+            const container = document.getElementById('documentsContainer');
+            
+            if (allDocuments.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 3rem;">Chưa có văn bản nào. Tải lên để bắt đầu!</div>';
+                return;
+            }
+
+            const filtered = allDocuments.filter(doc => {
+                if (currentDocFilter === 'all') return true;
+                if (currentDocFilter === 'pdf') return doc.mime_type === 'application/pdf';
+                if (currentDocFilter === 'docx') return doc.mime_type.includes('wordprocessing');
+                if (currentDocFilter === 'image') return doc.mime_type.startsWith('image/');
+                return true;
+            });
+
+            container.innerHTML = filtered.map(doc => {
+                const icon = getDocumentIcon(doc.mime_type);
+                const statusIcon = getStatusIcon(doc.status);
+                const isSelected = selectedDocuments.has(doc.id);
+
+                return `
+                    <div class="document-card ${isSelected ? 'selected' : ''}" data-id="${doc.id}">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleDocumentSelection('${doc.id}')" style="flex-shrink: 0;">
+                        <div class="document-icon">${icon}</div>
+                        <div class="document-info">
+                            <div class="document-name">${escapeHtml(doc.name)}</div>
+                            <div class="document-meta">
+                                ${doc.doc_type ? `Loại: ${doc.doc_type}` : 'Loại: Chưa xác định'} | 
+                                ${doc.page_count ? `${doc.page_count} trang |` : ''} 
+                                ${(doc.file_size / 1024).toFixed(1)} KB
+                            </div>
+                            <div class="document-meta">
+                                Trạng thái: ${statusIcon} ${getStatusText(doc.status)}
+                            </div>
+                            <div class="document-actions">
+                                <button class="doc-action-btn" onclick="viewDocument('${doc.id}')">👁️ Xem</button>
+                                ${doc.status !== 'pending_ocr' ? `<button class="doc-action-btn" onclick="analyzeDocument('${doc.id}')">🔍 Phân tích AI</button>` : ''}
+                                <button class="doc-action-btn" onclick="downloadDocument('${doc.id}')">⬇️ Tải</button>
+                                <button class="doc-action-btn" onclick="deleteDocument('${doc.id}')">🗑️ Xóa</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateBatchButtons();
+        }
+
+        function getDocumentIcon(mimeType) {
+            if (mimeType === 'application/pdf') return '📄';
+            if (mimeType.includes('word')) return '📝';
+            if (mimeType === 'text/plain') return '📃';
+            if (mimeType.startsWith('image/')) return '📸';
+            return '📄';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'uploaded': '⏳',
+                'processed': '✅',
+                'analyzed': '🔍',
+                'pending_ocr': '⚠️'
+            };
+            return icons[status] || '○';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'uploaded': 'Đã tải lên',
+                'processed': 'Đã xử lý',
+                'analyzed': 'Đã phân tích',
+                'pending_ocr': 'Chờ OCR'
+            };
+            return texts[status] || status;
+        }
+
+        function updateDocumentsStats() {
+            const totalDocs = allDocuments.length;
+            const totalSize = allDocuments.reduce((sum, doc) => sum + doc.file_size, 0) / (1024 * 1024);
+            
+            document.getElementById('totalDocs').textContent = totalDocs;
+            document.getElementById('totalSize').textContent = totalSize.toFixed(2);
+        }
+
+        function filterDocuments(filter) {
+            currentDocFilter = filter;
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderDocuments();
+        }
+
+        function sortDocuments(sortBy) {
+            if (sortBy === 'newest') {
+                allDocuments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            } else if (sortBy === 'name') {
+                allDocuments.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortBy === 'size') {
+                allDocuments.sort((a, b) => b.file_size - a.file_size);
+            }
+            renderDocuments();
+        }
+
+        function toggleDocumentSelection(id) {
+            if (selectedDocuments.has(id)) {
+                selectedDocuments.delete(id);
+            } else {
+                selectedDocuments.add(id);
+            }
+            renderDocuments();
+        }
+
+        function selectAllDocuments() {
+            if (selectedDocuments.size === allDocuments.length) {
+                selectedDocuments.clear();
+            } else {
+                allDocuments.forEach(doc => selectedDocuments.add(doc.id));
+            }
+            renderDocuments();
+        }
+
+        function updateBatchButtons() {
+            const hasSelection = selectedDocuments.size > 0;
+            document.getElementById('batchDeleteBtn').classList.toggle('hidden', !hasSelection);
+            document.getElementById('batchAnalyzeBtn').classList.toggle('hidden', !hasSelection);
+            document.getElementById('selectAllBtn').textContent = selectedDocuments.size === allDocuments.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+        }
+
+        async function uploadDocument(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/v1/documents', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`✅ ${result.message}`);
+                    loadDocuments();
+                    event.target.value = '';
+                } else {
+                    const error = await response.json();
+                    alert(`❌ ${error.detail}`);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Có lỗi xảy ra khi tải lên');
+            }
+        }
+
+        async function viewDocument(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/documents/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const doc = await response.json();
+                    showDocumentViewerModal(doc);
+                } else {
+                    alert('Không thể tải thông tin văn bản');
+                }
+            } catch (error) {
+                console.error('View document error:', error);
+            }
+        }
+
+        function showDocumentViewerModal(doc) {
+            const isImage = doc.mime_type && doc.mime_type.startsWith('image/');
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <div class="modal-title">${escapeHtml(doc.name)}</div>
+                        <button class="icon-btn" onclick="this.closest('.modal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; font-size: 0.875rem;">
+                                <div><strong>Kích thước:</strong> ${(doc.file_size / 1024).toFixed(1)} KB</div>
+                                <div><strong>Trang:</strong> ${doc.page_count || 'N/A'}</div>
+                                <div><strong>Loại:</strong> ${doc.mime_type}</div>
+                                <div><strong>Trạng thái:</strong> ${getStatusText(doc.status)}</div>
+                                <div><strong>Ngày tải lên:</strong> ${new Date(doc.created_at).toLocaleDateString('vi-VN')}</div>
+                                ${doc.analyzed_at ? `<div><strong>Ngày phân tích:</strong> ${new Date(doc.analyzed_at).toLocaleDateString('vi-VN')}</div>` : ''}
+                            </div>
+                        </div>
+                        ${isImage ? 
+                            `<div style="text-align: center; margin: 1rem 0;">
+                                <img src="/uploads/${doc.file_path}" style="max-width: 100%; border-radius: 8px;" />
+                            </div>` :
+                            `<div style="max-height: 400px; overflow-y: auto; padding: 1rem; background: var(--code-bg); border-radius: 8px; font-family: monospace; font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap;">
+                                ${escapeHtml(doc.extracted_text || 'Không có văn bản trích xuất')}
+                            </div>`
+                        }
+                    </div>
+                    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border);">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Đóng</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function analyzeDocument(id) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <div class="modal-title">Phân tích AI</div>
+                        <button class="icon-btn" onclick="this.closest('.modal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body" style="padding: 2rem; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+                        <div style="font-size: 1.125rem; margin-bottom: 0.5rem;">Đang phân tích văn bản...</div>
+                        <div style="color: var(--text-muted);">Vui lòng đợi trong giây lát</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/documents/${id}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    modal.remove();
+                    showAnalysisResultModal(result.analysis);
+                    loadDocuments(); // Refresh list
+                } else {
+                    const error = await response.json();
+                    modal.remove();
+                    alert(`❌ ${error.detail}`);
+                }
+            } catch (error) {
+                modal.remove();
+                console.error('Analyze error:', error);
+                alert('Có lỗi xảy ra khi phân tích');
+            }
+        }
+
+        function showAnalysisResultModal(analysis) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            const riskColor = analysis.risk_score > 60 ? 'var(--danger)' : analysis.risk_score > 30 ? 'var(--warning)' : 'var(--success)';
+            
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <div class="modal-title">📊 Kết quả phân tích</div>
+                        <button class="icon-btn" onclick="this.closest('.modal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <!-- Doc Type -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: inline-block; background: var(--accent-bg); color: var(--accent); padding: 0.375rem 0.875rem; border-radius: 20px; font-size: 0.875rem; font-weight: 600;">
+                                ${escapeHtml(analysis.doc_type || 'Không xác định')}
+                            </div>
+                        </div>
+
+                        <!-- Summary -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Tóm tắt</div>
+                            <div style="color: var(--text-secondary); line-height: 1.6;">${escapeHtml(analysis.summary || 'N/A')}</div>
+                        </div>
+
+                        <!-- Risk Score -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Điểm rủi ro: ${analysis.risk_score}/100</div>
+                            <div style="background: var(--bg-secondary); border-radius: 8px; height: 20px; overflow: hidden;">
+                                <div style="background: ${riskColor}; height: 100%; width: ${analysis.risk_score}%; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Parties -->
+                        ${analysis.parties && analysis.parties.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Các bên liên quan</div>
+                            <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                                ${analysis.parties.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
+                            </ul>
+                        </div>` : ''}
+
+                        <!-- Key Dates -->
+                        ${analysis.key_dates && analysis.key_dates.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Ngày quan trọng</div>
+                            <div style="display: grid; gap: 0.5rem;">
+                                ${analysis.key_dates.map(d => `
+                                    <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-secondary); border-radius: 6px;">
+                                        <span>${escapeHtml(d.label)}</span>
+                                        <span style="color: var(--text-muted);">${escapeHtml(d.date)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>` : ''}
+
+                        <!-- Risks -->
+                        ${analysis.risks && analysis.risks.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Rủi ro</div>
+                            <div style="display: grid; gap: 0.75rem;">
+                                ${analysis.risks.map(r => {
+                                    const levelColor = r.level === 'high' ? 'var(--danger)' : r.level === 'medium' ? 'var(--warning)' : 'var(--text-muted)';
+                                    return `
+                                        <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; border-left: 3px solid ${levelColor};">
+                                            <div style="font-weight: 500; margin-bottom: 0.25rem; color: ${levelColor};">${r.level.toUpperCase()}</div>
+                                            <div style="color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(r.description)}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>` : ''}
+
+                        <!-- Recommendations -->
+                        ${analysis.recommendations && analysis.recommendations.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">Khuyến nghị</div>
+                            <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                                ${analysis.recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                            </ul>
+                        </div>` : ''}
+                    </div>
+                    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border);">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Đóng</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function downloadDocument(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/documents/${id}/download`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    // In production, this would trigger an actual download
+                    alert(`📥 Download URL: ${result.download_url}\n\n(Cần cấu hình static file serving)`);
+                } else {
+                    alert('Không thể tải file');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+            }
+        }
+
+        async function deleteDocument(id) {
+            if (!confirm('Bạn có chắc muốn xóa văn bản này?')) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/documents/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    alert('✅ Đã xóa văn bản');
+                    loadDocuments();
+                } else {
+                    alert('Không thể xóa văn bản');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+            }
+        }
+
+        async function batchDelete() {
+            if (selectedDocuments.size === 0) return;
+            if (!confirm(`Bạn có chắc muốn xóa ${selectedDocuments.size} văn bản?`)) return;
+
+            const promises = Array.from(selectedDocuments).map(id => {
+                const token = localStorage.getItem('token');
+                return fetch(`/v1/documents/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            });
+
+            try {
+                await Promise.all(promises);
+                selectedDocuments.clear();
+                alert('✅ Đã xóa các văn bản đã chọn');
+                loadDocuments();
+            } catch (error) {
+                console.error('Batch delete error:', error);
+                alert('Có lỗi xảy ra khi xóa');
+            }
+        }
+
+        async function batchAnalyze() {
+            if (selectedDocuments.size === 0) return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title">Phân tích hàng loạt</div>
+                        <button class="icon-btn" onclick="this.closest('.modal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body" style="padding: 2rem; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+                        <div id="batchProgress">Đang phân tích 0/${selectedDocuments.size}...</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            let completed = 0;
+            const promises = Array.from(selectedDocuments).map(async id => {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/v1/documents/${id}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                completed++;
+                document.getElementById('batchProgress').textContent = `Đang phân tích ${completed}/${selectedDocuments.size}...`;
+                return response;
+            });
+
+            try {
+                await Promise.all(promises);
+                modal.remove();
+                selectedDocuments.clear();
+                alert('✅ Đã phân tích xong tất cả văn bản');
+                loadDocuments();
+            } catch (error) {
+                modal.remove();
+                console.error('Batch analyze error:', error);
+                alert('Có lỗi xảy ra khi phân tích');
             }
         }
 

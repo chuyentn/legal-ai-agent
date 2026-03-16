@@ -29,7 +29,7 @@ load_dotenv()
 JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "your-super-secret-jwt-key-change-in-production")
 
 # Import new routes
-from .routes import auth, company, keys, usage, chats, documents, admin, contracts
+from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates
 # from .middleware.logging import PlatformLoggingMiddleware  # disabled for deploy
 
 app = FastAPI(
@@ -61,6 +61,13 @@ app.include_router(chats.router)
 app.include_router(documents.router)
 app.include_router(admin.router)
 app.include_router(contracts.router)
+app.include_router(templates.router)
+
+# Startup event - seed templates
+@app.on_event("startup")
+async def startup_event():
+    """Seed default templates on startup"""
+    templates.seed_default_templates()
 
 # Static files
 static_dir = pathlib.Path(__file__).parent.parent.parent / "static"
