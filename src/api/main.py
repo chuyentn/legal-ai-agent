@@ -5,7 +5,7 @@ Legal AI Agent API
 - Multi-tenant API key authentication
 - User authentication and management
 """
-from fastapi import FastAPI, HTTPException, Depends, Header, Request, Query, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, Header, Request, Query, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -1946,6 +1946,595 @@ async def get_notifications(company: dict = Depends(verify_api_key)):
             })
 
     return {"notifications": notifications, "count": len(notifications)}
+
+
+# ============================================
+# Feature: Smart Contract Report Export (Word)
+# ============================================
+
+@app.post("/v1/contracts/{contract_id}/report")
+async def generate_contract_report(contract_id: str, company: dict = Depends(verify_api_key)):
+    """Generate professional AI review report for a contract as Word document"""
+    from docx import Document as DocxDocument
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from io import BytesIO
+
+    company_id = str(company["company_id"])
+
+    try:
+        with get_db() as conn:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            cur.execute(
+                "SELECT * FROM contracts WHERE id::text = %s AND company_id = %s AND status != 'deleted'",
+                (contract_id, company_id)
+            )
+            contract = cur.fetchone()
+            if not contract:
+                raise HTTPException(404, "Hợp đồng không tồn tại")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"DB error in contract report: {e}")
+        raise HTTPException(500, "Lỗi truy vấn database")
+
+    # Run AI analysis
+    try:
+        analysis = await legal_agent.run_agent(
+            question=f"Phân tích chi tiết và rà soát toàn diện hợp đồng: {contract['name']}. Đánh giá rủi ro, điều khoản quan trọng, vấn đề cần lưu ý, và đề xuất cụ thể.",
+            company_id=company_id
+        )
+    except Exception as e:
+        print(f"AI analysis error: {e}")
+        raise HTTPException(502, "Lỗi phân tích AI")
+
+    # Generate Word document
+    doc = DocxDocument()
+
+    # Title
+    title = doc.add_heading('BÁO CÁO RÀ SOÁT HỢP ĐỒNG', level=0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Contract info table
+    doc.add_heading('I. Thông tin hợp đồng', level=1)
+    table = doc.add_table(rows=5, cols=2)
+    try:
+        table.style = 'Light Grid Accent 1'
+    except Exception:
+        pass  # Style may not exist in all templates
+
+    # Parse parties safely
+    parties_raw = contract.get('parties', [])
+    if isinstance(parties_raw, str):
+        try:
+            parties_raw = json.loads(parties_raw)
+        except Exception:
+            parties_raw = [parties_raw]
+    parties_str = ', '.join(str(p) for p in (parties_raw or ['N/A']))
+
+    cells = [
+        ('Tên hợp đồng', str(contract.get('name', 'N/A'))),
+        ('Các bên', parties_str),
+        ('Ngày bắt đầu', str(contract.get('start_date', 'N/A'))),
+        ('Ngày kết thúc', str(contract.get('end_date', 'N/A'))),
+        ('Loại hợp đồng', str(contract.get('contract_type', 'N/A'))),
+    ]
+    for i, (label, value) in enumerate(cells):
+        table.rows[i].cells[0].text = label
+        table.rows[i].cells[1].text = value
+
+    # AI Analysis
+    doc.add_heading('II. Kết quả rà soát AI', level=1)
+    answer = analysis.get('answer', '')
+    for line in answer.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('### '):
+            doc.add_heading(line[4:], level=3)
+        elif line.startswith('## '):
+            doc.add_heading(line[3:], level=2)
+        elif line.startswith('# '):
+            doc.add_heading(line[2:], level=1)
+        elif line.startswith('- ') or line.startswith('* '):
+            doc.add_paragraph(line[2:], style='List Bullet')
+        elif line.startswith('**') and line.endswith('**'):
+            p = doc.add_paragraph()
+            run = p.add_run(line.strip('*'))
+            run.bold = True
+        else:
+            clean = line.replace('**', '').replace('*', '').replace('`', '')
+            doc.add_paragraph(clean)
+
+    # Citations
+    citations = analysis.get('citations', [])
+    if citations:
+        doc.add_heading('III. Căn cứ pháp lý', level=1)
+        for c in citations[:10]:
+            p = doc.add_paragraph(style='List Bullet')
+            run = p.add_run(f"{c.get('source', '')} ({c.get('law_number', '')})")
+            run.bold = True
+            if c.get('content'):
+                p.add_run(f"\n{str(c['content'])[:200]}...")
+
+    # Disclaimer
+    doc.add_paragraph()
+    disclaimer = doc.add_paragraph()
+    disclaimer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = disclaimer.add_run('⚠️ Đây là báo cáo phân tích tự động bằng AI. Vui lòng tham vấn luật sư trực tiếp cho vụ việc cụ thể.')
+    run.italic = True
+    run.font.size = Pt(9)
+
+    # Save to bytes
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    safe_name = str(contract.get('name', 'contract'))[:30].replace(' ', '_')
+    filename = f"Bao_cao_ra_soat_{safe_name}.docx"
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+# ============================================
+# Feature: Multi-Contract Risk Dashboard
+# ============================================
+
+@app.get("/v1/contracts/risk-overview")
+async def contract_risk_overview(company: dict = Depends(verify_api_key)):
+    """Get risk overview for all company contracts"""
+    from datetime import date
+    company_id = str(company["company_id"])
+
+    try:
+        with get_db() as conn:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            cur.execute("""
+                SELECT id, name, contract_type, start_date, end_date, status,
+                       parties, metadata
+                FROM contracts
+                WHERE company_id = %s AND status != 'deleted'
+                ORDER BY created_at DESC
+            """, (company_id,))
+            contracts = cur.fetchall()
+    except Exception as e:
+        print(f"DB error in risk overview: {e}")
+        raise HTTPException(500, "Lỗi truy vấn database")
+
+    overview = {
+        "total": len(contracts),
+        "by_status": {},
+        "by_type": {},
+        "expiring_soon": [],
+        "expired": [],
+        "missing_end_date": [],
+        "risk_items": []
+    }
+
+    today = date.today()
+
+    for c in contracts:
+        c = dict(c)
+        # Status count
+        s = c.get('status', 'unknown') or 'unknown'
+        overview["by_status"][s] = overview["by_status"].get(s, 0) + 1
+
+        # Type count
+        t = c.get('contract_type', 'Khác') or 'Khác'
+        overview["by_type"][t] = overview["by_type"].get(t, 0) + 1
+
+        # Parse parties
+        parties_raw = c.get("parties", [])
+        if isinstance(parties_raw, str):
+            try:
+                parties_raw = json.loads(parties_raw)
+            except Exception:
+                parties_raw = [parties_raw]
+
+        contract_info = {
+            "id": str(c["id"]),
+            "name": c.get("name", "N/A"),
+            "end_date": str(c.get("end_date")) if c.get("end_date") else None,
+            "parties": parties_raw or []
+        }
+
+        if c.get("end_date"):
+            try:
+                days_left = (c["end_date"] - today).days
+                if days_left < 0:
+                    overview["expired"].append({**contract_info, "days_overdue": abs(days_left)})
+                    overview["risk_items"].append({
+                        "type": "expired",
+                        "severity": "critical",
+                        "contract": contract_info,
+                        "message": f"Đã hết hạn {abs(days_left)} ngày"
+                    })
+                elif days_left <= 30:
+                    overview["expiring_soon"].append({**contract_info, "days_left": days_left})
+                    overview["risk_items"].append({
+                        "type": "expiring",
+                        "severity": "warning" if days_left > 7 else "critical",
+                        "contract": contract_info,
+                        "message": f"Còn {days_left} ngày"
+                    })
+            except Exception:
+                pass
+        else:
+            overview["missing_end_date"].append(contract_info)
+            overview["risk_items"].append({
+                "type": "no_end_date",
+                "severity": "info",
+                "contract": contract_info,
+                "message": "Không có ngày kết thúc"
+            })
+
+    # Sort risk items by severity
+    severity_order = {"critical": 0, "warning": 1, "info": 2}
+    overview["risk_items"].sort(key=lambda x: severity_order.get(x["severity"], 3))
+
+    return overview
+
+
+# ============================================
+# Feature: Chat History Search
+# ============================================
+
+@app.get("/v1/chats/search")
+async def search_chat_history(
+    q: str = Query(..., min_length=1),
+    limit: int = Query(20, ge=1, le=100),
+    company: dict = Depends(verify_api_key)
+):
+    """Search through chat history"""
+    company_id = str(company["company_id"])
+
+    try:
+        with get_db() as conn:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # Search in usage_logs - handle missing columns gracefully
+            try:
+                cur.execute("""
+                    SELECT u.id, u.question, u.answer, u.created_at, u.session_id,
+                           u.response_time_ms, u.citations_count
+                    FROM usage_logs u
+                    WHERE u.company_id = %s
+                    AND (u.question ILIKE %s OR u.answer ILIKE %s)
+                    ORDER BY u.created_at DESC
+                    LIMIT %s
+                """, (company_id, f"%{q}%", f"%{q}%", limit))
+                results = cur.fetchall()
+            except Exception:
+                # Fallback: some columns may not exist, try simpler query
+                conn.rollback()
+                cur.execute("""
+                    SELECT m.id, m.content, m.role, m.created_at, m.session_id
+                    FROM messages m
+                    WHERE m.company_id = %s
+                    AND m.content ILIKE %s
+                    ORDER BY m.created_at DESC
+                    LIMIT %s
+                """, (company_id, f"%{q}%", limit))
+                raw = cur.fetchall()
+                results = []
+                for r in raw:
+                    results.append({
+                        "id": r["id"],
+                        "question": r["content"] if r.get("role") == "user" else None,
+                        "answer": r["content"] if r.get("role") == "assistant" else None,
+                        "created_at": r.get("created_at"),
+                        "session_id": r.get("session_id"),
+                        "response_time_ms": None,
+                        "citations_count": None
+                    })
+    except Exception as e:
+        print(f"Search chat error: {e}")
+        raise HTTPException(500, "Lỗi tìm kiếm")
+
+    return {
+        "query": q,
+        "results": [{
+            "id": str(r["id"]) if r.get("id") else None,
+            "question": r.get("question"),
+            "answer_preview": (r.get("answer") or "")[:200] + "..." if r.get("answer") and len(r.get("answer", "")) > 200 else r.get("answer", ""),
+            "created_at": r["created_at"].isoformat() if r.get("created_at") and hasattr(r["created_at"], 'isoformat') else str(r.get("created_at", "")),
+            "session_id": str(r.get("session_id")) if r.get("session_id") else None,
+            "response_time": r.get("response_time_ms")
+        } for r in results],
+        "total": len(results)
+    }
+
+
+# ============================================
+# Feature: Enhanced Contract Comparison
+# ============================================
+
+@app.post("/v1/contracts/compare-detailed")
+async def compare_contracts_detailed(req: ContractCompareRequest, company: dict = Depends(verify_api_key)):
+    """Enhanced contract comparison with detailed side-by-side analysis"""
+    check_rate_limit(str(company["company_id"]))
+
+    if len(req.contract_ids) < 2:
+        raise HTTPException(status_code=400, detail="Cần ít nhất 2 hợp đồng để so sánh")
+    if len(req.contract_ids) > 5:
+        raise HTTPException(status_code=400, detail="Tối đa 5 hợp đồng")
+
+    contracts_data = []
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        for cid in req.contract_ids:
+            cur.execute("""
+                SELECT id, name, contract_type, extracted_text, parties,
+                       start_date, end_date, value, status, notes
+                FROM contracts
+                WHERE id::text = %s AND company_id = %s AND status != 'deleted'
+            """, (cid, company["company_id"]))
+            contract = cur.fetchone()
+            if not contract:
+                raise HTTPException(status_code=404, detail=f"Không tìm thấy hợp đồng: {cid}")
+            c = dict(contract)
+            for key in ["start_date", "end_date"]:
+                if c.get(key):
+                    c[key] = str(c[key])
+            contracts_data.append(c)
+
+    # Build detailed comparison prompt
+    contracts_text = ""
+    for i, c in enumerate(contracts_data, 1):
+        text = (c.get("extracted_text") or "")[:10000]
+        parties_raw = c.get("parties", [])
+        if isinstance(parties_raw, str):
+            try:
+                parties_raw = json.loads(parties_raw)
+            except Exception:
+                parties_raw = [parties_raw]
+        contracts_text += f"\n\n--- HỢP ĐỒNG {i}: {c['name']} ---\n"
+        contracts_text += f"Loại: {c.get('contract_type', 'N/A')}\n"
+        contracts_text += f"Các bên: {', '.join(str(p) for p in (parties_raw or []))}\n"
+        contracts_text += f"Thời hạn: {c.get('start_date', 'N/A')} → {c.get('end_date', 'N/A')}\n"
+        contracts_text += f"Giá trị: {c.get('value', 'N/A')}\n"
+        contracts_text += f"NỘI DUNG:\n{text}"
+
+    system_prompt = """Bạn là luật sư chuyên so sánh hợp đồng chi tiết. Phân tích từng khía cạnh.
+
+Trả về JSON format:
+{
+    "summary": "Tóm tắt so sánh tổng quan",
+    "side_by_side": [
+        {
+            "aspect": "Tên khía cạnh (VD: Điều khoản thanh toán, Phạt vi phạm, Bảo mật...)",
+            "contracts": [
+                {"name": "Tên HĐ 1", "content": "Nội dung điều khoản", "rating": "good|neutral|risk"},
+                {"name": "Tên HĐ 2", "content": "Nội dung điều khoản", "rating": "good|neutral|risk"}
+            ],
+            "analysis": "Phân tích so sánh",
+            "recommendation": "Đề xuất"
+        }
+    ],
+    "risk_matrix": [
+        {"contract_name": "...", "overall_risk": "low|medium|high", "risk_score": 1-100, "key_risks": ["..."]}
+    ],
+    "missing_clauses": [
+        {"clause": "Tên điều khoản thiếu", "affected_contracts": ["..."], "importance": "critical|important|optional"}
+    ],
+    "inconsistencies": ["Điểm không nhất quán"],
+    "best_contract": {"name": "...", "reason": "Lý do"},
+    "action_items": ["Việc cần làm cụ thể"]
+}"""
+
+    user_message = f"""So sánh CHI TIẾT {len(contracts_data)} hợp đồng sau. Phân tích từng điều khoản quan trọng side-by-side:
+{contracts_text}
+
+Hãy phân tích:
+1. So sánh từng điều khoản quan trọng (thanh toán, phạt vi phạm, bảo mật, chấm dứt HĐ, giải quyết tranh chấp...)
+2. Ma trận rủi ro cho từng hợp đồng
+3. Điều khoản nào bị thiếu ở hợp đồng nào
+4. Điểm không nhất quán giữa các hợp đồng
+5. Đề xuất cụ thể"""
+
+    result = await call_claude(system_prompt, user_message, max_tokens=8192)
+
+    # Update usage
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE companies SET used_quota = used_quota + 1 WHERE id = %s", (company["company_id"],))
+        cur.execute("""
+            INSERT INTO usage_logs (company_id, endpoint, agent_type, input_tokens, output_tokens, status_code)
+            VALUES (%s, '/v1/contracts/compare-detailed', 'compare', %s, %s, 200)
+        """, (company["company_id"], result["input_tokens"], result["output_tokens"]))
+        conn.commit()
+
+    try:
+        comparison = json.loads(result["content"])
+    except Exception:
+        comparison = {"raw_analysis": result["content"]}
+
+    return {
+        "comparison": comparison,
+        "contracts": [{
+            "id": str(c["id"]),
+            "name": c["name"],
+            "contract_type": c.get("contract_type"),
+            "start_date": c.get("start_date"),
+            "end_date": c.get("end_date"),
+            "value": c.get("value")
+        } for c in contracts_data],
+        "tokens_used": result["input_tokens"] + result["output_tokens"],
+        "model": result["model"]
+    }
+
+
+# ============================================
+# Feature: Template Auto-Fill with AI
+# ============================================
+
+@app.post("/v1/templates/{template_id}/fill")
+async def ai_fill_template(
+    template_id: str,
+    request: dict = Body(...),
+    company: dict = Depends(verify_api_key)
+):
+    """AI fills template with provided data"""
+    company_id = str(company["company_id"])
+    context = request.get("context", "")
+
+    try:
+        with get_db() as conn:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # Try both 'id' and 'template_id' columns
+            try:
+                cur.execute("SELECT * FROM document_templates WHERE template_id = %s", (template_id,))
+                template = cur.fetchone()
+            except Exception:
+                conn.rollback()
+                cur.execute("SELECT * FROM document_templates WHERE id::text = %s", (template_id,))
+                template = cur.fetchone()
+
+            if not template:
+                raise HTTPException(404, "Template không tồn tại")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"DB error in template fill: {e}")
+        raise HTTPException(500, "Lỗi truy vấn database")
+
+    # Get template content - handle different column names
+    template_content = template.get('template_content') or template.get('content') or ''
+    template_name = template.get('name', '')
+
+    # Use AI to fill template
+    try:
+        result = await legal_agent.run_agent(
+            question=f"""Điền vào template sau dựa trên thông tin được cung cấp.
+
+TEMPLATE:
+{template_content[:10000]}
+
+THÔNG TIN:
+{context}
+
+Hãy điền đầy đủ các trường trong template. Giữ nguyên format. Thay [placeholder] bằng nội dung phù hợp.
+Nếu thiếu thông tin, đánh dấu [CẦN BỔ SUNG: mô tả].
+Trả về toàn bộ nội dung template đã điền.""",
+            company_id=company_id
+        )
+    except Exception as e:
+        print(f"AI fill error: {e}")
+        raise HTTPException(502, "Lỗi AI khi điền template")
+
+    # Parse [CẦN BỔ SUNG] markers
+    filled_content = result.get("answer", "")
+    missing_fields = []
+    import re as _re
+    for match in _re.finditer(r'\[CẦN BỔ SUNG:\s*([^\]]+)\]', filled_content):
+        missing_fields.append(match.group(1).strip())
+
+    return {
+        "filled_content": filled_content,
+        "template_name": template_name,
+        "missing_fields": missing_fields
+    }
+
+
+# ============================================
+# Feature: Usage Analytics
+# ============================================
+
+@app.get("/v1/analytics")
+async def get_analytics(
+    days: int = Query(30, ge=1, le=365),
+    company: dict = Depends(verify_api_key)
+):
+    """Get usage analytics for the company"""
+    company_id = str(company["company_id"])
+
+    try:
+        with get_db() as conn:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            # Daily usage
+            try:
+                cur.execute("""
+                    SELECT DATE(created_at) as date, COUNT(*) as queries,
+                           AVG(response_time_ms) as avg_response_time,
+                           SUM(CASE WHEN citations_count > 0 THEN 1 ELSE 0 END) as queries_with_citations
+                    FROM usage_logs
+                    WHERE company_id = %s AND created_at >= NOW() - INTERVAL '%s days'
+                    GROUP BY DATE(created_at)
+                    ORDER BY date DESC
+                """, (company_id, days))
+                daily = cur.fetchall()
+            except Exception:
+                conn.rollback()
+                # Fallback without optional columns
+                cur.execute("""
+                    SELECT DATE(created_at) as date, COUNT(*) as queries
+                    FROM usage_logs
+                    WHERE company_id = %s AND created_at >= NOW() - INTERVAL '%s days'
+                    GROUP BY DATE(created_at)
+                    ORDER BY date DESC
+                """, (company_id, days))
+                daily = [dict(r, avg_response_time=0, queries_with_citations=0) for r in cur.fetchall()]
+
+            # Top queries
+            try:
+                cur.execute("""
+                    SELECT question, COUNT(*) as count
+                    FROM usage_logs
+                    WHERE company_id = %s AND created_at >= NOW() - INTERVAL '%s days'
+                    AND question IS NOT NULL
+                    GROUP BY question
+                    ORDER BY count DESC
+                    LIMIT 10
+                """, (company_id, days))
+                top_queries = cur.fetchall()
+            except Exception:
+                conn.rollback()
+                top_queries = []
+
+            # Summary
+            try:
+                cur.execute("""
+                    SELECT COUNT(*) as total_queries,
+                           AVG(response_time_ms) as avg_response_time
+                    FROM usage_logs
+                    WHERE company_id = %s AND created_at >= NOW() - INTERVAL '%s days'
+                """, (company_id, days))
+                summary = cur.fetchone()
+            except Exception:
+                conn.rollback()
+                cur.execute("""
+                    SELECT COUNT(*) as total_queries
+                    FROM usage_logs
+                    WHERE company_id = %s AND created_at >= NOW() - INTERVAL '%s days'
+                """, (company_id, days))
+                row = cur.fetchone()
+                summary = {"total_queries": row["total_queries"] if row else 0, "avg_response_time": 0}
+
+    except Exception as e:
+        print(f"Analytics error: {e}")
+        raise HTTPException(500, "Lỗi truy vấn analytics")
+
+    return {
+        "period_days": days,
+        "summary": {
+            "total_queries": summary["total_queries"] if summary else 0,
+            "avg_response_time_ms": round(summary.get("avg_response_time") or 0) if summary else 0,
+        },
+        "daily": [{
+            "date": str(d["date"]),
+            "queries": d["queries"],
+            "avg_response_time_ms": round(d.get("avg_response_time") or 0),
+            "queries_with_citations": d.get("queries_with_citations", 0) or 0
+        } for d in daily],
+        "top_queries": [{
+            "question": (q.get("question") or "")[:100],
+            "count": q["count"]
+        } for q in top_queries]
+    }
 
 
 if __name__ == "__main__":
