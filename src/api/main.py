@@ -194,12 +194,13 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
 
 async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4096) -> dict:
-    """Call Claude via API key"""
-    # Use ANTHROPIC_API_KEY if available, otherwise fall back to CLAUDE_OAUTH_TOKEN
+    """Call Claude via OAuth token or API key"""
     api_key = ANTHROPIC_API_KEY or CLAUDE_OAUTH_TOKEN
+    
     headers = {
         "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "oauth-2025-04-20",
         "content-type": "application/json"
     }
     
@@ -211,16 +212,23 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
     }
     
     async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(CLAUDE_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        
-        return {
-            "content": data["content"][0]["text"],
-            "input_tokens": data["usage"]["input_tokens"],
-            "output_tokens": data["usage"]["output_tokens"],
-            "model": data["model"]
-        }
+        try:
+            response = await client.post(CLAUDE_API_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            
+            return {
+                "content": data["content"][0]["text"],
+                "input_tokens": data["usage"]["input_tokens"],
+                "output_tokens": data["usage"]["output_tokens"],
+                "model": data["model"]
+            }
+        except httpx.HTTPStatusError as e:
+            print(f"Claude API error: {e.response.status_code} - {e.response.text[:200]}")
+            raise
+        except Exception as e:
+            print(f"Claude call error: {e}")
+            raise
 
 # ============================================
 # Law Search
