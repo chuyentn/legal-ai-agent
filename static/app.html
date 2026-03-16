@@ -2265,6 +2265,17 @@ console.log(await resp.json());</code></pre>
         }
 
         function handleChatKeydown(event) {
+            var slashPanel = document.getElementById('slashSuggestions');
+            // If slash suggestions visible, handle navigation
+            if (slashPanel && !slashPanel.classList.contains('hidden')) {
+                if (event.key === 'Tab' || event.key === 'Enter') {
+                    event.preventDefault();
+                    var active = slashPanel.querySelector('.slash-item.active') || slashPanel.querySelector('.slash-item');
+                    if (active) active.click();
+                    return;
+                }
+                if (event.key === 'Escape') { slashPanel.classList.add('hidden'); return; }
+            }
             if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }
             if (event.key === 'Enter' && event.ctrlKey) { event.preventDefault(); sendMessage(); }
         }
