@@ -198,6 +198,13 @@ async def login(data: LoginRequest):
         cur.execute("UPDATE users SET last_login_at = now() WHERE id = %s", (user["id"],))
         conn.commit()
         
+        # Audit log for login
+        try:
+            from ..main import log_audit
+            log_audit(str(user["company_id"]), str(user["id"]), "login", "auth")
+        except Exception:
+            pass
+        
         # Create tokens
         access_token = create_access_token({"user_id": str(user["id"]), "email": user["email"]})
         refresh_token = create_refresh_token({"user_id": str(user["id"])})

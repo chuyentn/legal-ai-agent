@@ -1235,6 +1235,122 @@
             .risk-summary-cards { grid-template-columns: repeat(2, 1fr); }
             .analytics-summary { grid-template-columns: 1fr; }
         }
+        /* ===== CALENDAR ===== */
+        .calendar-view { padding: 24px; max-width: 800px; margin: 0 auto; }
+        .calendar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; justify-content: center; }
+        .calendar-header h2 { font-size: 1.1rem; color: var(--text); min-width: 180px; text-align: center; }
+        .cal-nav-btn {
+            width: 32px; height: 32px; border-radius: 8px; background: var(--bg-elevated);
+            border: 1px solid var(--border); color: var(--text); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+        }
+        .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .calendar-grid { margin-bottom: 24px; }
+        .cal-day-header {
+            display: inline-block; width: calc(100%/7); text-align: center;
+            font-size: 0.75rem; color: var(--text-muted); padding: 8px 0; font-weight: 600;
+        }
+        .cal-days-container { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .cal-day {
+            aspect-ratio: 1; padding: 4px; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;
+            transition: all 0.15s; border: 1px solid transparent; position: relative;
+        }
+        .cal-day:hover { background: var(--bg-elevated); border-color: var(--border); }
+        .cal-day.today { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+        .cal-day.other-month { opacity: 0.3; }
+        .cal-day.has-event::after {
+            content: ''; position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%;
+        }
+        .cal-day.has-start::after { background: #34d399; }
+        .cal-day.has-end::after { background: #f87171; }
+        .cal-day.has-both::after { background: linear-gradient(135deg, #34d399 50%, #f87171 50%); width: 8px; height: 8px; }
+        .calendar-events { margin-top: 16px; }
+        .calendar-events h3 { font-size: 0.9rem; color: var(--text); margin-bottom: 12px; }
+        .cal-event {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            background: var(--bg-elevated); border-radius: 8px; margin-bottom: 6px;
+            border-left: 3px solid var(--accent); cursor: pointer; transition: all 0.15s;
+        }
+        .cal-event:hover { transform: translateX(4px); border-color: var(--accent); }
+        .cal-event.start { border-left-color: #34d399; }
+        .cal-event.end { border-left-color: #f87171; }
+        .cal-event.end-warning { border-left-color: #fbbf24; }
+        .cal-event-date { font-size: 0.75rem; color: var(--text-muted); min-width: 60px; }
+        .cal-event-title { font-size: 0.82rem; color: var(--text); flex: 1; }
+        .cal-event-badge {
+            font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+            background: var(--accent-dim); color: var(--accent);
+        }
+
+        /* ===== AUDIT LOG ===== */
+        .audit-log-view { padding: 24px; max-width: 800px; margin: 0 auto; }
+        .audit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .audit-header select {
+            padding: 6px 12px; background: var(--bg-elevated); border: 1px solid var(--border);
+            color: var(--text); border-radius: 8px; font-size: 0.82rem;
+        }
+        .audit-timeline { position: relative; }
+        .audit-timeline::before {
+            content: ''; position: absolute; left: 16px; top: 0; bottom: 0;
+            width: 2px; background: var(--border);
+        }
+        .audit-entry { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+        .audit-dot {
+            width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+            margin-top: 5px; flex-shrink: 0; z-index: 1; margin-left: 11px;
+            border: 2px solid var(--bg-surface);
+        }
+        .audit-dot.login { background: #34d399; }
+        .audit-dot.upload { background: #818cf8; }
+        .audit-dot.chat { background: #60a5fa; }
+        .audit-dot.export { background: #fbbf24; }
+        .audit-dot.delete { background: #f87171; }
+        .audit-info { flex: 1; }
+        .audit-action { font-size: 0.82rem; color: var(--text); }
+        .audit-time { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* ===== BATCH UPLOAD ===== */
+        .batch-upload-modal {
+            position: fixed; inset: 0; z-index: 10000;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .batch-upload-content {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 16px; width: 550px; max-width: 90vw; padding: 24px;
+        }
+        .batch-upload-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .batch-upload-header h2 { font-size: 1rem; color: var(--text-active); }
+        .batch-upload-header button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
+        .batch-dropzone {
+            border: 2px dashed var(--border); border-radius: 12px; padding: 32px;
+            text-align: center; transition: all 0.2s; cursor: pointer;
+        }
+        .batch-dropzone.active { border-color: var(--accent); background: var(--accent-dim); }
+        .batch-drop-icon { font-size: 2rem; margin-bottom: 8px; }
+        .batch-dropzone p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; }
+        .batch-dropzone button {
+            padding: 6px 16px; background: var(--accent); color: white;
+            border: none; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+        }
+        .batch-hint { display: block; margin-top: 8px; font-size: 0.72rem; color: var(--text-muted); }
+        .batch-file-list { max-height: 200px; overflow-y: auto; margin: 16px 0; }
+        .batch-file-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            background: var(--bg-elevated); border-radius: 6px; margin-bottom: 4px;
+        }
+        .batch-file-name { flex: 1; font-size: 0.82rem; color: var(--text); }
+        .batch-file-size { font-size: 0.72rem; color: var(--text-muted); }
+        .batch-file-status { font-size: 0.75rem; }
+        .batch-file-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; }
+        .batch-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 16px; border-top: 1px solid var(--border);
+        }
+        #batchStatusText { font-size: 0.82rem; color: var(--text-muted); }
+
     </style>
 </head>
 <body>
@@ -1308,6 +1424,9 @@
                 <div class="activity-icon" data-panel="chat-history" data-tooltip="Lịch sử chat" onclick="switchSidebarPanel('chat-history')">💬</div>
                 <div class="activity-icon" data-tooltip="Tổng quan rủi ro" onclick="openRiskDashboard()">📊</div>
                 <div class="activity-icon" data-tooltip="Thống kê" onclick="openAnalytics()">📈</div>
+                <div class="activity-icon" data-tooltip="Lịch hợp đồng" onclick="openCalendar()">📅</div>
+                <div class="activity-icon" data-tooltip="Nhật ký hoạt động" onclick="openAuditLog()">📋</div>
+                <div class="activity-icon" data-tooltip="Upload nhiều file" onclick="openBatchUpload()">📦</div>
             </div>
             <div class="activity-bar-bottom">
                 <div class="activity-icon" data-tooltip="Cài đặt" onclick="openSettingsModal()">⚙️</div>
@@ -1427,6 +1546,54 @@
 
             <!-- Center Content -->
             <div class="center-content" id="centerContent">
+                <!-- Calendar Tab -->
+                <div id="tab-calendar" class="tab-content-pane hidden">
+                    <div class="calendar-view">
+                        <div class="calendar-header">
+                            <button class="cal-nav-btn" onclick="calendarPrevMonth()">◀</button>
+                            <h2 id="calendarTitle">Tháng 3, 2026</h2>
+                            <button class="cal-nav-btn" onclick="calendarNextMonth()">▶</button>
+                            <button class="btn-sm" onclick="calendarToday()">Hôm nay</button>
+                        </div>
+                        <div class="calendar-grid">
+                            <div class="cal-day-header">CN</div>
+                            <div class="cal-day-header">T2</div>
+                            <div class="cal-day-header">T3</div>
+                            <div class="cal-day-header">T4</div>
+                            <div class="cal-day-header">T5</div>
+                            <div class="cal-day-header">T6</div>
+                            <div class="cal-day-header">T7</div>
+                            <div id="calendarDays" class="cal-days-container">
+                                <!-- Dynamic -->
+                            </div>
+                        </div>
+                        <div class="calendar-events" id="calendarEvents">
+                            <h3>📅 Sự kiện trong tháng</h3>
+                            <div id="calendarEventsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Log Tab -->
+                <div id="tab-audit-log" class="tab-content-pane hidden">
+                    <div class="audit-log-view">
+                        <div class="audit-header">
+                            <h2>📋 Nhật ký hoạt động</h2>
+                            <select id="auditFilter" onchange="loadAuditLog()">
+                                <option value="">Tất cả</option>
+                                <option value="login">Đăng nhập</option>
+                                <option value="upload">Upload</option>
+                                <option value="chat">Chat AI</option>
+                                <option value="export">Xuất file</option>
+                                <option value="delete">Xóa</option>
+                            </select>
+                        </div>
+                        <div class="audit-timeline" id="auditTimeline">
+                            <!-- Dynamic -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Risk Dashboard Tab -->
                 <div id="tab-risk-dashboard" class="tab-content-pane hidden">
                     <div class="risk-dashboard">

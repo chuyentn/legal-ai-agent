@@ -369,6 +369,13 @@ async def create_contract(
         contract = dict(cur.fetchone())
         conn.commit()
         
+        # Audit log for upload
+        try:
+            from ..main import log_audit
+            log_audit(str(current_user["company_id"]), str(current_user.get("id")), "upload", "contract", str(contract["id"]))
+        except Exception:
+            pass
+        
         return contract
 
 @router.get("")
@@ -468,6 +475,13 @@ async def get_contract(contract_id: str, current_user: Dict = Depends(get_curren
         if not contract:
             raise HTTPException(status_code=404, detail="Contract not found")
         
+        # Audit log for view
+        try:
+            from ..main import log_audit
+            log_audit(str(current_user["company_id"]), str(current_user.get("user_id")), "view", "contract", contract_id)
+        except Exception:
+            pass
+        
         return dict(contract)
 
 @router.put("/{contract_id}")
@@ -559,6 +573,14 @@ async def delete_contract(
             raise HTTPException(status_code=404, detail="Contract not found")
         
         conn.commit()
+        
+        # Audit log for delete
+        try:
+            from ..main import log_audit
+            log_audit(str(current_user["company_id"]), str(current_user.get("user_id")), "delete", "contract", contract_id)
+        except Exception:
+            pass
+        
         return {"message": "Contract deleted", "id": deleted["id"]}
 
 @router.post("/{contract_id}/review")

@@ -102,8 +102,9 @@ app.include_router(templates.router)
 # Startup event - seed templates
 @app.on_event("startup")
 async def startup_event():
-    """Seed default templates on startup"""
+    """Seed default templates and ensure audit table on startup"""
     templates.seed_default_templates()
+    ensure_audit_table()
 
 # Static files
 static_dir = pathlib.Path(__file__).parent.parent.parent / "static"
@@ -137,6 +138,44 @@ def get_db():
         yield conn
     finally:
         conn.close()
+
+# ============================================
+# Audit Log
+# ============================================
+
+def log_audit(company_id: str, user_id: str, action: str, resource_type: str, resource_id: str = None, details: dict = None):
+    """Log an audit event"""
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO audit_logs (company_id, user_id, action, resource_type, resource_id, details, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            """, (company_id, user_id, action, resource_type, resource_id, json.dumps(details or {})))
+            conn.commit()
+    except Exception as e:
+        print(f"Audit log error: {e}")
+
+def ensure_audit_table():
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id SERIAL PRIMARY KEY,
+                    company_id UUID,
+                    user_id UUID,
+                    action VARCHAR(50) NOT NULL,
+                    resource_type VARCHAR(50),
+                    resource_id VARCHAR(100),
+                    details JSONB DEFAULT '{}',
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_company ON audit_logs(company_id, created_at DESC)")
+            conn.commit()
+    except Exception as e:
+        print(f"Audit table error: {e}")
 
 # ============================================
 # Auth
@@ -1005,6 +1044,9 @@ CÂU HỎI: {query.question}"""
         """, (company["company_id"], result.get("input_tokens", 0), result.get("output_tokens", 0)))
         conn.commit()
     
+    # Audit log for chat
+    log_audit(str(company["company_id"]), str(user_id) if user_id else None, "chat", "ai", str(session_id) if session_id else None, {"question_length": len(query.question)})
+
     return LegalResponse(
         answer=result["answer"],
         citations=citations,
@@ -1341,6 +1383,9 @@ Hãy rà soát hợp đồng trên và trả về kết quả theo format JSON."
     except:
         review_data = {"raw_analysis": result["content"]}
     
+    # Audit log for contract review
+    log_audit(str(company["company_id"]), str(company.get("user_id")) if company.get("user_id") else None, "review", "contract", None, {"contract_type": review.contract_type})
+
     return {
         "review": review_data,
         "tokens_used": result["input_tokens"] + result["output_tokens"],
@@ -2075,6 +2120,9 @@ async def generate_contract_report(contract_id: str, company: dict = Depends(ver
 
     safe_name = str(contract.get('name', 'contract'))[:30].replace(' ', '_')
     filename = f"Bao_cao_ra_soat_{safe_name}.docx"
+
+    # Audit log for report export
+    log_audit(company_id, str(company.get("user_id")) if company.get("user_id") else None, "export", "report", contract_id)
 
     return StreamingResponse(
         buffer,
@@ -3002,6 +3050,351 @@ async def export_chat(session_id: str, company: dict = Depends(verify_api_key)):
         BytesIO(md.encode('utf-8')),
         media_type="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="chat_{session_id[:8]}.md"'}
+    )
+
+
+# ============================================
+# Feature: Audit Log API
+# ============================================
+
+@app.get("/v1/audit-log")
+async def get_audit_log(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    action: str = Query(None),
+    company: dict = Depends(verify_api_key)
+):
+    """Get audit log for the company"""
+    company_id = str(company["company_id"])
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        query = "SELECT * FROM audit_logs WHERE company_id = %s"
+        params = [company_id]
+        if action:
+            query += " AND action = %s"
+            params.append(action)
+        query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+        cur.execute(query, params)
+        logs = cur.fetchall()
+
+    return {"logs": [{
+        "id": l["id"],
+        "action": l["action"],
+        "resource_type": l.get("resource_type"),
+        "resource_id": l.get("resource_id"),
+        "details": l.get("details", {}),
+        "created_at": l["created_at"].isoformat() if l.get("created_at") else None
+    } for l in logs], "total": len(logs)}
+
+
+# ============================================
+# Feature: Universal Search
+# ============================================
+
+@app.get("/v1/search/all")
+async def universal_search(
+    q: str = Query(..., min_length=1),
+    limit: int = Query(20, ge=1, le=50),
+    company: dict = Depends(verify_api_key)
+):
+    """Search across contracts, documents, laws, and chat history"""
+    company_id = str(company["company_id"])
+    results = {"contracts": [], "documents": [], "laws": [], "chats": []}
+
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Search contracts
+        try:
+            cur.execute("""
+                SELECT id, name, contract_type, parties, status
+                FROM contracts
+                WHERE company_id = %s AND status != 'deleted'
+                AND (name ILIKE %s OR content ILIKE %s)
+                LIMIT %s
+            """, (company_id, f"%{q}%", f"%{q}%", limit // 4 + 1))
+            results["contracts"] = [{
+                "id": str(r["id"]), "name": r["name"], "type": "contract",
+                "subtitle": r.get("contract_type", ""),
+                "icon": "📄"
+            } for r in cur.fetchall()]
+        except: pass
+
+        # Search documents
+        try:
+            cur.execute("""
+                SELECT id, filename, category, doc_status
+                FROM documents
+                WHERE company_id = %s
+                AND (filename ILIKE %s OR content ILIKE %s)
+                LIMIT %s
+            """, (company_id, f"%{q}%", f"%{q}%", limit // 4 + 1))
+            results["documents"] = [{
+                "id": str(r["id"]), "name": r["filename"], "type": "document",
+                "subtitle": r.get("category", ""),
+                "icon": "📁"
+            } for r in cur.fetchall()]
+        except: pass
+
+        # Search laws
+        try:
+            cur.execute("""
+                SELECT id, title, law_number, effective_date
+                FROM law_documents
+                WHERE title ILIKE %s OR law_number ILIKE %s
+                LIMIT %s
+            """, (f"%{q}%", f"%{q}%", limit // 4 + 1))
+            results["laws"] = [{
+                "id": str(r["id"]), "name": r["title"], "type": "law",
+                "subtitle": r.get("law_number", ""),
+                "icon": "⚖️"
+            } for r in cur.fetchall()]
+        except: pass
+
+        # Search chat history
+        try:
+            cur.execute("""
+                SELECT id, question, created_at, session_id
+                FROM usage_logs
+                WHERE company_id = %s AND question ILIKE %s
+                ORDER BY created_at DESC
+                LIMIT %s
+            """, (company_id, f"%{q}%", limit // 4 + 1))
+            results["chats"] = [{
+                "id": str(r.get("session_id", r["id"])),
+                "name": r["question"][:80], "type": "chat",
+                "subtitle": r["created_at"].strftime("%d/%m/%Y %H:%M") if r.get("created_at") else "",
+                "icon": "💬"
+            } for r in cur.fetchall()]
+        except: pass
+
+    total = sum(len(v) for v in results.values())
+    all_results = []
+    for category in ["contracts", "documents", "laws", "chats"]:
+        all_results.extend(results[category])
+
+    return {"query": q, "results": all_results, "by_category": results, "total": total}
+
+
+# ============================================
+# Feature: Batch Contract Upload
+# ============================================
+
+@app.post("/v1/contracts/batch-upload")
+async def batch_upload_contracts(
+    files: List[UploadFile] = File(...),
+    company: dict = Depends(verify_api_key)
+):
+    """Upload multiple contracts at once"""
+    company_id = str(company["company_id"])
+    user_id = company.get("user_id")
+
+    results = []
+    allowed_ext = {'.pdf', '.docx', '.doc', '.txt'}
+
+    for file in files[:10]:  # Max 10 files
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_ext:
+            results.append({"filename": file.filename, "status": "error", "error": f"Loại file không hỗ trợ: {file_ext}"})
+            continue
+
+        try:
+            content = await file.read()
+            if len(content) > 10 * 1024 * 1024:
+                results.append({"filename": file.filename, "status": "error", "error": "File quá lớn (>10MB)"})
+                continue
+
+            # Extract text
+            text_content = ""
+            try:
+                if file_ext == '.docx':
+                    from docx import Document as DocxDocument
+                    doc = DocxDocument(BytesIO(content))
+                    text_content = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+                elif file_ext == '.pdf':
+                    import PyPDF2
+                    reader = PyPDF2.PdfReader(BytesIO(content))
+                    text_content = "\n".join(page.extract_text() or "" for page in reader.pages)
+                elif file_ext == '.txt':
+                    text_content = content.decode('utf-8', errors='ignore')
+            except Exception as e:
+                text_content = f"[Lỗi đọc: {e}]"
+
+            # Save file
+            file_id = str(uuid.uuid4())
+            file_path = f"uploads/{file_id}{file_ext}"
+            os.makedirs("uploads", exist_ok=True)
+            with open(file_path, "wb") as f:
+                f.write(content)
+
+            # Auto-detect contract name from filename
+            name = os.path.splitext(file.filename)[0].replace('_', ' ').replace('-', ' ')
+
+            # Insert to DB
+            with get_db() as conn:
+                cur = conn.cursor(cursor_factory=RealDictCursor)
+                contract_id = str(uuid.uuid4())
+                cur.execute("""
+                    INSERT INTO contracts (id, company_id, name, content, file_id, original_filename, status, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'uploaded', NOW(), NOW())
+                    RETURNING id
+                """, (contract_id, company_id, name, text_content[:50000], file_id, file.filename))
+                conn.commit()
+
+            # Audit log for each upload
+            log_audit(company_id, str(user_id) if user_id else None, "upload", "contract", contract_id, {"filename": file.filename})
+
+            results.append({
+                "filename": file.filename,
+                "status": "success",
+                "contract_id": contract_id,
+                "name": name,
+                "text_length": len(text_content)
+            })
+
+        except Exception as e:
+            results.append({"filename": file.filename, "status": "error", "error": str(e)})
+
+    success_count = sum(1 for r in results if r["status"] == "success")
+    return {
+        "total": len(results),
+        "success": success_count,
+        "failed": len(results) - success_count,
+        "results": results
+    }
+
+
+# ============================================
+# Feature: Contract Calendar/Timeline
+# ============================================
+
+@app.get("/v1/contracts/calendar")
+async def contract_calendar(
+    year: int = Query(None),
+    month: int = Query(None),
+    company: dict = Depends(verify_api_key)
+):
+    """Get contract events for calendar view"""
+    company_id = str(company["company_id"])
+
+    from datetime import date, datetime as dt_cls
+    if not year:
+        year = date.today().year
+    if not month:
+        month = date.today().month
+
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        events = []
+
+        try:
+            cur.execute("""
+                SELECT id, name, start_date, end_date, contract_type, status
+                FROM contracts
+                WHERE company_id = %s AND status != 'deleted'
+                AND (
+                    (EXTRACT(YEAR FROM start_date) = %s AND EXTRACT(MONTH FROM start_date) = %s)
+                    OR (EXTRACT(YEAR FROM end_date) = %s AND EXTRACT(MONTH FROM end_date) = %s)
+                    OR (start_date <= make_date(%s, %s, 1) AND (end_date IS NULL OR end_date >= make_date(%s, %s, 1)))
+                )
+                ORDER BY start_date ASC
+            """, (company_id, year, month, year, month, year, month, year, month))
+
+            for c in cur.fetchall():
+                if c.get("start_date") and c["start_date"].year == year and c["start_date"].month == month:
+                    events.append({
+                        "date": str(c["start_date"]),
+                        "type": "start",
+                        "color": "#34d399",
+                        "title": f"📗 Bắt đầu: {c['name']}",
+                        "contract_id": str(c["id"])
+                    })
+                if c.get("end_date") and c["end_date"].year == year and c["end_date"].month == month:
+                    days_left = (c["end_date"] - date.today()).days
+                    color = "#f87171" if days_left <= 0 else "#fbbf24" if days_left <= 30 else "#60a5fa"
+                    events.append({
+                        "date": str(c["end_date"]),
+                        "type": "end",
+                        "color": color,
+                        "title": f"📕 Kết thúc: {c['name']}",
+                        "contract_id": str(c["id"]),
+                        "days_left": days_left
+                    })
+        except Exception as e:
+            print(f"Calendar error: {e}")
+
+    return {
+        "year": year,
+        "month": month,
+        "events": events,
+        "total": len(events)
+    }
+
+
+# ============================================
+# Feature: Data Export — Export all company data
+# ============================================
+
+@app.get("/v1/export/all")
+async def export_all_data(company: dict = Depends(verify_api_key)):
+    """Export all company data as JSON"""
+    company_id = str(company["company_id"])
+    from datetime import date as date_cls, datetime as dt_cls
+
+    export_data = {"exported_at": datetime.utcnow().isoformat(), "company_id": company_id}
+
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Company profile
+        try:
+            cur.execute("SELECT name, tax_code, address, industry FROM companies WHERE id = %s", (company_id,))
+            export_data["company"] = cur.fetchone() or {}
+        except: export_data["company"] = {}
+
+        # Contracts
+        try:
+            cur.execute("""
+                SELECT id, name, contract_type, parties, start_date, end_date, status, metadata, created_at
+                FROM contracts WHERE company_id = %s AND status != 'deleted'
+                ORDER BY created_at DESC
+            """, (company_id,))
+            contracts = cur.fetchall()
+            export_data["contracts"] = [{
+                **{k: (str(v) if isinstance(v, (date_cls, dt_cls, uuid.UUID)) else v) for k, v in c.items()}
+            } for c in contracts]
+        except: export_data["contracts"] = []
+
+        # Documents
+        try:
+            cur.execute("""
+                SELECT id, filename, category, doc_status, created_at
+                FROM documents WHERE company_id = %s
+                ORDER BY created_at DESC
+            """, (company_id,))
+            docs = cur.fetchall()
+            export_data["documents"] = [{
+                **{k: (str(v) if isinstance(v, (date_cls, dt_cls, uuid.UUID)) else v) for k, v in d.items()}
+            } for d in docs]
+        except: export_data["documents"] = []
+
+        # Usage stats
+        try:
+            cur.execute("SELECT COUNT(*) as total_queries FROM usage_logs WHERE company_id = %s", (company_id,))
+            export_data["usage"] = {"total_queries": cur.fetchone()["total_queries"]}
+        except: export_data["usage"] = {}
+
+    content = json.dumps(export_data, ensure_ascii=False, indent=2, default=str)
+
+    # Audit log for data export
+    log_audit(company_id, str(company.get("user_id")) if company.get("user_id") else None, "export", "all_data")
+
+    return StreamingResponse(
+        BytesIO(content.encode('utf-8')),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="legal_agent_export_{company_id[:8]}.json"'}
     )
 
 
