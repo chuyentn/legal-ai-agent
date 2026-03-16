@@ -5,19 +5,20 @@ Legal AI Agent API
 - Multi-tenant API key authentication
 - User authentication and management
 """
-from fastapi import FastAPI, HTTPException, Depends, Header, Request
+from fastapi import FastAPI, HTTPException, Depends, Header, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import pathlib
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, AsyncGenerator
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import httpx
 import json
 import hashlib
 import time
+import re as re_module
 import os
 from contextlib import contextmanager
 import jwt
@@ -252,6 +253,127 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
         except Exception as e:
             print(f"Claude call error: {e}")
             raise
+
+
+async def call_claude_stream(system_prompt: str, user_message: str, max_tokens: int = 8192, history: list = None) -> AsyncGenerator[str, None]:
+    """Call Claude with streaming via SSE, yielding text deltas"""
+    api_key = ANTHROPIC_API_KEY
+    oauth_token = CLAUDE_OAUTH_TOKEN
+
+    headers = {
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+
+    if oauth_token:
+        headers["Authorization"] = f"Bearer {oauth_token}"
+        headers["anthropic-beta"] = "oauth-2025-04-20"
+    elif api_key:
+        headers["x-api-key"] = api_key
+    else:
+        raise ValueError("No Claude API key or OAuth token configured")
+
+    messages = []
+    if history:
+        for msg in history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": user_message})
+
+    payload = {
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": max_tokens,
+        "system": system_prompt,
+        "messages": messages,
+        "stream": True
+    }
+
+    async with httpx.AsyncClient(timeout=180) as client:
+        async with client.stream("POST", CLAUDE_API_URL, headers=headers, json=payload) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    data_str = line[6:]
+                    if data_str.strip() == "[DONE]":
+                        break
+                    try:
+                        event = json.loads(data_str)
+                        event_type = event.get("type", "")
+                        if event_type == "content_block_delta":
+                            delta = event.get("delta", {})
+                            if delta.get("type") == "text_delta":
+                                yield delta.get("text", "")
+                        elif event_type == "message_stop":
+                            break
+                        elif event_type == "message_delta":
+                            # Contains usage info at the end
+                            pass
+                    except json.JSONDecodeError:
+                        continue
+
+
+# ============================================
+# Context Enrichment - Company Documents & Contracts
+# ============================================
+
+def fetch_company_context(company_id: str, question: str, limit: int = 5) -> str:
+    """Search company's uploaded documents and contracts for relevant context"""
+    context_parts = []
+    question_lower = question.lower()
+
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Search company documents with extracted text
+        cur.execute("""
+            SELECT name, extracted_text, doc_type, analysis
+            FROM documents
+            WHERE company_id = %s
+              AND extracted_text IS NOT NULL
+              AND length(extracted_text) > 50
+            ORDER BY created_at DESC
+            LIMIT %s
+        """, (company_id, limit))
+
+        docs = cur.fetchall()
+        for doc in docs:
+            text = doc["extracted_text"] or ""
+            # Check if document is relevant to the question
+            if any(kw in text.lower() for kw in question_lower.split() if len(kw) > 2):
+                excerpt = text[:1500]
+                context_parts.append(
+                    f"📄 TÀI LIỆU CÔNG TY: {doc['name']} (Loại: {doc.get('doc_type', 'N/A')})\n{excerpt}"
+                )
+
+        # Search company contracts
+        cur.execute("""
+            SELECT name, contract_type, extracted_text, parties, start_date, end_date, notes
+            FROM contracts
+            WHERE company_id = %s
+              AND status != 'deleted'
+              AND extracted_text IS NOT NULL
+              AND length(extracted_text) > 50
+            ORDER BY created_at DESC
+            LIMIT %s
+        """, (company_id, limit))
+
+        contracts = cur.fetchall()
+        for contract in contracts:
+            text = contract["extracted_text"] or ""
+            if any(kw in text.lower() for kw in question_lower.split() if len(kw) > 2):
+                excerpt = text[:1500]
+                parties_str = ""
+                if contract.get("parties"):
+                    try:
+                        parties = json.loads(contract["parties"]) if isinstance(contract["parties"], str) else contract["parties"]
+                        parties_str = f" | Các bên: {', '.join(str(p) for p in parties)}"
+                    except:
+                        pass
+                context_parts.append(
+                    f"📋 HỢP ĐỒNG: {contract['name']} (Loại: {contract.get('contract_type', 'N/A')}{parties_str})\n{excerpt}"
+                )
+
+    return "\n\n".join(context_parts[:5]) if context_parts else ""
+
 
 # ============================================
 # Law Search
@@ -687,53 +809,104 @@ Nội dung:
     
     context = "\n\n".join(context_parts)
     
-    # Professional Vietnamese legal consultant prompt
-    system_prompt = """Bạn là Trợ lý Pháp lý AI chuyên nghiệp cho doanh nghiệp Việt Nam.
+    # Fetch company-specific context (documents & contracts)
+    company_context = ""
+    if company.get("company_id"):
+        try:
+            company_context = fetch_company_context(
+                str(company["company_id"]), query.question
+            )
+        except Exception as e:
+            print(f"Error fetching company context: {e}")
 
-NĂNG LỰC CỦA BẠN:
-1. TRẢ LỜI câu hỏi pháp lý — tra cứu, giải thích luật
-2. SOẠN THẢO văn bản pháp lý — hợp đồng, đơn từ, biên bản, quyết định, nội quy
-3. TƯ VẤN chiến lược pháp lý — phân tích rủi ro, đề xuất giải pháp
-4. RÀ SOÁT văn bản — kiểm tra tính hợp pháp, phát hiện lỗi
+    # Senior Vietnamese Legal Expert system prompt
+    system_prompt = """Bạn là LUẬT SƯ CAO CẤP chuyên tư vấn pháp luật Việt Nam, với hơn 20 năm kinh nghiệm thực tiễn. Bạn được đào tạo bài bản về Luật Việt Nam và có chuyên môn sâu trong tất cả các lĩnh vực pháp luật.
 
-KHI TRẢ LỜI CÂU HỎI:
-- Trả lời trực tiếp ngay đầu tiên (1-2 câu tóm tắt)
-- Trích dẫn CỤ THỂ: "Theo Điều X, Khoản Y, Luật Z năm YYYY..."
-- Giải thích rõ ràng, dễ hiểu cho người không chuyên luật
-- Kết thúc bằng LƯU Ý thực tiễn (nếu có)
+## NGUYÊN TẮC CỐT LÕI
 
-KHI SOẠN THẢO VĂN BẢN:
-- TRƯỚC KHI SOẠN: Hỏi người dùng các thông tin cần thiết (kiểu brainstorm)
-  + Ví dụ: "Để soạn hợp đồng lao động, tôi cần biết: 1) Tên công ty? 2) Tên nhân viên? 3) Vị trí? 4) Mức lương? 5) Thời hạn?"
-  + Hỏi TỐI ĐA 1 lần, liệt kê TẤT CẢ thông tin cần trong 1 câu hỏi
-  + Nếu user trả lời thiếu, dùng [THÔNG TIN CẦN ĐIỀN] cho phần thiếu
-- SAU KHI CÓ THÔNG TIN: Soạn HOÀN CHỈNH, chuyên nghiệp, đúng chuẩn pháp lý VN
-- Tuân thủ đúng quy định pháp luật hiện hành (trích dẫn điều luật áp dụng)
-- Bao gồm đầy đủ các điều khoản bắt buộc theo luật
-- Format rõ ràng: tiêu đề, các điều khoản đánh số, chữ ký
-- Nếu người dùng cung cấp thông tin cụ thể (tên, địa chỉ...), ĐIỀN LUÔN vào văn bản
-- Nếu user nói "soạn luôn" hoặc "không cần hỏi", soạn ngay với [PLACEHOLDER]
+1. **LUÔN TRÍCH DẪN CỤ THỂ**: Mỗi ý kiến pháp lý PHẢI kèm trích dẫn:
+   - Format: "Theo **Điều X, Khoản Y** của **Luật Z năm YYYY** (Số: XX/YYYY/QH)"
+   - Nếu là Nghị định: "Theo **Điều X** Nghị định số XX/YYYY/NĐ-CP ngày DD/MM/YYYY"
+   - Nếu là Thông tư: "Theo **Điều X** Thông tư số XX/YYYY/TT-BXY ngày DD/MM/YYYY"
+   
+2. **PHÂN BIỆT HIỆU LỰC**: 
+   - Ghi rõ văn bản còn hiệu lực hay đã hết hiệu lực
+   - Nếu văn bản đã được thay thế, chỉ ra văn bản thay thế
+   - Ưu tiên văn bản MỚI NHẤT (năm ban hành gần nhất)
 
-ĐỊNH DẠNG:
-- Dùng heading ## cho các phần chính
-- Dùng **bold** cho điều khoản quan trọng
-- Dùng bullet list cho các trường hợp
-- Ngắn gọn, súc tích — không dài dòng
+3. **CẤU TRÚC TRẢ LỜI**:
+   
+   ### 📋 Tóm tắt
+   (1-2 câu trả lời trực tiếp câu hỏi)
+   
+   ### ⚖️ Căn cứ pháp lý
+   (Liệt kê các điều luật áp dụng, trích dẫn nội dung cụ thể)
+   
+   ### 📖 Phân tích chi tiết
+   (Giải thích rõ ràng, phân tích từng trường hợp nếu có)
+   
+   ### 💡 Lời khuyên thực tiễn
+   (Hướng dẫn cụ thể nên làm gì, thủ tục ra sao, lưu ý gì)
+   
+   ### ⚠️ Lưu ý
+   (Các ngoại lệ, rủi ro, trường hợp đặc biệt cần chú ý)
 
-QUAN TRỌNG:
-- Sử dụng nguồn luật được cung cấp làm tham chiếu
-- Kết hợp kiến thức pháp luật Việt Nam để trả lời TOÀN DIỆN
-- Nếu nguồn luật không đủ, VẪN trả lời dựa trên kiến thức chung về luật VN nhưng GHI CHÚ rõ
-- KHÔNG bịa số hiệu văn bản hoặc điều luật cụ thể khi không chắc chắn
-- Ưu tiên Bộ luật/Luật mới nhất (năm ban hành gần nhất)
-- Luôn kèm disclaimer: đây là tham khảo, cần luật sư cho trường hợp cụ thể"""
+4. **KHI SOẠN THẢO VĂN BẢN**:
+   - Hỏi thông tin cần thiết TỐI ĐA 1 lần
+   - Soạn HOÀN CHỈNH, đúng chuẩn pháp lý VN
+   - Tuân thủ Nghị định 30/2020/NĐ-CP về công tác văn thư
+   - Bao gồm đầy đủ điều khoản bắt buộc theo luật
+   - Dùng [THÔNG TIN CẦN ĐIỀN] cho phần thiếu
+
+## QUAN TRỌNG
+- Sử dụng nguồn luật được cung cấp làm tham chiếu CHÍNH
+- Nếu có tài liệu/hợp đồng của công ty, ĐỐI CHIẾU với quy định pháp luật
+- Kết hợp kiến thức pháp luật VN để trả lời TOÀN DIỆN
+- KHÔNG bịa số hiệu văn bản — nếu không chắc chắn, ghi "cần xác minh thêm"
+- Phân biệt rõ: quy định bắt buộc vs khuyến nghị vs thông lệ thực tiễn
+- Kết thúc bằng disclaimer: "Đây là tư vấn tham khảo. Đối với vụ việc cụ thể, cần tham vấn luật sư trực tiếp."
+
+## VĂN BẢN PHÁP LUẬT QUAN TRỌNG CẦN NHỚ
+- Bộ luật Lao động 2019 (45/2019/QH14) - hiệu lực từ 01/01/2021
+- Bộ luật Dân sự 2015 (91/2015/QH13)
+- Luật Doanh nghiệp 2020 (59/2020/QH14)
+- Luật Đầu tư 2020 (61/2020/QH14)
+- Luật Thuế TNDN 2008, sửa đổi 2013, 2014
+- Luật Thuế TNCN 2007, sửa đổi 2012, 2014
+- Luật Đất đai 2024 (31/2024/QH15) - hiệu lực từ 01/08/2024
+- Luật Nhà ở 2023 (27/2023/QH15)
+- Luật Hôn nhân và Gia đình 2014
+- Bộ luật Hình sự 2015, sửa đổi 2017"""
+
+    # Build user message with law sources and company context
+    company_context_section = ""
+    if company_context:
+        company_context_section = f"""
+
+TÀI LIỆU NỘI BỘ CỦA CÔNG TY (dùng để đối chiếu với pháp luật):
+{company_context}
+"""
+
+    # Build consulted laws summary
+    consulted_laws = []
+    seen_laws = set()
+    for src in sources:
+        law_key = f"{src['law_title']} ({src.get('law_number', 'N/A')})"
+        if law_key not in seen_laws:
+            seen_laws.add(law_key)
+            consulted_laws.append(law_key)
+
+    consulted_section = ""
+    if consulted_laws:
+        consulted_section = "\n📚 CÁC VĂN BẢN ĐÃ TRA CỨU:\n" + "\n".join(f"  • {law}" for law in consulted_laws[:15])
 
     user_message = f"""YÊU CẦU: {query.question}
 
-CÁC NGUỒN LUẬT LIÊN QUAN (dùng làm tham chiếu):
+CÁC NGUỒN LUẬT LIÊN QUAN (dùng làm tham chiếu — hãy trích dẫn Điều, Khoản cụ thể):
 {context}
+{company_context_section}{consulted_section}
 
-Hãy thực hiện yêu cầu trên. Nếu là câu hỏi thì trả lời. Nếu là yêu cầu soạn thảo thì soạn văn bản hoàn chỉnh."""
+Hãy thực hiện yêu cầu trên với cấu trúc rõ ràng. Trích dẫn CỤ THỂ Điều, Khoản, tên Luật và số hiệu."""
 
     # Load chat history for multi-turn conversation
     chat_history = []
@@ -833,6 +1006,340 @@ Hãy thực hiện yêu cầu trên. Nếu là câu hỏi thì trả lời. Nế
         model=result["model"],
         session_id=str(session_id) if session_id else None
     )
+
+
+@app.post("/v1/legal/ask-stream")
+async def legal_ask_stream(query: LegalQuery, company: dict = Depends(verify_api_key)):
+    """Tư vấn pháp luật với streaming SSE - Legal Q&A Streaming"""
+
+    # Auto-detect domain
+    domains = query.domains
+    if not domains:
+        detected = detect_domain(query.question)
+        if detected:
+            domains = detected
+
+    # Multi-query search
+    sources = multi_query_search(query.question, domains, query.max_sources)
+
+    # Build context
+    context_parts = []
+    citations = []
+    for i, src in enumerate(sources, 1):
+        law_title = src['law_title']
+        law_number = src.get('law_number', 'N/A')
+        article = src.get('article', 'N/A')
+        content = src['content'][:2000]
+
+        context_parts.append(f"""--- NGUỒN {i} ---
+Văn bản: {law_title} (Số: {law_number})
+Điều: {article}
+Nội dung:
+{content}
+---""")
+
+        citations.append({
+            "source": law_title,
+            "law_number": law_number,
+            "article": article,
+            "relevance": float(src.get("rank", 0))
+        })
+
+    context = "\n\n".join(context_parts)
+
+    # Company context enrichment
+    company_context = ""
+    if company.get("company_id"):
+        try:
+            company_context = fetch_company_context(
+                str(company["company_id"]), query.question
+            )
+        except Exception as e:
+            print(f"Error fetching company context: {e}")
+
+    # Same upgraded system prompt as /v1/legal/ask
+    system_prompt = """Bạn là LUẬT SƯ CAO CẤP chuyên tư vấn pháp luật Việt Nam, với hơn 20 năm kinh nghiệm thực tiễn.
+
+## NGUYÊN TẮC CỐT LÕI
+
+1. **LUÔN TRÍCH DẪN CỤ THỂ**: Mỗi ý kiến pháp lý PHẢI kèm trích dẫn:
+   - Format: "Theo **Điều X, Khoản Y** của **Luật Z năm YYYY** (Số: XX/YYYY/QH)"
+   
+2. **PHÂN BIỆT HIỆU LỰC**: Ghi rõ văn bản còn hiệu lực hay đã hết hiệu lực
+
+3. **CẤU TRÚC TRẢ LỜI**:
+   ### 📋 Tóm tắt
+   ### ⚖️ Căn cứ pháp lý
+   ### 📖 Phân tích chi tiết
+   ### 💡 Lời khuyên thực tiễn
+   ### ⚠️ Lưu ý
+
+## QUAN TRỌNG
+- Sử dụng nguồn luật được cung cấp làm tham chiếu CHÍNH
+- KHÔNG bịa số hiệu văn bản
+- Kết thúc bằng disclaimer"""
+
+    company_context_section = ""
+    if company_context:
+        company_context_section = f"\n\nTÀI LIỆU NỘI BỘ CỦA CÔNG TY:\n{company_context}\n"
+
+    consulted_laws = []
+    seen_laws = set()
+    for src in sources:
+        law_key = f"{src['law_title']} ({src.get('law_number', 'N/A')})"
+        if law_key not in seen_laws:
+            seen_laws.add(law_key)
+            consulted_laws.append(law_key)
+
+    consulted_section = ""
+    if consulted_laws:
+        consulted_section = "\n📚 CÁC VĂN BẢN ĐÃ TRA CỨU:\n" + "\n".join(f"  • {law}" for law in consulted_laws[:15])
+
+    user_message = f"""YÊU CẦU: {query.question}
+
+CÁC NGUỒN LUẬT LIÊN QUAN:
+{context}
+{company_context_section}{consulted_section}
+
+Hãy trả lời với cấu trúc rõ ràng. Trích dẫn CỤ THỂ Điều, Khoản, tên Luật."""
+
+    # Load chat history
+    chat_history = []
+    session_id = None
+    user_id = company.get("user_id")
+
+    if query.session_id and user_id:
+        try:
+            with get_db() as conn:
+                cur = conn.cursor(cursor_factory=RealDictCursor)
+                cur.execute("""
+                    SELECT role, content FROM messages
+                    WHERE session_id = %s AND company_id = %s
+                    ORDER BY created_at ASC
+                    LIMIT 20
+                """, (query.session_id, company["company_id"]))
+                rows = cur.fetchall()
+                for row in rows:
+                    chat_history.append({"role": row["role"], "content": row["content"]})
+                session_id = query.session_id
+        except Exception as e:
+            print(f"Error loading chat history: {e}")
+
+    async def sse_generator():
+        """Generate SSE events"""
+        full_response = []
+
+        # Send citations first
+        yield f"data: {json.dumps({'type': 'citations', 'citations': citations}, ensure_ascii=False)}\n\n"
+
+        # Send consulted laws
+        if consulted_laws:
+            yield f"data: {json.dumps({'type': 'sources', 'laws_consulted': consulted_laws[:15]}, ensure_ascii=False)}\n\n"
+
+        # Stream AI response
+        try:
+            async for text_chunk in call_claude_stream(
+                system_prompt, user_message, max_tokens=8192, history=chat_history
+            ):
+                full_response.append(text_chunk)
+                yield f"data: {json.dumps({'type': 'delta', 'text': text_chunk}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
+            return
+
+        complete_text = "".join(full_response)
+
+        # Save to chat history if user is authenticated
+        saved_session_id = session_id
+        if user_id:
+            try:
+                with get_db() as conn:
+                    cur = conn.cursor(cursor_factory=RealDictCursor)
+                    if not saved_session_id:
+                        cur.execute("""
+                            SELECT id FROM chat_sessions
+                            WHERE user_id = %s AND company_id = %s AND agent_type = 'qa' AND status = 'active'
+                            ORDER BY last_message_at DESC NULLS LAST LIMIT 1
+                        """, (user_id, company["company_id"]))
+                        session = cur.fetchone()
+                        if session:
+                            saved_session_id = session["id"]
+                        else:
+                            cur.execute("""
+                                INSERT INTO chat_sessions (company_id, user_id, agent_type, title, status)
+                                VALUES (%s, %s, 'qa', %s, 'active') RETURNING id
+                            """, (company["company_id"], user_id, f"Q&A - {query.question[:50]}..."))
+                            saved_session_id = cur.fetchone()["id"]
+
+                    cur.execute("""
+                        INSERT INTO messages (session_id, company_id, role, content, tokens_used, model)
+                        VALUES (%s, %s, 'user', %s, 0, '')
+                    """, (saved_session_id, company["company_id"], query.question))
+
+                    cur.execute("""
+                        INSERT INTO messages (session_id, company_id, role, content, citations, confidence, tokens_used, model)
+                        VALUES (%s, %s, 'assistant', %s, %s, %s, 0, 'claude-sonnet-4-20250514')
+                    """, (
+                        saved_session_id, company["company_id"],
+                        complete_text, json.dumps(citations),
+                        0.85 if sources else 0.5
+                    ))
+
+                    cur.execute("""
+                        UPDATE chat_sessions SET message_count = message_count + 2, last_message_at = now()
+                        WHERE id = %s
+                    """, (saved_session_id,))
+                    conn.commit()
+            except Exception as e:
+                print(f"Error saving stream chat history: {e}")
+
+        # Update usage
+        try:
+            with get_db() as conn:
+                cur = conn.cursor()
+                cur.execute("UPDATE companies SET used_quota = used_quota + 1 WHERE id = %s",
+                            (company["company_id"],))
+                cur.execute("""
+                    INSERT INTO usage_logs (company_id, endpoint, agent_type, input_tokens, output_tokens, status_code)
+                    VALUES (%s, '/v1/legal/ask-stream', 'qa', 0, 0, 200)
+                """, (company["company_id"],))
+                conn.commit()
+        except Exception as e:
+            print(f"Error updating usage: {e}")
+
+        # Send done event
+        yield f"data: {json.dumps({'type': 'done', 'session_id': str(saved_session_id) if saved_session_id else None}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        sse_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
+@app.get("/v1/legal/search-detailed")
+async def search_detailed(
+    q: str,
+    domains: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=50),
+    company: dict = Depends(verify_api_key)
+):
+    """Tìm kiếm luật chi tiết - Detailed Law Search with categorization and highlighting"""
+    import time as _time
+
+    start_time = _time.time()
+
+    domain_list = domains.split(",") if domains else None
+
+    # Use multi_query_search for better results
+    results = multi_query_search(q, domain_list, min(limit, 50))
+
+    elapsed = _time.time() - start_time
+
+    # Categorize results by law type
+    categories = {}
+    highlighted_results = []
+    query_words = [w.lower() for w in q.split() if len(w) > 1]
+
+    for r in results:
+        law_title = r.get("law_title", "")
+        law_number = r.get("law_number", "")
+        content = r.get("content", "")
+
+        # Determine category
+        if any(x in law_title for x in ["Bộ luật", "Bo Luat"]):
+            cat = "Bộ luật"
+        elif any(x in law_title for x in ["Luật ", "Luat "]):
+            cat = "Luật"
+        elif any(x in law_title for x in ["Nghị định", "Nghi dinh"]):
+            cat = "Nghị định"
+        elif any(x in law_title for x in ["Thông tư", "Thong tu"]):
+            cat = "Thông tư"
+        elif any(x in law_title for x in ["Quyết định", "Quyet dinh"]):
+            cat = "Quyết định"
+        else:
+            cat = "Khác"
+
+        if cat not in categories:
+            categories[cat] = []
+
+        # Highlight matching text
+        highlighted_content = content
+        for word in query_words:
+            if len(word) > 2:
+                pattern = re_module.compile(re_module.escape(word), re_module.IGNORECASE)
+                highlighted_content = pattern.sub(f"<mark>{word}</mark>", highlighted_content)
+
+        result_item = {
+            "law_title": law_title,
+            "law_number": law_number,
+            "article": r.get("article"),
+            "chunk_title": r.get("chunk_title", ""),
+            "content": content[:1000],
+            "highlighted_content": highlighted_content[:1000],
+            "rank": float(r.get("rank", 0)),
+            "category": cat,
+            "domains": r.get("domains", [])
+        }
+
+        categories[cat].append(result_item)
+        highlighted_results.append(result_item)
+
+    # Find related articles (same law, adjacent articles) for top results
+    related_articles = []
+    if results:
+        top_law_ids = list(set(r.get("law_id") for r in results[:3] if r.get("law_id")))
+        top_articles = [r.get("article") for r in results[:3] if r.get("article")]
+
+        if top_law_ids:
+            try:
+                with get_db() as conn:
+                    cur = conn.cursor(cursor_factory=RealDictCursor)
+                    # Get adjacent articles from the same laws
+                    for law_id in top_law_ids[:2]:
+                        cur.execute("""
+                            SELECT lc.article, lc.title as chunk_title, ld.title as law_title,
+                                   ld.law_number, LEFT(lc.content, 300) as content_preview
+                            FROM law_chunks lc
+                            JOIN law_documents ld ON ld.id = lc.law_id
+                            WHERE lc.law_id = %s
+                              AND lc.article IS NOT NULL
+                            ORDER BY lc.article
+                            LIMIT 10
+                        """, (law_id,))
+                        rows = cur.fetchall()
+                        for row in rows:
+                            if row["article"] not in top_articles:
+                                related_articles.append({
+                                    "law_title": row["law_title"],
+                                    "law_number": row["law_number"],
+                                    "article": row["article"],
+                                    "chunk_title": row["chunk_title"],
+                                    "content_preview": row["content_preview"]
+                                })
+            except Exception as e:
+                print(f"Error fetching related articles: {e}")
+
+    # Category counts
+    category_stats = {cat: len(items) for cat, items in categories.items()}
+
+    return {
+        "query": q,
+        "stats": {
+            "total_results": len(results),
+            "search_time_seconds": round(elapsed, 3),
+            "categories": category_stats,
+            "domains_searched": domain_list
+        },
+        "results": highlighted_results,
+        "categories": {cat: items[:10] for cat, items in categories.items()},
+        "related_articles": related_articles[:10]
+    }
+
 
 @app.post("/v1/legal/review")
 async def contract_review(review: ContractReview, company: dict = Depends(verify_api_key)):
