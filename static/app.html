@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal AI — Trợ lý pháp lý AI cho doanh nghiệp Việt Nam</title>
+    <title>AI Legal Agent — Trợ lý pháp lý AI cho doanh nghiệp Việt Nam</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2806,6 +2806,54 @@
             display: flex;
             gap: 0.5rem;
         }
+
+        /* ===== AGENT TOOLS STATUS ===== */
+        .agent-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(99, 102, 241, 0.08);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            font-size: 0.85rem;
+        }
+        .tool-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            animation: slideInUp 0.3s ease-out;
+        }
+        .tool-step.done { color: var(--text-muted); }
+        .tool-step.done .tool-check { color: #4ade80; font-weight: 600; }
+        .tool-step.running { color: var(--accent); font-weight: 500; }
+        .tool-icon.spinning { display: inline-block; animation: spin 1s linear infinite; }
+
+        /* Agent mode badge */
+        .agent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--accent-bg);
+            color: var(--accent);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            border: 1px solid var(--accent);
+            margin-left: 0.5rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .agent-badge .badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -2888,6 +2936,7 @@
                 <div class="sidebar-logo">
                     <span>⚖️</span>
                     <span>Legal AI</span>
+                    <span class="agent-badge"><span class="badge-dot"></span> Agent</span>
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()" data-tooltip="Toggle theme">
                     <span id="themeIcon">🌙</span>
@@ -2971,7 +3020,7 @@
                                 </div>
                                 <div class="breadcrumb-item">Chat</div>
                             </div>
-                            <div class="chat-title" id="chatHeaderTitle">Cuộc hội thoại mới</div>
+                            <div class="chat-title" id="chatHeaderTitle">AI Legal Agent</div>
                         </div>
                         <div class="chat-actions">
                             <button class="icon-btn" title="Cài đặt" onclick="showPage('settings')" data-tooltip="Settings">⚙️</button>
@@ -2981,28 +3030,28 @@
                     <div class="chat-messages" id="chatMessages" onscroll="handleChatScroll()">
                         <div class="chat-welcome" id="chatWelcome">
                             <div class="welcome-card">
-                                <div class="welcome-icon">⚖️</div>
-                                <div class="welcome-title">Xin chào! Tôi là trợ lý pháp lý AI.</div>
-                                <div class="welcome-text">Hỏi tôi bất kỳ câu hỏi nào về luật pháp Việt Nam, soạn thảo văn bản, hoặc rà soát hợp đồng.</div>
+                                <div class="welcome-icon">🤖</div>
+                                <div class="welcome-title">AI Legal Agent <span class="agent-badge"><span class="badge-dot"></span> Agent</span></div>
+                                <div class="welcome-text">Tôi có thể tra cứu luật, đọc hợp đồng, phân tích rủi ro và soạn thảo văn bản pháp lý cho bạn.</div>
                             </div>
                             <div class="suggestion-chips">
-                                <div class="suggestion-chip" onclick="useSuggestion('Soạn hợp đồng lao động')">
-                                    📄 Soạn HĐLĐ
+                                <div class="suggestion-chip" onclick="useSuggestion('Phân tích hợp đồng lao động của tôi')">
+                                    ⚖️ Phân tích hợp đồng lao động của tôi
                                 </div>
-                                <div class="suggestion-chip" onclick="useSuggestion('Rà soát hợp đồng')">
-                                    🔍 Rà soát hợp đồng
+                                <div class="suggestion-chip" onclick="useSuggestion('Tra cứu quy định về nghỉ phép năm')">
+                                    🔍 Tra cứu quy định về nghỉ phép năm
                                 </div>
-                                <div class="suggestion-chip" onclick="useSuggestion('Tra cứu luật lao động')">
-                                    📋 Tra cứu luật
+                                <div class="suggestion-chip" onclick="useSuggestion('Liệt kê tất cả hợp đồng đang có')">
+                                    📋 Liệt kê tất cả hợp đồng đang có
                                 </div>
-                                <div class="suggestion-chip" onclick="useSuggestion('Thời gian thử việc là bao lâu?')">
-                                    ❓ Thử việc
+                                <div class="suggestion-chip" onclick="useSuggestion('Soạn hợp đồng dịch vụ')">
+                                    ✍️ Soạn hợp đồng dịch vụ
                                 </div>
-                                <div class="suggestion-chip" onclick="useSuggestion('Thuế TNDN là gì?')">
-                                    💰 Thuế TNDN
+                                <div class="suggestion-chip" onclick="useSuggestion('Đánh giá rủi ro pháp lý cho công ty')">
+                                    ⚠️ Đánh giá rủi ro pháp lý cho công ty
                                 </div>
-                                <div class="suggestion-chip" onclick="useSuggestion('Thành lập công ty cần gì?')">
-                                    🏢 Thành lập công ty
+                                <div class="suggestion-chip" onclick="useSuggestion('Tìm tài liệu liên quan đến bảo hiểm')">
+                                    📂 Tìm tài liệu liên quan đến bảo hiểm
                                 </div>
                             </div>
                         </div>
@@ -3460,6 +3509,77 @@ console.log(data);</code></pre>
             'hanh_chinh': 'Hành chính',
             'noi_bo': 'Nội bộ'
         };
+
+        // Agent tool icon/label mapping
+        const toolMeta = {
+            'search_law':           { icon: '🔍', label: 'Tra cứu luật' },
+            'read_contract':        { icon: '📄', label: 'Đọc hợp đồng' },
+            'list_contracts':       { icon: '📋', label: 'Liệt kê hợp đồng' },
+            'search_company_docs':  { icon: '📂', label: 'Tìm tài liệu công ty' },
+            'analyze_contract_risk':{ icon: '⚠️', label: 'Phân tích rủi ro' },
+            'draft_document':       { icon: '✍️', label: 'Soạn thảo văn bản' },
+            'get_company_profile':  { icon: '🏢', label: 'Lấy thông tin công ty' }
+        };
+
+        // Current AI avatar state for agent mode
+        let currentAgentAvatar = '🤖';
+
+        function getToolAvatarIcon(toolName) {
+            const avatarMap = {
+                'search_law': '🔍',
+                'read_contract': '📄',
+                'search_company_docs': '🔍',
+                'draft_document': '✍️'
+            };
+            return avatarMap[toolName] || '🤖';
+        }
+
+        function updateToolStatus(toolsDiv, toolName, status, event) {
+            if (!toolsDiv) return;
+
+            const meta = toolMeta[toolName] || { icon: '⚙️', label: toolName };
+            let stepEl = toolsDiv.querySelector(`[data-tool="${toolName}"]`);
+
+            if (status === 'running') {
+                // Update avatar to reflect current tool
+                currentAgentAvatar = getToolAvatarIcon(toolName);
+                const avatarEl = toolsDiv.closest('.message')?.querySelector('.message-avatar');
+                if (avatarEl) avatarEl.textContent = currentAgentAvatar;
+
+                if (!stepEl) {
+                    stepEl = document.createElement('div');
+                    stepEl.className = 'tool-step running';
+                    stepEl.setAttribute('data-tool', toolName);
+
+                    let statusText = 'Đang ' + meta.label.toLowerCase() + '...';
+                    if (event.query) statusText = `Tra cứu: "${event.query}"`;
+
+                    stepEl.innerHTML = `
+                        <span class="tool-icon spinning">${meta.icon}</span>
+                        <span class="tool-text">${statusText}</span>
+                    `;
+                    toolsDiv.appendChild(stepEl);
+                    toolsDiv.classList.remove('hidden');
+                }
+            } else if (status === 'done' && stepEl) {
+                stepEl.className = 'tool-step done';
+
+                let doneText = meta.label;
+                if (event.query) doneText = `Tra cứu: "${event.query}"`;
+                if (event.results_count !== undefined) doneText += ` → ${event.results_count} kết quả`;
+
+                stepEl.innerHTML = `
+                    <span class="tool-icon">${meta.icon}</span>
+                    <span class="tool-text">${doneText}</span>
+                    <span class="tool-check">✓</span>
+                `;
+
+                // Reset avatar back to default
+                currentAgentAvatar = '🤖';
+                const avatarEl = toolsDiv.closest('.message')?.querySelector('.message-avatar');
+                if (avatarEl) avatarEl.textContent = currentAgentAvatar;
+            }
+        }
 
         // ===== THEME TOGGLE =====
         function toggleTheme() {
@@ -3978,21 +4098,21 @@ console.log(data);</code></pre>
             chatMessages.innerHTML = `
                 <div class="chat-welcome" id="chatWelcome">
                     <div class="welcome-card">
-                        <div class="welcome-icon">⚖️</div>
-                        <div class="welcome-title">Xin chào! Tôi là trợ lý pháp lý AI.</div>
-                        <div class="welcome-text">Hỏi tôi bất kỳ câu hỏi nào về luật pháp Việt Nam, soạn thảo văn bản, hoặc rà soát hợp đồng.</div>
+                        <div class="welcome-icon">🤖</div>
+                        <div class="welcome-title">AI Legal Agent <span class="agent-badge"><span class="badge-dot"></span> Agent</span></div>
+                        <div class="welcome-text">Tôi có thể tra cứu luật, đọc hợp đồng, phân tích rủi ro và soạn thảo văn bản pháp lý cho bạn.</div>
                     </div>
                     <div class="suggestion-chips">
-                        <div class="suggestion-chip" onclick="useSuggestion('Soạn hợp đồng lao động')">📄 Soạn HĐLĐ</div>
-                        <div class="suggestion-chip" onclick="useSuggestion('Rà soát hợp đồng')">🔍 Rà soát hợp đồng</div>
-                        <div class="suggestion-chip" onclick="useSuggestion('Tra cứu luật lao động')">📋 Tra cứu luật</div>
-                        <div class="suggestion-chip" onclick="useSuggestion('Thời gian thử việc là bao lâu?')">❓ Thử việc</div>
-                        <div class="suggestion-chip" onclick="useSuggestion('Thuế TNDN là gì?')">💰 Thuế TNDN</div>
-                        <div class="suggestion-chip" onclick="useSuggestion('Thành lập công ty cần gì?')">🏢 Thành lập công ty</div>
+                        <div class="suggestion-chip" onclick="useSuggestion('Phân tích hợp đồng lao động của tôi')">⚖️ Phân tích hợp đồng lao động của tôi</div>
+                        <div class="suggestion-chip" onclick="useSuggestion('Tra cứu quy định về nghỉ phép năm')">🔍 Tra cứu quy định về nghỉ phép năm</div>
+                        <div class="suggestion-chip" onclick="useSuggestion('Liệt kê tất cả hợp đồng đang có')">📋 Liệt kê tất cả hợp đồng đang có</div>
+                        <div class="suggestion-chip" onclick="useSuggestion('Soạn hợp đồng dịch vụ')">✍️ Soạn hợp đồng dịch vụ</div>
+                        <div class="suggestion-chip" onclick="useSuggestion('Đánh giá rủi ro pháp lý cho công ty')">⚠️ Đánh giá rủi ro pháp lý cho công ty</div>
+                        <div class="suggestion-chip" onclick="useSuggestion('Tìm tài liệu liên quan đến bảo hiểm')">📂 Tìm tài liệu liên quan đến bảo hiểm</div>
                     </div>
                 </div>
             `;
-            document.getElementById('chatHeaderTitle').textContent = 'Cuộc hội thoại mới';
+            document.getElementById('chatHeaderTitle').textContent = 'AI Legal Agent';
             renderChatHistory();
             showPage('chat');
             
@@ -4193,13 +4313,14 @@ console.log(data);</code></pre>
 
             removeTyping();
 
-            // Create streaming message bubble
+            // Create streaming message bubble with agent tools area
             const container = document.getElementById('chatMessages');
             const msg = document.createElement('div');
             msg.className = 'message message-ai';
             msg.innerHTML = `
-                <div class="message-avatar">⚖️</div>
+                <div class="message-avatar">🤖</div>
                 <div class="message-content">
+                    <div class="agent-tools hidden" id="streamingToolsLive"></div>
                     <div class="message-text" id="streamingTextLive"></div>
                     <div id="streamingCursorLive" class="cursor"></div>
                 </div>
@@ -4207,6 +4328,7 @@ console.log(data);</code></pre>
             container.appendChild(msg);
             container.scrollTop = container.scrollHeight;
 
+            const toolsDiv = msg.querySelector('#streamingToolsLive');
             const textDiv = msg.querySelector('#streamingTextLive');
             const cursor = msg.querySelector('#streamingCursorLive');
             let fullText = '';
@@ -4232,7 +4354,10 @@ console.log(data);</code></pre>
 
                         try {
                             const event = JSON.parse(jsonStr);
-                            if (event.type === 'token' || event.type === 'delta') {
+                            if (event.type === 'tool_status') {
+                                updateToolStatus(toolsDiv, event.tool, event.status, event);
+                                container.scrollTop = container.scrollHeight;
+                            } else if (event.type === 'token' || event.type === 'delta') {
                                 fullText += (event.content || event.text || '');
                                 textDiv.innerHTML = renderMarkdown(fullText);
                                 container.scrollTop = container.scrollHeight;
@@ -4258,6 +4383,9 @@ console.log(data);</code></pre>
             // Finalize message
             cursor.remove();
             textDiv.removeAttribute('id');
+            toolsDiv.removeAttribute('id');
+            // Reset avatar to default
+            msg.querySelector('.message-avatar').textContent = '🤖';
             msg.dataset.rawMarkdown = fullText;
 
             const responseTime = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -4297,7 +4425,7 @@ console.log(data);</code></pre>
             msg.className = `message message-${type}`;
             
             msg.innerHTML = `
-                <div class="message-avatar">⚖️</div>
+                <div class="message-avatar">🤖</div>
                 <div class="message-content">
                     <div class="message-text" id="streamingText"></div>
                     <div id="streamingCursor" class="cursor"></div>
@@ -4364,7 +4492,7 @@ console.log(data);</code></pre>
             
             const avatar = type === 'user' 
                 ? (currentUser?.full_name?.[0] || currentUser?.name?.[0] || 'U')
-                : '⚖️';
+                : '🤖';
 
             let citationsHtml = '';
             if (citations && citations.length > 0) {
@@ -4592,7 +4720,7 @@ console.log(data);</code></pre>
             typing.className = 'typing-indicator';
             typing.id = 'typingIndicator';
             typing.innerHTML = `
-                <div class="message-avatar">⚖️</div>
+                <div class="message-avatar">🤖</div>
                 <div>
                     <div class="typing-dots">
                         <div class="typing-dot"></div>

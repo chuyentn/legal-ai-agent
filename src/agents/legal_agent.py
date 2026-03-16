@@ -1,0 +1,840 @@
+"""
+Legal AI Agent — Tool-Use Architecture
+Uses Claude's native tool_use to autonomously decide which tools to call
+based on user questions. Replaces hardcoded Q&A flow.
+"""
+import json
+import httpx
+import os
+from typing import Optional, List, AsyncGenerator
+from psycopg2.extras import RealDictCursor
+
+# ============================================
+# Shared DB & Claude config (imported from main)
+# ============================================
+
+# These will be set by init_agent() called from main.py
+_get_db = None
+_multi_query_search = None
+_search_laws = None
+_detect_domain = None
+_fetch_company_context = None
+
+CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
+
+
+def init_agent(get_db_fn, multi_query_search_fn, search_laws_fn, detect_domain_fn, fetch_company_context_fn):
+    """Initialize agent with shared functions from main.py"""
+    global _get_db, _multi_query_search, _search_laws, _detect_domain, _fetch_company_context
+    _get_db = get_db_fn
+    _multi_query_search = multi_query_search_fn
+    _search_laws = search_laws_fn
+    _detect_domain = detect_domain_fn
+    _fetch_company_context = fetch_company_context_fn
+
+
+# ============================================
+# Tool Definitions
+# ============================================
+
+TOOLS = [
+    {
+        "name": "search_law",
+        "description": "Tìm kiếm văn bản pháp luật Việt Nam theo từ khóa. Dùng khi cần tra cứu luật, nghị định, thông tư, quyết định. LUÔN dùng tool này trước khi trả lời câu hỏi pháp lý.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Từ khóa tìm kiếm pháp luật"},
+                "domains": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Lĩnh vực: lao_dong, thue, doanh_nghiep, dan_su, dat_dai, hinh_su, hanh_chinh"
+                },
+                "limit": {"type": "integer", "default": 10, "description": "Số kết quả tối đa"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "read_contract",
+        "description": "Đọc nội dung hợp đồng đã upload. Dùng khi người dùng hỏi về hợp đồng cụ thể hoặc cần rà soát.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "contract_id": {"type": "string", "description": "ID hợp đồng (UUID)"}
+            },
+            "required": ["contract_id"]
+        }
+    },
+    {
+        "name": "list_contracts",
+        "description": "Liệt kê tất cả hợp đồng của công ty. Dùng khi cần tổng quan về hợp đồng hoặc khi người dùng hỏi 'hợp đồng nào', 'danh sách hợp đồng'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "search_company_docs",
+        "description": "Tìm kiếm trong tài liệu nội bộ của công ty (documents đã upload). Dùng khi cần tìm nội quy, quy chế, tài liệu nội bộ.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Từ khóa tìm kiếm trong tài liệu công ty"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "analyze_contract_risk",
+        "description": "Phân tích rủi ro pháp lý chi tiết cho hợp đồng. Dùng khi được yêu cầu rà soát, đánh giá rủi ro, hoặc kiểm tra tính hợp pháp của hợp đồng.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "contract_id": {"type": "string", "description": "ID hợp đồng cần phân tích"}
+            },
+            "required": ["contract_id"]
+        }
+    },
+    {
+        "name": "draft_document",
+        "description": "Soạn thảo văn bản pháp lý mới (hợp đồng, đơn từ, quyết định, biên bản, công văn, nội quy). Dùng khi người dùng yêu cầu soạn/tạo văn bản.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "doc_type": {
+                    "type": "string",
+                    "description": "Loại văn bản: hop_dong, don_tu, quyet_dinh, bien_ban, cong_van, noi_quy, hop_dong_lao_dong, hop_dong_dich_vu"
+                },
+                "requirements": {
+                    "type": "string",
+                    "description": "Yêu cầu chi tiết cho văn bản cần soạn"
+                },
+                "template_id": {
+                    "type": "string",
+                    "description": "ID template mẫu (optional)"
+                }
+            },
+            "required": ["doc_type", "requirements"]
+        }
+    },
+    {
+        "name": "get_company_profile",
+        "description": "Lấy thông tin công ty: tên, loại hình, ngành nghề, số nhân sự, hợp đồng đang có, tài liệu. Dùng khi cần context về công ty.",
+        "input_schema": {
+            "type": "object",
+            "properties": {}
+        }
+    }
+]
+
+# ============================================
+# System Prompt
+# ============================================
+
+AGENT_SYSTEM_PROMPT = """Bạn là LUẬT SƯ CAO CẤP AI chuyên tư vấn pháp luật Việt Nam, với hơn 20 năm kinh nghiệm thực tiễn.
+
+## Quy tắc sử dụng tools:
+1. **LUÔN tra cứu luật** trước khi trả lời câu hỏi pháp lý (dùng tool search_law)
+2. Khi được hỏi về hợp đồng → dùng list_contracts hoặc read_contract
+3. Khi cần soạn văn bản → dùng draft_document  
+4. Khi cần tìm tài liệu nội bộ → dùng search_company_docs
+5. Khi cần rà soát hợp đồng → dùng analyze_contract_risk
+6. Khi cần thông tin công ty → dùng get_company_profile
+7. Có thể gọi NHIỀU tools cùng lúc nếu cần
+
+## Quy tắc trả lời:
+1. Trích dẫn CỤ THỂ: "Theo **Điều X, Khoản Y** của **Luật Z năm YYYY** (Số: XX/YYYY/QH)"
+2. Phân biệt luật hiện hành và đã hết hiệu lực
+3. Đưa ra lời khuyên THỰC TẾ, không chỉ lý thuyết
+4. KHÔNG bịa số hiệu văn bản — nếu không chắc, ghi "cần xác minh thêm"
+
+## Cấu trúc trả lời:
+- 📋 **Tóm tắt** — trả lời ngắn gọn trực tiếp
+- ⚖️ **Căn cứ pháp lý** — điều khoản cụ thể từ kết quả tra cứu
+- 📖 **Phân tích chi tiết** — giải thích rõ ràng
+- 💡 **Lời khuyên thực tế** — action items cụ thể
+- ⚠️ **Lưu ý** — rủi ro, ngoại lệ, disclaimer
+
+## Văn bản pháp luật quan trọng:
+- Bộ luật Lao động 2019 (45/2019/QH14) - hiệu lực từ 01/01/2021
+- Bộ luật Dân sự 2015 (91/2015/QH13)
+- Luật Doanh nghiệp 2020 (59/2020/QH14)
+- Luật Đầu tư 2020 (61/2020/QH14)
+- Luật Đất đai 2024 (31/2024/QH15) - hiệu lực từ 01/08/2024
+- Luật Nhà ở 2023 (27/2023/QH15)
+
+Kết thúc bằng: "Đây là tư vấn tham khảo. Đối với vụ việc cụ thể, cần tham vấn luật sư trực tiếp."
+"""
+
+# ============================================
+# Claude API helpers (with tool_use support)
+# ============================================
+
+def _get_claude_headers():
+    """Build headers for Claude API"""
+    oauth_token = os.getenv("CLAUDE_OAUTH_TOKEN", "")
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+
+    headers = {
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+
+    if oauth_token:
+        headers["Authorization"] = f"Bearer {oauth_token}"
+        headers["anthropic-beta"] = "oauth-2025-04-20"
+    elif api_key:
+        headers["x-api-key"] = api_key
+    else:
+        raise ValueError("No Claude API key or OAuth token configured")
+
+    return headers
+
+
+async def _call_claude_with_tools(messages: list, tools: list, system: str = AGENT_SYSTEM_PROMPT, max_tokens: int = 8192) -> dict:
+    """Call Claude API with tool definitions, return raw response dict"""
+    headers = _get_claude_headers()
+
+    payload = {
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": messages,
+        "tools": tools
+    }
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        response = await client.post(CLAUDE_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()
+
+
+async def _call_claude_with_tools_stream(messages: list, tools: list, system: str = AGENT_SYSTEM_PROMPT, max_tokens: int = 8192):
+    """Call Claude API with tools + streaming. Yields raw SSE events."""
+    headers = _get_claude_headers()
+
+    payload = {
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": messages,
+        "tools": tools,
+        "stream": True
+    }
+
+    async with httpx.AsyncClient(timeout=180) as client:
+        async with client.stream("POST", CLAUDE_API_URL, headers=headers, json=payload) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    data_str = line[6:]
+                    if data_str.strip() == "[DONE]":
+                        break
+                    try:
+                        yield json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+
+
+# ============================================
+# Tool Execution
+# ============================================
+
+async def execute_tool(tool_name: str, tool_input: dict, company_id: str) -> dict:
+    """Execute a tool and return result dict"""
+
+    if tool_name == "search_law":
+        return await _tool_search_law(tool_input, company_id)
+    elif tool_name == "read_contract":
+        return await _tool_read_contract(tool_input, company_id)
+    elif tool_name == "list_contracts":
+        return await _tool_list_contracts(company_id)
+    elif tool_name == "search_company_docs":
+        return await _tool_search_company_docs(tool_input, company_id)
+    elif tool_name == "analyze_contract_risk":
+        return await _tool_analyze_contract_risk(tool_input, company_id)
+    elif tool_name == "draft_document":
+        return await _tool_draft_document(tool_input, company_id)
+    elif tool_name == "get_company_profile":
+        return await _tool_get_company_profile(company_id)
+    else:
+        return {"error": f"Unknown tool: {tool_name}"}
+
+
+async def _tool_search_law(tool_input: dict, company_id: str) -> dict:
+    """Search Vietnamese law database"""
+    query = tool_input.get("query", "")
+    domains = tool_input.get("domains", None)
+    limit = tool_input.get("limit", 10)
+
+    if not domains:
+        domains = _detect_domain(query)
+
+    results = _multi_query_search(query, domains, min(limit, 20))
+
+    citations = []
+    formatted_results = []
+    for i, src in enumerate(results, 1):
+        law_title = src.get("law_title", "")
+        law_number = src.get("law_number", "N/A")
+        article = src.get("article", "N/A")
+        content = src.get("content", "")[:2000]
+
+        formatted_results.append({
+            "index": i,
+            "law_title": law_title,
+            "law_number": law_number,
+            "article": article,
+            "content": content
+        })
+
+        citations.append({
+            "source": law_title,
+            "law_number": law_number,
+            "article": article,
+            "relevance": float(src.get("rank", 0))
+        })
+
+    return {
+        "results": formatted_results,
+        "total": len(formatted_results),
+        "citations": citations
+    }
+
+
+async def _tool_read_contract(tool_input: dict, company_id: str) -> dict:
+    """Read a specific contract"""
+    contract_id = tool_input.get("contract_id", "")
+
+    with _get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT id, name, contract_type, extracted_text, parties,
+                   start_date, end_date, value, status, notes, created_at
+            FROM contracts
+            WHERE id::text = %s AND company_id = %s AND status != 'deleted'
+        """, (contract_id, company_id))
+        contract = cur.fetchone()
+
+    if not contract:
+        return {"error": f"Không tìm thấy hợp đồng với ID: {contract_id}"}
+
+    result = dict(contract)
+    # Convert dates to strings
+    for key in ["start_date", "end_date", "created_at"]:
+        if result.get(key):
+            result[key] = str(result[key])
+    # Parse parties JSON
+    if result.get("parties"):
+        try:
+            if isinstance(result["parties"], str):
+                result["parties"] = json.loads(result["parties"])
+        except:
+            pass
+
+    return {
+        "contract": result,
+        "text_length": len(result.get("extracted_text", "") or "")
+    }
+
+
+async def _tool_list_contracts(company_id: str) -> dict:
+    """List all contracts for a company"""
+    with _get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT id, name, contract_type, parties, start_date, end_date,
+                   value, status, created_at
+            FROM contracts
+            WHERE company_id = %s AND status != 'deleted'
+            ORDER BY created_at DESC
+            LIMIT 50
+        """, (company_id,))
+        contracts = cur.fetchall()
+
+    results = []
+    for c in contracts:
+        item = dict(c)
+        for key in ["start_date", "end_date", "created_at"]:
+            if item.get(key):
+                item[key] = str(item[key])
+        if item.get("parties"):
+            try:
+                if isinstance(item["parties"], str):
+                    item["parties"] = json.loads(item["parties"])
+            except:
+                pass
+        results.append(item)
+
+    return {
+        "contracts": results,
+        "total": len(results)
+    }
+
+
+async def _tool_search_company_docs(tool_input: dict, company_id: str) -> dict:
+    """Search company's uploaded documents"""
+    query = tool_input.get("query", "")
+
+    with _get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT id, name, doc_type, extracted_text, analysis, created_at
+            FROM documents
+            WHERE company_id = %s
+              AND extracted_text IS NOT NULL
+              AND length(extracted_text) > 50
+            ORDER BY created_at DESC
+            LIMIT 20
+        """, (company_id,))
+        docs = cur.fetchall()
+
+    # Filter by relevance
+    query_words = [w.lower() for w in query.split() if len(w) > 2]
+    relevant = []
+    for doc in docs:
+        text = (doc.get("extracted_text") or "").lower()
+        name = (doc.get("name") or "").lower()
+        score = sum(1 for w in query_words if w in text or w in name)
+        if score > 0 or not query_words:
+            relevant.append({
+                "id": str(doc["id"]),
+                "name": doc["name"],
+                "doc_type": doc.get("doc_type"),
+                "excerpt": (doc.get("extracted_text") or "")[:1500],
+                "relevance_score": score,
+                "created_at": str(doc["created_at"]) if doc.get("created_at") else None
+            })
+
+    relevant.sort(key=lambda x: x["relevance_score"], reverse=True)
+    return {
+        "documents": relevant[:10],
+        "total": len(relevant)
+    }
+
+
+async def _tool_analyze_contract_risk(tool_input: dict, company_id: str) -> dict:
+    """Analyze contract risk — reads contract + searches relevant laws"""
+    contract_id = tool_input.get("contract_id", "")
+
+    # Read the contract
+    contract_data = await _tool_read_contract({"contract_id": contract_id}, company_id)
+    if "error" in contract_data:
+        return contract_data
+
+    contract = contract_data["contract"]
+    contract_text = contract.get("extracted_text", "")
+    contract_type = contract.get("contract_type", "hợp đồng")
+
+    if not contract_text or len(contract_text) < 50:
+        return {"error": "Hợp đồng chưa có nội dung text để phân tích. Vui lòng upload lại file hợp đồng."}
+
+    # Search relevant laws for this contract type
+    search_query = f"{contract_type} điều khoản quyền nghĩa vụ"
+    law_results = _multi_query_search(search_query, None, 10)
+
+    law_context = []
+    for src in law_results:
+        law_context.append({
+            "law_title": src.get("law_title", ""),
+            "law_number": src.get("law_number", ""),
+            "article": src.get("article", ""),
+            "content": src.get("content", "")[:1000]
+        })
+
+    return {
+        "contract_name": contract.get("name", ""),
+        "contract_type": contract_type,
+        "contract_text": contract_text[:15000],
+        "parties": contract.get("parties"),
+        "relevant_laws": law_context,
+        "instruction": "Hãy phân tích rủi ro pháp lý của hợp đồng này dựa trên nội dung và các luật liên quan. Đánh giá: tính hợp pháp, điều khoản thiếu, rủi ro cho các bên, đề xuất sửa đổi."
+    }
+
+
+async def _tool_draft_document(tool_input: dict, company_id: str) -> dict:
+    """Prepare context for document drafting"""
+    doc_type = tool_input.get("doc_type", "")
+    requirements = tool_input.get("requirements", "")
+    template_id = tool_input.get("template_id")
+
+    # Search relevant laws for this doc type
+    search_query = doc_type.replace("_", " ") + " mẫu quy định"
+    law_results = _search_laws(search_query, None, 8)
+
+    law_context = []
+    for src in law_results:
+        law_context.append({
+            "law_title": src.get("law_title", ""),
+            "article": src.get("article", ""),
+            "content": src.get("content", "")[:1000]
+        })
+
+    # Check for template
+    template_data = None
+    if template_id:
+        with _get_db() as conn:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            cur.execute("""
+                SELECT template_id, name, category, description, template_content
+                FROM document_templates
+                WHERE template_id = %s
+                LIMIT 1
+            """, (template_id,))
+            row = cur.fetchone()
+            if row:
+                template_data = dict(row)
+
+    return {
+        "doc_type": doc_type,
+        "requirements": requirements,
+        "relevant_laws": law_context,
+        "template": template_data,
+        "instruction": f"Soạn thảo văn bản loại '{doc_type}' theo yêu cầu: {requirements}. Tuân thủ Nghị định 30/2020/NĐ-CP về công tác văn thư. Dùng [THÔNG TIN CẦN ĐIỀN] cho phần thiếu."
+    }
+
+
+async def _tool_get_company_profile(company_id: str) -> dict:
+    """Get company profile with stats"""
+    with _get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Company info
+        cur.execute("""
+            SELECT id, name, slug, plan, monthly_quota, used_quota, created_at
+            FROM companies WHERE id = %s
+        """, (company_id,))
+        company = cur.fetchone()
+        if not company:
+            return {"error": "Không tìm thấy thông tin công ty"}
+
+        # Contract stats
+        cur.execute("""
+            SELECT COUNT(*) as total,
+                   COUNT(*) FILTER (WHERE status = 'active') as active,
+                   COUNT(*) FILTER (WHERE status = 'expired') as expired
+            FROM contracts WHERE company_id = %s AND status != 'deleted'
+        """, (company_id,))
+        contract_stats = cur.fetchone()
+
+        # Document stats
+        cur.execute("""
+            SELECT COUNT(*) as total,
+                   COUNT(DISTINCT doc_type) as doc_types
+            FROM documents WHERE company_id = %s
+        """, (company_id,))
+        doc_stats = cur.fetchone()
+
+        # User count
+        cur.execute("SELECT COUNT(*) as total FROM users WHERE company_id = %s", (company_id,))
+        user_stats = cur.fetchone()
+
+    result = dict(company)
+    result["created_at"] = str(result["created_at"]) if result.get("created_at") else None
+    result["contracts"] = dict(contract_stats) if contract_stats else {}
+    result["documents"] = dict(doc_stats) if doc_stats else {}
+    result["users"] = dict(user_stats) if user_stats else {}
+
+    return result
+
+
+# ============================================
+# Agent Loop (non-streaming)
+# ============================================
+
+async def run_agent(
+    question: str,
+    company_id: str,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    chat_history: Optional[list] = None
+) -> dict:
+    """
+    Agent loop:
+    1. Send user question + tools to Claude
+    2. If Claude returns tool_use → execute tool → feed result back
+    3. Repeat until Claude returns text response (no more tool calls)
+    4. Return final text + all citations collected from tool calls
+    """
+    messages = []
+    if chat_history:
+        for msg in chat_history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": question})
+
+    all_citations = []
+    total_input_tokens = 0
+    total_output_tokens = 0
+    max_iterations = 5
+
+    for i in range(max_iterations):
+        response = await _call_claude_with_tools(messages, TOOLS)
+
+        usage = response.get("usage", {})
+        total_input_tokens += usage.get("input_tokens", 0)
+        total_output_tokens += usage.get("output_tokens", 0)
+
+        content_blocks = response.get("content", [])
+        stop_reason = response.get("stop_reason", "")
+
+        # Check for tool_use blocks
+        tool_uses = [b for b in content_blocks if b.get("type") == "tool_use"]
+
+        if not tool_uses or stop_reason == "end_turn":
+            # Final text response — no more tool calls
+            if not tool_uses:
+                text_parts = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
+                final_text = "".join(text_parts)
+                return {
+                    "answer": final_text,
+                    "citations": all_citations,
+                    "input_tokens": total_input_tokens,
+                    "output_tokens": total_output_tokens,
+                    "model": response.get("model", "claude-sonnet-4-20250514"),
+                    "tool_calls_made": i
+                }
+
+        # Execute tools and feed results back
+        messages.append({"role": "assistant", "content": content_blocks})
+
+        tool_results = []
+        for tool_use in tool_uses:
+            tool_name = tool_use.get("name", "")
+            tool_input = tool_use.get("input", {})
+            tool_id = tool_use.get("id", "")
+
+            try:
+                result = await execute_tool(tool_name, tool_input, company_id)
+            except Exception as e:
+                result = {"error": f"Tool execution failed: {str(e)}"}
+
+            # Collect citations from search_law
+            if tool_name == "search_law" and "citations" in result:
+                all_citations.extend(result["citations"])
+
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_id,
+                "content": json.dumps(result, ensure_ascii=False, default=str)[:12000]
+            })
+
+        messages.append({"role": "user", "content": tool_results})
+
+    # Max iterations reached
+    return {
+        "answer": "Xin lỗi, tôi không thể xử lý yêu cầu này trong số bước cho phép. Vui lòng thử lại với câu hỏi cụ thể hơn.",
+        "citations": all_citations,
+        "input_tokens": total_input_tokens,
+        "output_tokens": total_output_tokens,
+        "model": "claude-sonnet-4-20250514",
+        "tool_calls_made": max_iterations
+    }
+
+
+# ============================================
+# Agent Loop (streaming with SSE)
+# ============================================
+
+TOOL_STATUS_LABELS = {
+    "search_law": "🔍 Đang tra cứu văn bản pháp luật...",
+    "read_contract": "📋 Đang đọc hợp đồng...",
+    "list_contracts": "📋 Đang liệt kê hợp đồng...",
+    "search_company_docs": "📄 Đang tìm kiếm tài liệu nội bộ...",
+    "analyze_contract_risk": "⚖️ Đang phân tích rủi ro hợp đồng...",
+    "draft_document": "✍️ Đang chuẩn bị soạn thảo văn bản...",
+    "get_company_profile": "🏢 Đang lấy thông tin công ty..."
+}
+
+
+async def run_agent_stream(
+    question: str,
+    company_id: str,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    chat_history: Optional[list] = None
+) -> AsyncGenerator[str, None]:
+    """
+    Streaming agent loop. Yields SSE events:
+    - {"type": "tool_status", "tool": "search_law", "status": "running", "label": "🔍 Đang tra cứu..."}
+    - {"type": "tool_status", "tool": "search_law", "status": "done"}
+    - {"type": "citations", "citations": [...]}
+    - {"type": "delta", "text": "chunk"}
+    - {"type": "done", "session_id": "...", "citations": [...]}
+    - {"type": "error", "message": "..."}
+    """
+    messages = []
+    if chat_history:
+        for msg in chat_history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": question})
+
+    all_citations = []
+    max_iterations = 5
+    full_response_text = []
+
+    for iteration in range(max_iterations):
+        # For non-final iterations, use non-streaming to get tool calls
+        # For final iteration (text response), use streaming
+        response = await _call_claude_with_tools(messages, TOOLS)
+        content_blocks = response.get("content", [])
+        stop_reason = response.get("stop_reason", "")
+
+        tool_uses = [b for b in content_blocks if b.get("type") == "tool_use"]
+
+        if not tool_uses:
+            # Final text response — now re-call with streaming for the text
+            # Actually, we already have the text from non-streaming call
+            text_parts = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
+            final_text = "".join(text_parts)
+
+            # Send citations first
+            if all_citations:
+                yield f"data: {json.dumps({'type': 'citations', 'citations': all_citations}, ensure_ascii=False)}\n\n"
+
+            # Stream the text in chunks for smooth UX
+            chunk_size = 20
+            for i in range(0, len(final_text), chunk_size):
+                chunk = final_text[i:i+chunk_size]
+                yield f"data: {json.dumps({'type': 'delta', 'text': chunk}, ensure_ascii=False)}\n\n"
+                full_response_text.append(chunk)
+
+            # Done
+            yield f"data: {json.dumps({'type': 'done', 'session_id': session_id, 'citations': all_citations}, ensure_ascii=False)}\n\n"
+            return
+
+        # Tool calls needed — execute them
+        messages.append({"role": "assistant", "content": content_blocks})
+
+        tool_results = []
+        for tool_use in tool_uses:
+            tool_name = tool_use.get("name", "")
+            tool_input = tool_use.get("input", {})
+            tool_id = tool_use.get("id", "")
+
+            # Notify frontend
+            label = TOOL_STATUS_LABELS.get(tool_name, f"🔧 Đang xử lý {tool_name}...")
+            yield f"data: {json.dumps({'type': 'tool_status', 'tool': tool_name, 'status': 'running', 'label': label}, ensure_ascii=False)}\n\n"
+
+            try:
+                result = await execute_tool(tool_name, tool_input, company_id)
+            except Exception as e:
+                result = {"error": str(e)}
+
+            if tool_name == "search_law" and "citations" in result:
+                all_citations.extend(result["citations"])
+
+            yield f"data: {json.dumps({'type': 'tool_status', 'tool': tool_name, 'status': 'done'}, ensure_ascii=False)}\n\n"
+
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_id,
+                "content": json.dumps(result, ensure_ascii=False, default=str)[:12000]
+            })
+
+        messages.append({"role": "user", "content": tool_results})
+
+    # Max iterations
+    yield f"data: {json.dumps({'type': 'error', 'message': 'Đã vượt quá số bước xử lý cho phép'}, ensure_ascii=False)}\n\n"
+
+
+async def run_agent_stream_final_text(
+    question: str,
+    company_id: str,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    chat_history: Optional[list] = None
+) -> AsyncGenerator[str, None]:
+    """
+    Enhanced streaming: tool calls use non-streaming, final text uses true streaming.
+    Yields same SSE events as run_agent_stream.
+    """
+    messages = []
+    if chat_history:
+        for msg in chat_history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": question})
+
+    all_citations = []
+    max_iterations = 5
+    full_response_parts = []
+
+    for iteration in range(max_iterations):
+        response = await _call_claude_with_tools(messages, TOOLS)
+        content_blocks = response.get("content", [])
+
+        tool_uses = [b for b in content_blocks if b.get("type") == "tool_use"]
+
+        if not tool_uses:
+            # Final iteration — re-request with streaming for smooth text delivery
+            # Send citations
+            if all_citations:
+                yield f"data: {json.dumps({'type': 'citations', 'citations': all_citations}, ensure_ascii=False)}\n\n"
+
+            # Consulted laws
+            seen_laws = set()
+            consulted = []
+            for c in all_citations:
+                key = f"{c.get('source', '')} ({c.get('law_number', '')})"
+                if key not in seen_laws:
+                    seen_laws.add(key)
+                    consulted.append(key)
+            if consulted:
+                yield f"data: {json.dumps({'type': 'sources', 'laws_consulted': consulted[:15]}, ensure_ascii=False)}\n\n"
+
+            # Stream the final text using true streaming
+            try:
+                async for event in _call_claude_with_tools_stream(messages, TOOLS):
+                    event_type = event.get("type", "")
+                    if event_type == "content_block_delta":
+                        delta = event.get("delta", {})
+                        if delta.get("type") == "text_delta":
+                            text = delta.get("text", "")
+                            full_response_parts.append(text)
+                            yield f"data: {json.dumps({'type': 'delta', 'text': text}, ensure_ascii=False)}\n\n"
+                    elif event_type == "message_stop":
+                        break
+            except Exception as e:
+                # Fallback: use the non-streamed response
+                text_parts = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
+                final_text = "".join(text_parts)
+                chunk_size = 20
+                for ci in range(0, len(final_text), chunk_size):
+                    chunk = final_text[ci:ci+chunk_size]
+                    full_response_parts.append(chunk)
+                    yield f"data: {json.dumps({'type': 'delta', 'text': chunk}, ensure_ascii=False)}\n\n"
+
+            yield f"data: {json.dumps({'type': 'done', 'session_id': session_id, 'citations': all_citations}, ensure_ascii=False)}\n\n"
+            return
+
+        # Tool calls — execute
+        messages.append({"role": "assistant", "content": content_blocks})
+
+        tool_results = []
+        for tool_use in tool_uses:
+            tool_name = tool_use.get("name", "")
+            tool_input = tool_use.get("input", {})
+            tool_id = tool_use.get("id", "")
+
+            label = TOOL_STATUS_LABELS.get(tool_name, f"🔧 Đang xử lý {tool_name}...")
+            yield f"data: {json.dumps({'type': 'tool_status', 'tool': tool_name, 'status': 'running', 'label': label}, ensure_ascii=False)}\n\n"
+
+            try:
+                result = await execute_tool(tool_name, tool_input, company_id)
+            except Exception as e:
+                result = {"error": str(e)}
+
+            if tool_name == "search_law" and "citations" in result:
+                all_citations.extend(result["citations"])
+
+            yield f"data: {json.dumps({'type': 'tool_status', 'tool': tool_name, 'status': 'done'}, ensure_ascii=False)}\n\n"
+
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_id,
+                "content": json.dumps(result, ensure_ascii=False, default=str)[:12000]
+            })
+
+        messages.append({"role": "user", "content": tool_results})
+
+    yield f"data: {json.dumps({'type': 'error', 'message': 'Đã vượt quá số bước xử lý cho phép'}, ensure_ascii=False)}\n\n"

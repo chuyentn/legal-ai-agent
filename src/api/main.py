@@ -33,6 +33,9 @@ JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "your-super-secret-jwt-key-change-
 from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates
 # from .middleware.logging import PlatformLoggingMiddleware  # disabled for deploy
 
+# Import agent (initialized after DB functions are defined)
+from ..agents import legal_agent
+
 app = FastAPI(
     title="Legal AI Agent API",
     description="AI-powered Vietnamese Legal Assistant - Tư vấn pháp luật, soạn thảo văn bản, rà soát hợp đồng",
