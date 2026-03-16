@@ -4225,6 +4225,51 @@ console.log(data);</code></pre>
             }
         }
 
+        // Setup document upload drop zone
+        function setupDocumentDropZone() {
+            const uploadZone = document.getElementById('uploadZone');
+            if (!uploadZone) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, () => {
+                    uploadZone.style.borderColor = 'var(--accent)';
+                    uploadZone.style.background = 'var(--accent-bg)';
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, () => {
+                    uploadZone.style.borderColor = '';
+                    uploadZone.style.background = '';
+                }, false);
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const input = document.getElementById('documentUpload');
+                    input.files = files;
+                    uploadDocument({ target: input });
+                }
+            }, false);
+        }
+
+        // Call setupDocumentDropZone when documents page loads
+        const originalShowPage = showPage;
+        showPage = function(pageName) {
+            originalShowPage(pageName);
+            if (pageName === 'documents') {
+                setTimeout(setupDocumentDropZone, 100);
+            }
+        };
+
         // ===== SEARCH =====
         function selectDomain(domain) {
             selectedDomain = domain;

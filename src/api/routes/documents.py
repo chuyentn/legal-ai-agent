@@ -17,7 +17,6 @@ import PyPDF2
 import docx
 
 from ..middleware.auth import get_db, get_current_user, require_role
-from ..main import call_claude
 
 router = APIRouter(prefix="/v1/documents", tags=["Documents"])
 
@@ -491,6 +490,7 @@ VĂN BẢN:
         
         # Call Claude for analysis
         try:
+            from ..main import call_claude
             result = await call_claude(system_prompt, user_message, max_tokens=4096)
             
             # Parse JSON response
@@ -586,6 +586,7 @@ VĂN BẢN 2 ({doc2['name']}):
 {doc2['extracted_text'][:15000]}"""
         
         try:
+            from ..main import call_claude
             result = await call_claude(system_prompt, user_message, max_tokens=4096)
             
             # Parse JSON response
