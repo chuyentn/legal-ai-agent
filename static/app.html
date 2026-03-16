@@ -5372,9 +5372,12 @@ Báo cáo được tạo bởi Legal AI Agent
                 formData.append('file', fileInput.files[0]);
             }
             
-            formData.append('title', document.getElementById('contractTitle').value);
+            formData.append('name', document.getElementById('contractTitle').value);
             formData.append('contract_type', document.getElementById('contractType').value);
-            formData.append('parties', document.getElementById('contractParties').value);
+            // Backend expects JSON array string for parties
+            const partiesStr = document.getElementById('contractParties').value;
+            const partiesArr = partiesStr ? partiesStr.split(',').map(p => p.trim()).filter(Boolean) : [];
+            formData.append('parties', JSON.stringify(partiesArr));
             formData.append('start_date', document.getElementById('contractStartDate').value);
             formData.append('end_date', document.getElementById('contractEndDate').value);
             formData.append('value', document.getElementById('contractValue').value || '0');
