@@ -4215,39 +4215,16 @@ console.log(data);</code></pre>
         // ===== NAVIGATION =====
         function showPage(pageName) {
             const nextPage = document.getElementById(pageName + 'Page');
-            if (!nextPage) return;
+            if (!nextPage) { console.error('Page not found:', pageName + 'Page'); return; }
             
-            // Clear any lingering transition styles from all pages
+            // Simple page switch - no JS animation (CSS handles it via @keyframes crossfade)
             document.querySelectorAll('.page').forEach(p => {
+                p.classList.remove('active');
                 p.style.transition = '';
                 p.style.opacity = '';
                 p.style.transform = '';
             });
-            
-            const currentPage = document.querySelector('.page.active');
-            
-            if (currentPage && currentPage !== nextPage) {
-                // Immediate switch - remove active from current, add to next
-                currentPage.classList.remove('active');
-                nextPage.classList.add('active');
-                
-                // Animate next page in
-                nextPage.style.opacity = '0';
-                nextPage.style.transform = 'translateY(10px)';
-                requestAnimationFrame(() => {
-                    nextPage.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                    nextPage.style.opacity = '1';
-                    nextPage.style.transform = 'translateY(0)';
-                    // Clean up transition after animation
-                    setTimeout(() => {
-                        nextPage.style.transition = '';
-                        nextPage.style.opacity = '';
-                        nextPage.style.transform = '';
-                    }, 350);
-                });
-            } else if (!currentPage) {
-                nextPage.classList.add('active');
-            }
+            nextPage.classList.add('active');
             
             // Update nav items
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
