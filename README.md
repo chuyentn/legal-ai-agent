@@ -1,6 +1,6 @@
 # ⚖️ AI Legal Agent
 
-> **Created by [Hiếu Nguyễn](https://github.com/Paparusi)** — Trader turned Builder 🇻🇳
+> **Created by [Lê Minh Hiếu](https://github.com/Paparusi)** — Trader turned Builder 🇻🇳
 
 **Trợ lý pháp lý AI cho doanh nghiệp Việt Nam**
 
@@ -223,4 +223,4 @@ MIT — sử dụng tự do, kể cả thương mại.
 
 ---
 
-Made with ❤️ by [Hiếu Nguyễn](https://github.com/Paparusi) 🇻🇳
+Made with ❤️ by [Lê Minh Hiếu](https://github.com/Paparusi) 🇻🇳
