@@ -115,13 +115,59 @@ Open http://localhost:8080/static/app.html
 ### 🐳 Docker (Recommended)
 
 ```bash
-cp .env.example .env
-# Edit .env with your credentials
+# 1. Clone
+git clone https://github.com/Paparusi/legal-ai-agent.git
+cd legal-ai-agent
 
+# 2. Configure
+cp .env.example .env
+nano .env  # Add your ANTHROPIC_API_KEY
+
+# 3. Start (PostgreSQL + App)
 docker compose up -d
+
+# 4. Open
+# http://localhost:8080/static/app.html
 ```
 
-This starts PostgreSQL (with pgvector) and the FastAPI app. Open http://localhost:8080/static/app.html
+This starts PostgreSQL 15 (with pgvector) and the FastAPI app automatically.
+
+#### 🖥️ Self-hosted (NAS / Xpenology / Synology)
+
+Works on any Docker-capable device — NAS, Raspberry Pi, VPS, or local server.
+
+```bash
+# SSH into your NAS/server
+git clone https://github.com/Paparusi/legal-ai-agent.git
+cd legal-ai-agent
+cp .env.example .env
+
+# Edit .env — only ANTHROPIC_API_KEY is required
+nano .env
+
+# Start
+docker compose up -d
+
+# Access from any device on your network:
+# http://NAS_IP:8080/static/app.html
+```
+
+**System requirements:**
+- Docker + Docker Compose
+- 512MB RAM minimum (1GB recommended)
+- 1GB disk space
+- Any CPU (x86_64 or ARM64)
+
+**Ports:** `8080` (web UI), `5432` (PostgreSQL, optional external access)
+
+**Persistent data:** PostgreSQL data is stored in a Docker volume (`pgdata`). Your data survives container restarts and updates.
+
+**Update to latest version:**
+```bash
+git pull
+docker compose build
+docker compose up -d
+```
 
 ## 📁 Project Structure
 
