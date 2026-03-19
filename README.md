@@ -17,20 +17,6 @@ An AI platform for legal research, contract review, and legal document drafting 
 
 ---
 
-## 🚀 Used in Production
-
-This project powers **[FundGo Law AI](https://ai.fundgolaw.vn)** 🇻🇳 — a real-world Vietnamese legal AI platform serving businesses across Vietnam.
-
-**Production Stats:**
-- 📚 **40,000+** Vietnamese legal documents indexed
-- 🔍 **97,000+** searchable chunks
-- ⚖️ **11 AI-powered tools** for legal research & contract review
-- 🏢 Serving **real clients** with contract analysis, compliance checks, and legal drafting
-
-Trusted, tested, and battle-proven in real legal workflows.
-
----
-
 ## 📸 Screenshots
 
 <p align="center">
