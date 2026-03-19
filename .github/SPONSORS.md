@@ -18,7 +18,6 @@ This project provides **free, open-source AI legal assistance** for Vietnamese b
 - 🇻🇳 **Support** Vietnamese open-source development
 - ⚖️ **Democratize** legal tech access for small businesses
 
-Currently used in production at **[FundGo Law](https://ai.fundgolaw.vn)** 🇻🇳
 
 ---
 
