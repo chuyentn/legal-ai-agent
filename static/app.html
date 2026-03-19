@@ -2101,6 +2101,46 @@
                         <button class="btn btn-secondary btn-small" style="margin-top:0.75rem;" onclick="saveNotifPrefs()">💾 Lưu thông báo</button>
                     </div>
 
+                    <!-- LLM Provider Settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-title">🤖 AI Provider</div>
+                        <form class="settings-form" onsubmit="saveLLMSettings(event)">
+                            <div class="form-group">
+                                <label class="form-label">Nhà cung cấp</label>
+                                <select class="form-input" id="llmProvider" onchange="updateLLMProviderUI()">
+                                    <option value="anthropic">Anthropic (Claude)</option>
+                                    <option value="openai">OpenAI (GPT)</option>
+                                    <option value="google">Google (Gemini)</option>
+                                    <option value="custom">Custom API</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">API Key</label>
+                                <div style="position: relative;">
+                                    <input type="password" class="form-input" id="llmApiKey" placeholder="sk-...">
+                                    <button type="button" class="icon-btn" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" onclick="toggleLLMApiKeyVisibility()" title="Hiện/Ẩn">👁️</button>
+                                </div>
+                            </div>
+                            <div class="form-group" id="llmModelGroup">
+                                <label class="form-label">Model</label>
+                                <select class="form-input" id="llmModel">
+                                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="oauthButtons" style="display: none;">
+                                <button type="button" class="btn btn-secondary btn-small" onclick="connectOAuth('openai')">🔗 Kết nối với OpenAI</button>
+                                <button type="button" class="btn btn-secondary btn-small" onclick="connectOAuth('google')">🔗 Kết nối với Google</button>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button type="submit" class="btn btn-primary btn-small">💾 Lưu cấu hình</button>
+                                <button type="button" class="btn btn-secondary btn-small" onclick="testLLMConnection()">🔌 Test kết nối</button>
+                                <div id="llmConnectionStatus" style="font-size: 0.75rem; margin-left: 0.5rem;"></div>
+                            </div>
+                        </form>
+                    </div>
+
                     <!-- Data Export -->
                     <div class="settings-card">
                         <div class="settings-card-title">📦 Dữ liệu</div>
@@ -2471,6 +2511,10 @@
                 const tabId = 'api-page';
                 createTabContentPane(tabId, getApiTabHTML());
                 addTab({ id: tabId, title: 'API & Tích hợp', icon: '🔑', type: 'api' });
+            } else if (type === 'contract-review') {
+                const tabId = 'contract-review';
+                createTabContentPane(tabId, getContractReviewTabHTML());
+                addTab({ id: tabId, title: 'Rà soát Hợp đồng', icon: '🔍', type: 'contract-review' });
             } else if (type === 'search-results') {
                 const tabId = 'search-results';
                 createTabContentPane(tabId, '<div class="search-results-tab" id="searchResultsCenter"><div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">Kết quả tìm kiếm sẽ hiển thị ở đây</div></div></div>');
@@ -2485,6 +2529,7 @@
             menu.style.cssText = `position: fixed; top: 40px; left: ${document.querySelector('.tab-add').getBoundingClientRect().left}px;`;
             menu.innerHTML = `
                 <div class="context-menu-item" onclick="openTabByType('contracts'); this.closest('.context-menu').remove();">📁 Hợp đồng</div>
+                <div class="context-menu-item" onclick="openTabByType('contract-review'); this.closest('.context-menu').remove();">🔍 Rà soát Hợp đồng</div>
                 <div class="context-menu-item" onclick="openTabByType('documents'); this.closest('.context-menu').remove();">📂 Tài liệu</div>
                 <div class="context-menu-item" onclick="openTabByType('templates'); this.closest('.context-menu').remove();">📋 Mẫu văn bản</div>
                 <div class="context-menu-item" onclick="openTabByType('search-results'); this.closest('.context-menu').remove();">🔍 Tìm kiếm</div>
@@ -2657,6 +2702,81 @@ console.log(await resp.json());</code></pre>
             </div>`;
         }
 
+        // ===== CONTRACT REVIEW TAB HTML =====
+        function getContractReviewTabHTML() {
+            return `<div class="contract-review-tab" style="padding: 1.5rem; max-width: 1000px; margin: 0 auto;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-active); margin-bottom: 0.5rem;">🔍 Rà soát Hợp đồng</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">AI phân tích rủi ro, điều khoản, và tuân thủ pháp luật Việt Nam</p>
+                
+                <!-- Upload Area -->
+                <div id="reviewUploadArea">
+                    <div class="upload-zone" style="margin-bottom: 1rem;" onclick="document.getElementById('reviewFileInput').click()">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+                        <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem;">Kéo thả file hoặc bấm để chọn</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Hỗ trợ: PDF, DOCX, DOC • Tối đa 50MB</div>
+                        <input type="file" id="reviewFileInput" style="display:none" accept=".pdf,.docx,.doc" onchange="handleReviewFileSelect(event)">
+                    </div>
+                    
+                    <div style="text-align: center; color: var(--text-muted); margin: 1rem 0;">— hoặc —</div>
+                    
+                    <textarea id="reviewTextInput" class="form-input form-textarea" placeholder="📝 Dán nội dung hợp đồng vào đây..." style="min-height: 120px; width: 100%; margin-bottom: 1rem;"></textarea>
+                    
+                    <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                        <button class="btn btn-primary" onclick="startReview()">
+                            <span id="reviewBtnIcon">🔍</span>
+                            <span id="reviewBtnText">Bắt đầu rà soát</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearReviewInput()">🗑️ Xóa</button>
+                    </div>
+                </div>
+                
+                <!-- Review Results Dashboard -->
+                <div id="reviewResults" class="hidden" style="margin-top: 2rem;">
+                    <!-- Risk Score Gauge -->
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; text-align: center;">
+                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted); margin-bottom: 1rem;">MỨC ĐỘ RỦI RO TỔNG THỂ</div>
+                        <div id="riskGauge" style="width: 160px; height: 160px; margin: 0 auto 1rem; position: relative;">
+                            <svg viewBox="0 0 160 160" style="transform: rotate(-90deg);">
+                                <circle cx="80" cy="80" r="70" fill="none" stroke="var(--border)" stroke-width="12"/>
+                                <circle id="riskGaugeCircle" cx="80" cy="80" r="70" fill="none" stroke-width="12" stroke-dasharray="439.8" stroke-dashoffset="439.8" stroke-linecap="round" style="transition: stroke-dashoffset 1s ease, stroke 0.5s ease;"/>
+                            </svg>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                <div id="riskScore" style="font-size: 2.5rem; font-weight: 800; line-height: 1;">0</div>
+                                <div id="riskLabel" style="font-size: 0.75rem; font-weight: 600; margin-top: 4px;">THẤP</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Card -->
+                    <div id="summaryCard" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;"></div>
+                    
+                    <!-- Clause Analysis -->
+                    <div style="margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-active); margin-bottom: 0.75rem;">⚠️ Điều khoản cần lưu ý</h3>
+                        <div id="clauseAnalysis"></div>
+                    </div>
+                    
+                    <!-- Missing Clauses -->
+                    <div id="missingClausesSection" style="margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-active); margin-bottom: 0.75rem;">➕ Điều khoản thiếu</h3>
+                        <div id="missingClauses"></div>
+                    </div>
+                    
+                    <!-- Compliance Status -->
+                    <div style="margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-active); margin-bottom: 0.75rem;">📋 Tuân thủ pháp luật</h3>
+                        <div id="complianceGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem;"></div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-active); margin-bottom: 0.75rem;">💡 Khuyến nghị</h3>
+                        <div id="recommendations"></div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
         function renderTemplatesGrid() {
             const grid = document.getElementById('templatesGridCenter');
             if (!grid) return;
@@ -2744,6 +2864,247 @@ console.log(await resp.json());</code></pre>
                     <button class="icon-btn" onclick="event.stopPropagation(); deleteDocument('${doc.id}')" title="Xóa">🗑️</button>
                 </div>
             `).join('');
+        }
+
+        // ===== CONTRACT REVIEW FUNCTIONS =====
+        let currentReviewData = null;
+        
+        function handleReviewFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            const validTypes = ['.pdf', '.doc', '.docx'];
+            const fileName = file.name.toLowerCase();
+            if (!validTypes.some(ext => fileName.endsWith(ext))) {
+                showToast('Chỉ hỗ trợ file PDF, DOC, DOCX', 'error');
+                return;
+            }
+            
+            // Validate file size (50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                showToast('File không được vượt quá 50MB', 'error');
+                return;
+            }
+            
+            // Store file for review
+            currentReviewData = { type: 'file', file: file };
+            showToast(`Đã chọn file: ${escapeHtml(file.name)}`, 'success');
+        }
+        
+        function clearReviewInput() {
+            document.getElementById('reviewFileInput').value = '';
+            document.getElementById('reviewTextInput').value = '';
+            currentReviewData = null;
+            document.getElementById('reviewResults').classList.add('hidden');
+            document.getElementById('reviewUploadArea').classList.remove('hidden');
+        }
+        
+        async function startReview() {
+            const textInput = document.getElementById('reviewTextInput').value.trim();
+            
+            if (!currentReviewData && !textInput) {
+                showToast('Vui lòng chọn file hoặc nhập nội dung hợp đồng', 'warning');
+                return;
+            }
+            
+            // Show loading state
+            const btnIcon = document.getElementById('reviewBtnIcon');
+            const btnText = document.getElementById('reviewBtnText');
+            btnIcon.innerHTML = '<div class="spinner"></div>';
+            btnText.textContent = 'Đang phân tích...';
+            
+            try {
+                let reviewResult;
+                
+                if (currentReviewData && currentReviewData.type === 'file') {
+                    // Upload file for review
+                    const formData = new FormData();
+                    formData.append('file', currentReviewData.file);
+                    
+                    // Note: This assumes contractId exists or API creates one
+                    // Adjust endpoint as needed based on actual backend API
+                    const contractId = 'temp-' + Date.now(); // Temporary ID
+                    const response = await apiCall(`/contracts/${contractId}/review-ai`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {} // FormData sets its own headers
+                    });
+                    
+                    reviewResult = response;
+                } else {
+                    // Review text content
+                    const response = await apiCall('/contracts/review-text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: textInput })
+                    });
+                    
+                    reviewResult = response;
+                }
+                
+                // Display results
+                displayReviewResults(reviewResult);
+                
+                // Hide upload area, show results
+                document.getElementById('reviewUploadArea').classList.add('hidden');
+                document.getElementById('reviewResults').classList.remove('hidden');
+                
+                showToast('Rà soát hoàn tất!', 'success');
+            } catch (error) {
+                console.error('Review error:', error);
+                showToast('Lỗi khi rà soát: ' + (error.message || 'Không rõ'), 'error');
+            } finally {
+                // Reset button
+                btnIcon.textContent = '🔍';
+                btnText.textContent = 'Bắt đầu rà soát';
+            }
+        }
+        
+        function displayReviewResults(data) {
+            // Risk Score Gauge
+            const riskScore = data.risk_score || 0;
+            updateRiskGauge(riskScore);
+            
+            // Summary Card
+            const summaryHtml = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Loại hợp đồng</div>
+                        <div style="font-size: 0.9rem; color: var(--text-active);">${escapeHtml(data.contract_type || 'Chưa xác định')}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Các bên</div>
+                        <div style="font-size: 0.9rem; color: var(--text-active);">${escapeHtml((data.parties || []).join(', ') || 'N/A')}</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">Tổng quan</div>
+                    <div style="font-size: 0.85rem; color: var(--text); line-height: 1.6;">${escapeHtml(data.summary || 'Không có tổng quan.')}</div>
+                </div>
+            `;
+            document.getElementById('summaryCard').innerHTML = summaryHtml;
+            
+            // Clause Analysis
+            const clauses = data.risky_clauses || [];
+            if (clauses.length === 0) {
+                document.getElementById('clauseAnalysis').innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem; text-align: center; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;">✅ Không phát hiện điều khoản có vấn đề</div>';
+            } else {
+                document.getElementById('clauseAnalysis').innerHTML = clauses.map((clause, idx) => {
+                    const riskColor = clause.risk_level === 'CRITICAL' ? 'var(--danger)' :
+                                     clause.risk_level === 'HIGH' ? 'orange' :
+                                     clause.risk_level === 'MEDIUM' ? 'var(--warning)' : 'var(--text-muted)';
+                    return `
+                        <div style="background: var(--bg-surface); border-left: 3px solid ${riskColor}; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div style="font-weight: 600; color: var(--text-active);">📌 ${escapeHtml(clause.title || `Điều khoản ${idx + 1}`)}</div>
+                                <span style="padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; background: ${riskColor}; color: white;">${escapeHtml(clause.risk_level || 'MEDIUM')}</span>
+                            </div>
+                            ${clause.category ? `<div style="display: inline-block; background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem;">${escapeHtml(clause.category)}</div>` : ''}
+                            <div style="font-size: 0.85rem; color: var(--text); margin-bottom: 0.5rem; line-height: 1.5;">${escapeHtml(clause.issue || '')}</div>
+                            ${clause.law_reference ? `<div style="background: rgba(99,102,241,0.08); border-left: 2px solid var(--accent); padding: 0.5rem; margin: 0.5rem 0; border-radius: 4px; font-size: 0.8rem; color: var(--text-secondary);">📚 ${escapeHtml(clause.law_reference)}</div>` : ''}
+                            ${clause.suggestion ? `
+                                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">💡 Đề xuất sửa đổi:</div>
+                                    <div style="font-size: 0.82rem; color: var(--text-secondary); background: var(--bg-elevated); padding: 0.5rem; border-radius: 6px; position: relative;">
+                                        ${escapeHtml(clause.suggestion)}
+                                        <button class="icon-btn" style="position: absolute; top: 4px; right: 4px;" onclick="copyToClipboard(\`${escapeHtml(clause.suggestion).replace(/`/g, '\\`')}\`)" title="Sao chép">📋</button>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Missing Clauses
+            const missing = data.missing_clauses || [];
+            if (missing.length === 0) {
+                document.getElementById('missingClausesSection').classList.add('hidden');
+            } else {
+                document.getElementById('missingClausesSection').classList.remove('hidden');
+                document.getElementById('missingClauses').innerHTML = missing.map(m => `
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; display: flex; align-items: start; gap: 0.5rem;">
+                        <span style="font-size: 1rem;">➕</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--text-active); font-size: 0.85rem; margin-bottom: 0.25rem;">${escapeHtml(m.title || m.name || 'Điều khoản')}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(m.reason || m.description || '')}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Compliance Status
+            const compliance = data.compliance || {
+                'Bộ Luật Dân Sự 2015': 'PASS',
+                'Luật Thương Mại 2005': 'PASS',
+                'Bộ Luật Lao Động 2019': 'UNKNOWN',
+                'Luật Doanh Nghiệp 2020': 'PASS'
+            };
+            
+            document.getElementById('complianceGrid').innerHTML = Object.entries(compliance).map(([law, status]) => {
+                const icon = status === 'PASS' ? '✅' : status === 'FAIL' ? '❌' : '⚠️';
+                const color = status === 'PASS' ? 'var(--success)' : status === 'FAIL' ? 'var(--danger)' : 'var(--warning)';
+                return `
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.5rem;">${icon}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-active); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(law)}</div>
+                            <div style="font-size: 0.7rem; color: ${color};">${status === 'PASS' ? 'Tuân thủ' : status === 'FAIL' ? 'Không tuân thủ' : 'Chưa rõ'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Recommendations
+            const recommendations = data.recommendations || [];
+            if (recommendations.length === 0) {
+                document.getElementById('recommendations').innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem; text-align: center; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;">Không có khuyến nghị đặc biệt.</div>';
+            } else {
+                document.getElementById('recommendations').innerHTML = `<ol style="margin: 0; padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">${recommendations.map(rec => `<li style="font-size: 0.85rem; color: var(--text); line-height: 1.6;">${escapeHtml(rec)}</li>`).join('')}</ol>`;
+            }
+        }
+        
+        function updateRiskGauge(score) {
+            const circle = document.getElementById('riskGaugeCircle');
+            const scoreEl = document.getElementById('riskScore');
+            const labelEl = document.getElementById('riskLabel');
+            
+            // Calculate progress (0-100 -> 0-439.8 circumference)
+            const circumference = 439.8;
+            const progress = circumference - (score / 100) * circumference;
+            
+            // Determine color and label
+            let color, label;
+            if (score <= 25) {
+                color = 'var(--success)';
+                label = 'THẤP';
+            } else if (score <= 50) {
+                color = 'var(--warning)';
+                label = 'TRUNG BÌNH';
+            } else if (score <= 75) {
+                color = 'orange';
+                label = 'CAO';
+            } else {
+                color = 'var(--danger)';
+                label = 'NGHIÊM TRỌNG';
+            }
+            
+            // Animate
+            circle.style.stroke = color;
+            circle.style.strokeDashoffset = progress;
+            scoreEl.textContent = score;
+            scoreEl.style.color = color;
+            labelEl.textContent = label;
+            labelEl.style.color = color;
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Đã sao chép!', 'success');
+            }).catch(err => {
+                showToast('Không thể sao chép', 'error');
+            });
         }
 
         // ===== RESIZE HANDLES =====
@@ -4141,6 +4502,8 @@ console.log(await resp.json());</code></pre>
             // Account info
             document.getElementById('settingsPlan').textContent = currentUser?.plan || 'Trial';
             document.getElementById('settingsCreated').textContent = currentUser?.created || new Date().toLocaleDateString('vi-VN');
+            // Load LLM settings
+            loadLLMSettings();
         }
         async function saveSettings(event) {
             event.preventDefault();
@@ -4193,6 +4556,132 @@ console.log(await resp.json());</code></pre>
             const a = document.createElement('a'); a.href = url; a.download = 'contracts-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
             URL.revokeObjectURL(url);
             showToast('Đã xuất dữ liệu hợp đồng', 'success');
+        }
+
+        // ===== LLM PROVIDER SETTINGS =====
+        function updateLLMProviderUI() {
+            const provider = document.getElementById('llmProvider').value;
+            const modelGroup = document.getElementById('llmModelGroup');
+            const modelSelect = document.getElementById('llmModel');
+            const oauthButtons = document.getElementById('oauthButtons');
+            
+            // Update available models based on provider
+            if (provider === 'anthropic') {
+                modelSelect.innerHTML = `
+                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                `;
+                oauthButtons.style.display = 'none';
+            } else if (provider === 'openai') {
+                modelSelect.innerHTML = `
+                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                `;
+                oauthButtons.style.display = 'block';
+            } else if (provider === 'google') {
+                modelSelect.innerHTML = `
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-pro">Gemini Pro</option>
+                `;
+                oauthButtons.style.display = 'block';
+            } else if (provider === 'custom') {
+                modelSelect.innerHTML = `<option value="custom">Custom Model</option>`;
+                oauthButtons.style.display = 'none';
+            }
+        }
+        
+        function toggleLLMApiKeyVisibility() {
+            const input = document.getElementById('llmApiKey');
+            const currentType = input.type;
+            input.type = currentType === 'password' ? 'text' : 'password';
+        }
+        
+        function saveLLMSettings(event) {
+            event.preventDefault();
+            const provider = document.getElementById('llmProvider').value;
+            const apiKey = document.getElementById('llmApiKey').value.trim();
+            const model = document.getElementById('llmModel').value;
+            
+            if (!apiKey && provider !== 'custom') {
+                showToast('Vui lòng nhập API Key', 'warning');
+                return;
+            }
+            
+            const config = { provider, apiKey, model, updatedAt: new Date().toISOString() };
+            localStorage.setItem('llmConfig', JSON.stringify(config));
+            
+            // Update connection status
+            document.getElementById('llmConnectionStatus').innerHTML = '<span style="color: var(--success);">✅ Đã lưu</span>';
+            setTimeout(() => {
+                document.getElementById('llmConnectionStatus').innerHTML = '';
+            }, 2000);
+            
+            showToast('Đã lưu cấu hình AI Provider', 'success');
+        }
+        
+        async function testLLMConnection() {
+            const provider = document.getElementById('llmProvider').value;
+            const apiKey = document.getElementById('llmApiKey').value.trim();
+            const model = document.getElementById('llmModel').value;
+            
+            if (!apiKey && provider !== 'custom') {
+                showToast('Vui lòng nhập API Key trước', 'warning');
+                return;
+            }
+            
+            const statusEl = document.getElementById('llmConnectionStatus');
+            statusEl.innerHTML = '<div class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></div> <span style="color: var(--text-muted); font-size: 0.75rem;">Đang kiểm tra...</span>';
+            
+            try {
+                // Send test request to backend
+                const response = await apiCall('/llm/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, apiKey, model })
+                });
+                
+                if (response.success) {
+                    statusEl.innerHTML = '<span style="color: var(--success);">✅ Kết nối thành công</span>';
+                    showToast('LLM Provider hoạt động tốt!', 'success');
+                } else {
+                    statusEl.innerHTML = '<span style="color: var(--danger);">❌ Lỗi</span>';
+                    showToast('Không thể kết nối: ' + (response.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                statusEl.innerHTML = '<span style="color: var(--danger);">❌ Lỗi</span>';
+                showToast('Lỗi kết nối: ' + error.message, 'error');
+            }
+            
+            setTimeout(() => {
+                statusEl.innerHTML = '';
+            }, 5000);
+        }
+        
+        function connectOAuth(provider) {
+            // OAuth flow placeholder
+            showToast(`OAuth cho ${provider} chưa được triển khai. Vui lòng nhập API Key thủ công.`, 'info');
+            
+            // In production, this would redirect to OAuth flow:
+            // window.location.href = `/auth/oauth/${provider}`;
+        }
+        
+        // Load LLM settings on settings modal open
+        function loadLLMSettings() {
+            const saved = localStorage.getItem('llmConfig');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    document.getElementById('llmProvider').value = config.provider || 'anthropic';
+                    document.getElementById('llmApiKey').value = config.apiKey || '';
+                    updateLLMProviderUI();
+                    document.getElementById('llmModel').value = config.model || '';
+                } catch (e) {
+                    console.error('Error loading LLM config:', e);
+                }
+            }
         }
 
         // ===== ENHANCED CHAT INPUT =====
