@@ -178,6 +178,20 @@ TOOLS = [
             },
             "required": ["clause_type"]
         }
+    },
+    {
+        "name": "crawl_legal_document",
+        "description": "Crawl và trích xuất nội dung từ một URL văn bản pháp luật (thuvienphapluat.vn, vbpl.vn, congbao.chinhphu.vn). Dùng khi người dùng cung cấp link văn bản pháp luật và muốn phân tích hoặc thêm vào cơ sở tri thức. CrawlKit API key bắt buộc.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL của văn bản pháp luật cần crawl"
+                }
+            },
+            "required": ["url"]
+        }
     }
 ]
 
@@ -204,6 +218,7 @@ AGENT_SYSTEM_PROMPT = """Bạn là trợ lý pháp lý AI thông minh. Bạn cha
 - Tóm tắt hợp đồng → summarize_contract
 - Kiểm tra tuân thủ pháp lý → check_legal_compliance
 - Soạn điều khoản cụ thể → generate_clause
+- Crawl URL văn bản pháp luật → crawl_legal_document (cần CrawlKit API key)
 - **KHÔNG dùng tool** cho chào hỏi, nói chuyện, câu hỏi đơn giản
 
 ## Khi trả lời pháp lý:
@@ -493,6 +508,8 @@ async def execute_tool(tool_name: str, tool_input: dict, company_id: str) -> dic
         return await _tool_get_company_profile(company_id)
     elif tool_name == "compare_contracts":
         return await _tool_compare_contracts(tool_input, company_id)
+    elif tool_name == "crawl_legal_document":
+        return await _tool_crawl_legal_document(tool_input, company_id)
     elif tool_name == "summarize_contract":
         contract_id = tool_input.get("contract_id")
         with _get_db() as conn:
@@ -589,6 +606,34 @@ async def execute_tool(tool_name: str, tool_input: dict, company_id: str) -> dic
             "context": context,
             "note": "Đây là mẫu tham khảo. AI sẽ tùy chỉnh theo bối cảnh cụ thể."
         }
+    elif tool_name == "crawl_legal_document":
+        url = tool_input.get("url", "")
+        crawlkit_key = os.getenv("CRAWLKIT_API_KEY")
+        if not crawlkit_key:
+            return {
+                "error": "⚠️ CrawlKit chưa được cấu hình. Để crawl văn bản pháp luật, vui lòng:\n\n1. Đăng ký miễn phí tại https://crawlkit.org\n2. Lấy API key\n3. Thêm CRAWLKIT_API_KEY vào file .env\n\n🆓 Free: 100 requests/ngày"
+            }
+        try:
+            from ..services.crawler import LegalCrawler
+            crawler = LegalCrawler(crawlkit_api_key=crawlkit_key)
+            crawl_result = crawler.crawl_and_index(url, company_id)
+            if crawl_result["success"]:
+                doc = crawl_result["document"]
+                return {
+                    "success": True,
+                    "title": doc['title'],
+                    "url": url,
+                    "content_length": crawl_result['content_length'],
+                    "chunks": crawl_result['chunks'],
+                    "source": doc['source'],
+                    "content_preview": doc['content'][:2000],
+                    "full_content": doc['content'],
+                    "message": f"✅ Đã crawl thành công!\n\n📄 **{doc['title']}**\n🔗 {url}\n📊 {crawl_result['content_length']:,} ký tự, {crawl_result['chunks']} chunks\n📁 Nguồn: {doc['source']}"
+                }
+            else:
+                return {"error": f"❌ Crawl thất bại: {crawl_result['error']}"}
+        except Exception as e:
+            return {"error": f"❌ Lỗi crawl: {str(e)}"}
     else:
         return {"error": f"Unknown tool: {tool_name}"}
 
@@ -901,6 +946,40 @@ async def _tool_compare_contracts(tool_input: dict, company_id: str) -> dict:
         "count": len(comparison),
         "instruction": "Hãy so sánh chi tiết các hợp đồng này. Tìm điểm khác biệt, điểm không nhất quán, và đánh giá hợp đồng nào có lợi hơn cho công ty."
     }
+
+
+async def _tool_crawl_legal_document(tool_input: dict, company_id: str) -> dict:
+    """Crawl legal document from URL using CrawlKit"""
+    url = tool_input.get("url", "")
+    crawlkit_key = os.getenv("CRAWLKIT_API_KEY")
+    
+    if not crawlkit_key:
+        return {
+            "error": "⚠️ CrawlKit chưa được cấu hình. Để crawl văn bản pháp luật, vui lòng:\n\n1. Đăng ký miễn phí tại https://crawlkit.org\n2. Lấy API key\n3. Thêm CRAWLKIT_API_KEY vào file .env\n\n🆓 Free: 100 requests/ngày"
+        }
+    
+    try:
+        from ..services.crawler import LegalCrawler
+        crawler = LegalCrawler(crawlkit_api_key=crawlkit_key)
+        crawl_result = crawler.crawl_and_index(url, company_id)
+        
+        if crawl_result["success"]:
+            doc = crawl_result["document"]
+            return {
+                "success": True,
+                "title": doc['title'],
+                "url": url,
+                "content_length": crawl_result['content_length'],
+                "chunks": crawl_result['chunks'],
+                "source": doc['source'],
+                "content_preview": doc['content'][:2000],
+                "full_content": doc['content'],
+                "message": f"✅ Đã crawl thành công!\n\n📄 **{doc['title']}**\n🔗 {url}\n📊 {crawl_result['content_length']:,} ký tự, {crawl_result['chunks']} chunks\n📁 Nguồn: {doc['source']}"
+            }
+        else:
+            return {"error": f"❌ Crawl thất bại: {crawl_result['error']}"}
+    except Exception as e:
+        return {"error": f"❌ Lỗi crawl: {str(e)}"}
 
 
 # ============================================

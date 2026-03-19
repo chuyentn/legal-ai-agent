@@ -75,6 +75,53 @@ An AI platform for legal research, contract review, and legal document drafting 
 - Command palette (Ctrl+K)
 - Keyboard shortcuts
 
+### 🕷️ Data Crawler (Powered by CrawlKit)
+Legal AI Agent can automatically crawl Vietnamese legal websites to build and update your document database.
+
+#### Supported Sources
+- 📚 **Thư Viện Pháp Luật** (thuvienphapluat.vn) — Largest Vietnamese legal document database
+- 🏛️ **Văn Bản Pháp Luật Chính Phủ** (vbpl.vn) — Official government legal portal
+- 📰 **Công Báo** (congbao.chinhphu.vn) — Official Gazette of Vietnam
+- 🌐 **Any legal website URL** — Custom legal document sources
+
+#### Setup
+1. Get your free API key at [crawlkit.org](https://crawlkit.org)
+2. Add to `.env`:
+   ```
+   CRAWLKIT_API_KEY=your_api_key_here
+   ```
+3. Start crawling!
+
+#### Usage
+
+**Via API:**
+```bash
+POST /crawler/crawl
+{
+  "url": "https://thuvienphapluat.vn/van-ban/..."
+}
+```
+
+**Via AI Chat:**
+```
+"Crawl văn bản tại https://thuvienphapluat.vn/van-ban/123"
+```
+
+**Other endpoints:**
+- `GET /crawler/sources` — List supported legal sources
+- `POST /crawler/discover` — Discover legal document links from a page
+- `POST /crawler/batch` — Batch crawl multiple URLs
+- `GET /crawler/status` — Check CrawlKit configuration
+
+#### Pricing
+- **Free:** 100 requests/day *(perfect for getting started)*
+- **Starter:** $19/mo — 10,000 requests
+- **Pro:** $79/mo — 100,000 requests
+
+[Get your free CrawlKit API key →](https://crawlkit.org)
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
