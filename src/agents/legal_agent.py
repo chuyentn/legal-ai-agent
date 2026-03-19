@@ -100,6 +100,17 @@ TOOLS = [
         }
     },
     {
+        "name": "review_contract_ai",
+        "description": "Rà soát hợp đồng với AI Contract Review Service — Phân tích 10 danh mục rủi ro, kiểm tra tuân thủ pháp luật Việt Nam (BLDS 2015, Luật TM 2005, BLLĐ 2019), đánh giá điểm rủi ro 0-100, đề xuất sửa đổi cụ thể. Dùng khi cần rà soát toàn diện hợp đồng.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "contract_id": {"type": "string", "description": "ID hợp đồng cần rà soát"}
+            },
+            "required": ["contract_id"]
+        }
+    },
+    {
         "name": "draft_document",
         "description": "Soạn thảo văn bản pháp lý mới (hợp đồng, đơn từ, quyết định, biên bản, công văn, nội quy). Dùng khi người dùng yêu cầu soạn/tạo văn bản.",
         "input_schema": {
@@ -502,6 +513,8 @@ async def execute_tool(tool_name: str, tool_input: dict, company_id: str) -> dic
         return await _tool_search_company_docs(tool_input, company_id)
     elif tool_name == "analyze_contract_risk":
         return await _tool_analyze_contract_risk(tool_input, company_id)
+    elif tool_name == "review_contract_ai":
+        return await _tool_review_contract_ai(tool_input, company_id)
     elif tool_name == "draft_document":
         return await _tool_draft_document(tool_input, company_id)
     elif tool_name == "get_company_profile":
@@ -829,6 +842,85 @@ async def _tool_analyze_contract_risk(tool_input: dict, company_id: str) -> dict
     }
 
 
+async def _tool_review_contract_ai(tool_input: dict, company_id: str) -> dict:
+    """
+    Review contract using ContractReviewService — comprehensive risk analysis
+    Returns structured review with 10 risk categories, compliance check, recommendations
+    """
+    from ..services.contract_review import ContractReviewService
+    
+    contract_id = tool_input.get("contract_id", "")
+    
+    # Read the contract
+    contract_data = await _tool_read_contract({"contract_id": contract_id}, company_id)
+    if "error" in contract_data:
+        return contract_data
+    
+    contract = contract_data["contract"]
+    contract_text = contract.get("extracted_text", "")
+    contract_type = contract.get("contract_type")
+    contract_name = contract.get("name", "Hợp đồng")
+    
+    if not contract_text or len(contract_text) < 50:
+        return {"error": "Hợp đồng chưa có nội dung để phân tích. Vui lòng upload lại file hợp đồng."}
+    
+    # Parse parties
+    parties = contract.get("parties")
+    if parties and isinstance(parties, str):
+        try:
+            parties = json.loads(parties)
+        except:
+            parties = None
+    
+    # Run contract review
+    reviewer = ContractReviewService()
+    review_result = reviewer.review_contract(
+        contract_text=contract_text,
+        contract_name=contract_name,
+        contract_type=contract_type,
+        parties=parties
+    )
+    
+    # Save review to database
+    with _get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        from datetime import datetime
+        cur.execute("""
+            UPDATE contracts
+            SET review_result = %s::jsonb,
+                metadata = COALESCE(metadata, '{}'::jsonb) || 
+                           jsonb_build_object('last_reviewed_at', %s, 'review_score', %s),
+                updated_at = NOW()
+            WHERE id = %s
+        """, (
+            json.dumps(review_result),
+            datetime.now().isoformat(),
+            review_result["risk_score"],
+            contract_id
+        ))
+        conn.commit()
+    
+    # Return structured result for AI to parse
+    return {
+        "success": True,
+        "contract_name": contract_name,
+        "risk_score": review_result["risk_score"],
+        "risk_level": review_result["risk_level"],
+        "total_issues": review_result["total_issues"],
+        "summary": review_result["summary"],
+        "key_issues": review_result["clauses"][:5],  # Top 5 issues
+        "missing_clauses": review_result["missing_clauses"],
+        "compliance_status": {
+            law: details["status"] 
+            for law, details in review_result["compliance"].items()
+        },
+        "top_recommendations": review_result["recommendations"][:3],
+        "full_review": review_result,
+        "message": f"✅ Đã rà soát hợp đồng '{contract_name}' — Phát hiện {review_result['total_issues']} vấn đề. Điểm rủi ro: {review_result['risk_score']}/100 ({review_result['risk_level']})"
+    }
+
+
 async def _tool_draft_document(tool_input: dict, company_id: str) -> dict:
     """Prepare context for document drafting"""
     doc_type = tool_input.get("doc_type", "")
@@ -1099,6 +1191,7 @@ TOOL_STATUS_LABELS = {
     "list_contracts": "📋 Đang liệt kê hợp đồng...",
     "search_company_docs": "📄 Đang tìm kiếm tài liệu nội bộ...",
     "analyze_contract_risk": "⚖️ Đang phân tích rủi ro hợp đồng...",
+    "review_contract_ai": "🤖 Đang rà soát hợp đồng với AI (10 danh mục rủi ro)...",
     "draft_document": "✍️ Đang chuẩn bị soạn thảo văn bản...",
     "get_company_profile": "🏢 Đang lấy thông tin công ty...",
     "compare_contracts": "⚖️ Đang so sánh hợp đồng...",

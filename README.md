@@ -50,6 +50,95 @@ An AI platform for legal research, contract review, and legal document drafting 
 - **Contract comparison** — Side-by-side diff of 2 contracts
 - **Company memory** — Remembers company context across chat sessions
 
+## 📋 Contract Review AI
+
+Upload contracts for instant AI-powered review:
+
+- ⚠️ **Risk identification and scoring** — 10 risk categories analyzed
+- ⚖️ **Vietnamese law compliance check** — Civil Code, Commercial Law, Labor Law
+- 💡 **Revision suggestions** — Specific amendments with legal references
+- 📊 **Clause-by-clause analysis** — Risk levels: LOW / MEDIUM / HIGH / CRITICAL
+- 📄 **8+ contract templates** — Ready-to-use Vietnamese templates
+
+### Risk Categories Analyzed
+
+1. **Điều khoản bất lợi** — One-sided clauses favoring one party
+2. **Phạt vi phạm cao** — Excessive penalty clauses (>8% per Vietnamese law)
+3. **Thời hạn bất hợp lý** — Unreasonable deadlines/terms
+4. **Thiếu điều khoản bảo vệ** — Missing protective clauses
+5. **Mâu thuẫn với luật** — Clauses contradicting Vietnamese law
+6. **Điều khoản tự động gia hạn** — Auto-renewal traps
+7. **Giới hạn trách nhiệm** — Liability limitations
+8. **Bảo mật và SHTT** — IP/confidentiality issues
+9. **Giải quyết tranh chấp** — Dispute resolution (arbitration vs court)
+10. **Force majeure** — Missing or weak force majeure
+
+### Supported Contract Types
+- Employment (Hợp đồng lao động)
+- Lease (Hợp đồng thuê mặt bằng)
+- Sale (Hợp đồng mua bán)
+- Service (Hợp đồng dịch vụ)
+- NDA / Confidentiality (Bảo mật thông tin)
+- Loan (Hợp đồng vay)
+- Agency (Hợp đồng đại lý)
+- Business Cooperation (Hợp đồng hợp tác kinh doanh)
+
+### API Usage
+
+**Review a contract:**
+```bash
+POST /v1/contracts/{contract_id}/review-ai
+```
+
+**Get review results:**
+```bash
+GET /v1/contracts/{contract_id}/review-ai
+```
+
+**Response structure:**
+```json
+{
+  "review_id": "review_20250319_143000",
+  "contract_title": "Hợp đồng thuê mặt bằng",
+  "contract_type": "lease",
+  "parties": ["Công ty A", "Công ty B"],
+  "risk_score": 72,
+  "risk_level": "HIGH",
+  "summary": "Hợp đồng có 5 điều khoản rủi ro cao...",
+  "clauses": [
+    {
+      "clause_number": "Điều 5",
+      "title": "Phạt vi phạm",
+      "content": "Bên B phải trả phạt 20%...",
+      "risk_level": "CRITICAL",
+      "risk_score": 95,
+      "issue": "Mức phạt 20% vượt quá quy định",
+      "law_reference": "Điều 301 Luật TM 2005: phạt ≤ 8%",
+      "suggestion": "Giảm mức phạt xuống ≤ 8%"
+    }
+  ],
+  "missing_clauses": [
+    {
+      "clause": "Force Majeure",
+      "importance": "HIGH",
+      "suggestion": "Thêm Điều 156 BLDS 2015"
+    }
+  ],
+  "compliance": {
+    "civil_code": {"status": "PARTIAL", "issues": 2},
+    "commercial_law": {"status": "VIOLATION", "issues": 1},
+    "labor_law": {"status": "N/A"}
+  },
+  "recommendations": [
+    {
+      "priority": 1,
+      "action": "Sửa Điều 5: giảm phạt 20% → 8%",
+      "reason": "Vi phạm Điều 301 Luật TM 2005"
+    }
+  ]
+}
+```
+
 ### 📊 Dashboard & Analytics
 - Risk Dashboard — Overview of risks across all contracts
 - Contract Calendar — Monthly contract schedule

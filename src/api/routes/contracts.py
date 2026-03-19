@@ -703,3 +703,119 @@ async def review_contract_text(
         "review": result["review"],
         "tokens_used": result["tokens"]["input"] + result["tokens"]["output"]
     }
+
+
+# ============================================
+# Contract Review AI — NEW ENDPOINTS
+# ============================================
+
+@router.post("/{contract_id}/review-ai")
+async def review_contract_ai(
+    contract_id: str,
+    current_user: Dict = Depends(get_current_user)
+):
+    """
+    AI-powered contract review using ContractReviewService
+    Analyzes risks, compliance, and provides detailed recommendations
+    """
+    from ...services.contract_review import ContractReviewService
+    
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Get contract
+        cur.execute("""
+            SELECT * FROM contracts
+            WHERE id = %s AND company_id = %s AND status != 'deleted'
+        """, (contract_id, current_user["company_id"]))
+        
+        contract = cur.fetchone()
+        if not contract:
+            raise HTTPException(status_code=404, detail="Contract not found")
+        
+        contract = dict(contract)
+        
+        # Get text
+        text = contract.get("extracted_text") or contract.get("content")
+        
+        if not text or len(text.strip()) < 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Hợp đồng chưa có nội dung để phân tích. Vui lòng upload file hợp đồng."
+            )
+        
+        # Run contract review service
+        reviewer = ContractReviewService()
+        
+        # Parse parties
+        parties = contract.get("parties")
+        if parties and isinstance(parties, str):
+            try:
+                parties = json.loads(parties)
+            except:
+                parties = None
+        
+        review_result = reviewer.review_contract(
+            contract_text=text,
+            contract_name=contract.get("name", "Hợp đồng"),
+            contract_type=contract.get("contract_type"),
+            parties=parties
+        )
+        
+        # Save review to database
+        cur.execute("""
+            UPDATE contracts
+            SET review_result = %s::jsonb,
+                metadata = COALESCE(metadata, '{}'::jsonb) || 
+                           jsonb_build_object('last_reviewed_at', %s, 'review_score', %s),
+                updated_at = NOW()
+            WHERE id = %s
+        """, (
+            json.dumps(review_result),
+            datetime.now().isoformat(),
+            review_result["risk_score"],
+            contract_id
+        ))
+        conn.commit()
+        
+        # Update usage
+        cur.execute("UPDATE companies SET used_quota = used_quota + 1 WHERE id = %s", 
+                   (current_user["company_id"],))
+        conn.commit()
+        
+        return {
+            "success": True,
+            "review": review_result,
+            "message": "Contract reviewed successfully"
+        }
+
+
+@router.get("/{contract_id}/review-ai")
+async def get_contract_review_ai(
+    contract_id: str,
+    current_user: Dict = Depends(get_current_user)
+):
+    """Get existing AI review for a contract"""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        cur.execute("""
+            SELECT review_result FROM contracts
+            WHERE id = %s AND company_id = %s AND status != 'deleted'
+        """, (contract_id, current_user["company_id"]))
+        
+        contract = cur.fetchone()
+        if not contract:
+            raise HTTPException(status_code=404, detail="Contract not found")
+        
+        review_result = contract.get("review_result")
+        if not review_result:
+            raise HTTPException(
+                status_code=404,
+                detail="No review found. Please run POST /contracts/{id}/review-ai first"
+            )
+        
+        return {
+            "success": True,
+            "review": review_result
+        }
