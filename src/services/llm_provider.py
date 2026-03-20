@@ -97,8 +97,17 @@ class AnthropicProvider(LLMProvider):
             kwargs["tools"] = tools
         
         response = self.client.messages.create(**kwargs)
+        # Convert SDK objects to dicts for compatibility
+        content = []
+        for block in response.content:
+            if hasattr(block, 'model_dump'):
+                content.append(block.model_dump())
+            elif hasattr(block, '__dict__'):
+                content.append({"type": getattr(block, 'type', 'text'), "text": getattr(block, 'text', ''), **({k: v for k, v in block.__dict__.items() if k not in ('type', 'text')})})
+            else:
+                content.append(block)
         return {
-            "content": response.content,
+            "content": content,
             "model": response.model,
             "usage": {"input": response.usage.input_tokens, "output": response.usage.output_tokens},
             "stop_reason": response.stop_reason,
