@@ -64,6 +64,8 @@ class AnthropicProvider(LLMProvider):
     
     def __init__(self, api_key: str, model: str = "claude-sonnet-4-20250514"):
         from anthropic import Anthropic
+        if not api_key:
+            raise ValueError("Anthropic API key is required. Please configure in Settings → Cài đặt LLM.")
         self.is_oauth = api_key.startswith("sk-ant-oat")
         if self.is_oauth:
             # OAuth workspace token — mimic Claude Code CLI headers
@@ -496,11 +498,15 @@ class LLMProviderManager:
                 if not row or not row.get("metadata"):
                     # Fallback to default
                     api_key = os.getenv("ANTHROPIC_API_KEY")
+                    if not api_key:
+                        raise ValueError("No LLM configured. Set up in Settings → Cài đặt LLM.")
                     return AnthropicProvider(api_key=api_key)
                 
                 llm_config = row["metadata"].get("llm_provider", {})
                 if not llm_config:
                     api_key = os.getenv("ANTHROPIC_API_KEY")
+                    if not api_key:
+                        raise ValueError("No LLM configured. Set up in Settings → Cài đặt LLM.")
                     return AnthropicProvider(api_key=api_key)
                 
                 provider_name = llm_config.get("provider", "anthropic")
