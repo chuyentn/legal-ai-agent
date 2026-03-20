@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Admin - Legal AI Super Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: rgba(99,102,241,0.15);
+            --bg: #09090b;
+            --bg-secondary: #111113;
+            --sidebar-bg: #0c0c0e;
+            --sidebar-text: #71717a;
+            --sidebar-hover: rgba(255,255,255,0.05);
+            --sidebar-active: rgba(99,102,241,0.15);
+            --card-bg: #18181b;
+            --card-border: #27272a;
+            --card-hover: #1f1f23;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
+            --success: #22c55e;
+            --success-bg: rgba(34,197,94,0.15);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245,158,11,0.15);
+            --danger: #ef4444;
+            --danger-bg: rgba(239,68,68,0.15);
+            --info: #3b82f6;
+            --info-bg: rgba(59,130,246,0.15);
+            --cyan: #06b6d4;
+            --violet: #8b5cf6;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        .hidden { display: none !important; }
+
+        /* LAYOUT */
+        .admin-layout { display: flex; min-height: 100vh; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .sidebar-logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .sidebar-logo .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--violet));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.25rem 0.75rem;
+            overflow-y: auto;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin: 0.125rem 0;
+            color: var(--sidebar-text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .sidebar-nav-item:hover {
+            background: var(--sidebar-hover);
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav-item.active {
+            background: var(--sidebar-active);
+            color: var(--primary);
+        }
+
+        .sidebar-nav-item .icon {
+            font-size: 1.125rem;
+            min-width: 1.25rem;
+        }
+
+        .sidebar-footer {
+            padding: 1.25rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .sidebar-user-info {
+            flex: 1;
+        }
+
+        .sidebar-user-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-user-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            background: var(--bg);
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--card-border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-active {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .content-wrapper {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            background: var(--card-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-card-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .stat-card-icon {
+            font-size: 1.5rem;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-change {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-card-change.positive {
+            color: var(--success);
+        }
+
+        .stat-card-change.negative {
+            color: var(--danger);
+        }
+
+        /* CARD */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* TABLE */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: var(--sidebar-hover);
+        }
+
+        /* BADGE */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-success {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        .badge-info {
+            background: var(--info-bg);
+            color: var(--info);
+        }
+
+        .badge-primary {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* BUTTON */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-hover);
+        }
+
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        /* INPUT */
+        .input {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* CHART */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1.5rem;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--card-border);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--sidebar-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* TOGGLE */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--card-border);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-input:checked + .toggle-slider {
+            background: var(--success);
+        }
+
+        .toggle-input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* UTILITIES */
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-warning {
+            color: var(--warning);
+        }
+
+        .text-danger {
+            color: var(--danger);
+        }
+
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gap-1 {
+            gap: 0.5rem;
+        }
+
+        .gap-2 {
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">⚡</div>
+                    <span>Platform Admin</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-item active" onclick="showSection('dashboard')">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="sidebar-nav-item" onclick="showSection('companies')">
+                    <span class="icon">🏢</span>
+                    <span>Công ty</span>
+                </div>
+                <div class="sidebar-nav-item" onclick="showSection('users')">
+                    <span class="icon">👥</span>
+                    <span>Người dùng</span>
+                </div>
+                <div class="sidebar-nav-item" onclick="showSection('settings')">
+                    <span class="icon">⚙️</span>
+                    <span>Cài đặt</span>
+                </div>
+                <div class="sidebar-nav-item" onclick="showSection('llm-usage')">
+                    <span class="icon">💰</span>
+                    <span>LLM Usage</span>
+                </div>
+                <div class="sidebar-nav-item" onclick="showSection('logs')">
+                    <span class="icon">📋</span>
+                    <span>Audit Logs</span>
+                </div>
+                <div class="sidebar-nav-item" onclick="showSection('maintenance')">
+                    <span class="icon">🔧</span>
+                    <span>Bảo trì</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar">SA</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="user-name">Super Admin</div>
+                        <div class="sidebar-user-role">Platform Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="header">
+                <div class="breadcrumb">
+                    <span>Platform Admin</span>
+                    <span>/</span>
+                    <span class="breadcrumb-active" id="breadcrumb-section">Dashboard</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-small" onclick="refreshData()">
+                        🔄 Làm mới
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- DASHBOARD SECTION -->
+                <div id="section-dashboard" class="section">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Tổng công ty</span>
+                                <span class="stat-card-icon">🏢</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-companies">0</div>
+                            <div class="stat-card-change positive">
+                                <span>↗</span>
+                                <span>Đang hoạt động</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Người dùng</span>
+                                <span class="stat-card-icon">👥</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-users">0</div>
+                            <div class="stat-card-change positive">
+                                <span id="stat-active-users">0</span>
+                                <span>đang hoạt động</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Tài liệu</span>
+                                <span class="stat-card-icon">📄</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-documents">0</div>
+                            <div class="stat-card-change">
+                                <span id="stat-contracts">0</span>
+                                <span>hợp đồng</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Queries hôm nay</span>
+                                <span class="stat-card-icon">💬</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-queries-today">0</div>
+                            <div class="stat-card-change">
+                                <span id="stat-queries-month">0</span>
+                                <span>trong tháng</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Luật VN</span>
+                                <span class="stat-card-icon">⚖️</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-law-docs">0</div>
+                            <div class="stat-card-change">
+                                <span id="stat-law-chunks">0</span>
+                                <span>chunks</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Storage</span>
+                                <span class="stat-card-icon">💾</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-storage">0</div>
+                            <div class="stat-card-change text-muted">
+                                <span>MB used</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Usage Trend (30 ngày)</h2>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="usageChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Top Công ty</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Công ty</th>
+                                        <th>Queries</th>
+                                        <th>Plan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-companies-list">
+                                    <tr>
+                                        <td colspan="3" class="text-muted">Đang tải...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPANIES SECTION -->
+                <div id="section-companies" class="section hidden">
+                    <div class="flex-between mb-2">
+                        <div class="flex gap-1">
+                            <input type="text" id="company-search" class="input" placeholder="Tìm kiếm công ty..." style="width: 300px;">
+                            <select id="company-filter-plan" class="input" style="width: 150px;">
+                                <option value="">Tất cả plans</option>
+                                <option value="trial">Trial</option>
+                                <option value="starter">Starter</option>
+                                <option value="professional">Professional</option>
+                                <option value="enterprise">Enterprise</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadCompanies()">
+                            🔍 Tìm kiếm
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Danh sách công ty</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tên công ty</th>
+                                        <th>Plan</th>
+                                        <th>Quota</th>
+                                        <th>Users</th>
+                                        <th>Tạo ngày</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="companies-list">
+                                    <tr>
+                                        <td colspan="7" class="text-muted">Đang tải...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USERS SECTION -->
+                <div id="section-users" class="section hidden">
+                    <div class="flex-between mb-2">
+                        <input type="text" id="user-search" class="input" placeholder="Tìm người dùng..." style="width: 300px;">
+                        <button class="btn btn-primary" onclick="loadUsers()">
+                            🔍 Tìm kiếm
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Danh sách người dùng</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Tên</th>
+                                        <th>Công ty</th>
+                                        <th>Role</th>
+                                        <th>Đăng nhập cuối</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-list">
+                                    <tr>
+                                        <td colspan="7" class="text-muted">Đang tải...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS SECTION -->
+                <div id="section-settings" class="section hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Cài đặt hệ thống</h2>
+                        </div>
+                        <div class="modal-body">
+                            <div class="input-group">
+                                <label class="input-label">LLM Provider</label>
+                                <select id="setting-llm-provider" class="input">
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="openai">OpenAI</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">LLM Model</label>
+                                <input type="text" id="setting-llm-model" class="input" placeholder="claude-sonnet-4-20250514">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Max File Size (MB)</label>
+                                <input type="number" id="setting-max-file-size" class="input" value="50">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Max Queries/Day (Free)</label>
+                                <input type="number" id="setting-max-queries-free" class="input" value="10">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <input type="checkbox" id="setting-registration-enabled"> Cho phép đăng ký
+                                </label>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <input type="checkbox" id="setting-maintenance-mode"> Chế độ bảo trì
+                                </label>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Thông báo bảo trì</label>
+                                <textarea id="setting-maintenance-message" class="input" rows="3" placeholder="Hệ thống đang bảo trì..."></textarea>
+                            </div>
+
+                            <button class="btn btn-primary" onclick="saveSettings()">
+                                💾 Lưu cài đặt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LLM USAGE SECTION -->
+                <div id="section-llm-usage" class="section hidden">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Tokens Today</span>
+                                <span class="stat-card-icon">🔢</span>
+                            </div>
+                            <div class="stat-card-value" id="llm-tokens-today">0</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Tokens This Month</span>
+                                <span class="stat-card-icon">📊</span>
+                            </div>
+                            <div class="stat-card-value" id="llm-tokens-month">0</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Estimated Cost</span>
+                                <span class="stat-card-icon">💵</span>
+                            </div>
+                            <div class="stat-card-value">$<span id="llm-cost">0</span></div>
+                            <div class="stat-card-change text-muted">
+                                <span>This month</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Usage by Provider</h2>
+                        </div>
+                        <div id="llm-by-provider" class="modal-body"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Top Companies</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Tokens</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="llm-by-company"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOGS SECTION -->
+                <div id="section-logs" class="section hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Platform Audit Logs</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Target</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-list">
+                                    <tr>
+                                        <td colspan="5" class="text-muted">Đang tải...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAINTENANCE SECTION -->
+                <div id="section-maintenance" class="section hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Database Statistics</h2>
+                        </div>
+                        <div class="modal-body" id="db-stats-content">
+                            <p class="text-muted">Đang tải...</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Maintenance Tools</h2>
+                        </div>
+                        <div class="modal-body flex gap-2">
+                            <button class="btn btn-secondary" onclick="runCleanup()">
+                                🧹 Xóa dữ liệu cũ (>30 ngày)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- COMPANY EDIT MODAL -->
+    <div class="modal" id="company-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Chỉnh sửa công ty</h3>
+                <button class="modal-close" onclick="closeCompanyModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label">Plan</label>
+                    <select id="edit-company-plan" class="input">
+                        <option value="trial">Trial</option>
+                        <option value="starter">Starter</option>
+                        <option value="professional">Professional</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Monthly Quota</label>
+                    <input type="number" id="edit-company-quota" class="input">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        <input type="checkbox" id="edit-company-active"> Kích hoạt
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCompanyModal()">Hủy</button>
+                <button class="btn btn-primary" onclick="saveCompanyEdit()">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let authToken = localStorage.getItem('auth_token');
+        let currentCompanyEdit = null;
+        let usageChart = null;
+
+        // AUTH
+        async function checkAuth() {
+            if (!authToken) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/v1/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!res.ok) {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const user = await res.json();
+                if (user.role !== 'superadmin') {
+                    alert('Bạn không có quyền truy cập Platform Admin');
+                    window.location.href = '/';
+                    return;
+                }
+
+                document.getElementById('user-name').textContent = user.full_name || user.email;
+            } catch (err) {
+                console.error('Auth error:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        // API CALL
+        async function apiCall(endpoint, options = {}) {
+            const res = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'API Error');
+            }
+
+            return res.json();
+        }
+
+        // NAVIGATION
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${section}`).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('breadcrumb-section').textContent = section.charAt(0).toUpperCase() + section.slice(1).replace('-', ' ');
+
+            // Load data for section
+            if (section === 'dashboard') loadDashboard();
+            if (section === 'companies') loadCompanies();
+            if (section === 'users') loadUsers();
+            if (section === 'settings') loadSettings();
+            if (section === 'llm-usage') loadLLMUsage();
+            if (section === 'logs') loadLogs();
+            if (section === 'maintenance') loadMaintenance();
+        }
+
+        // DASHBOARD
+        async function loadDashboard() {
+            try {
+                const stats = await apiCall('/v1/platform/stats');
+                
+                document.getElementById('stat-companies').textContent = stats.total_companies;
+                document.getElementById('stat-users').textContent = stats.total_users;
+                document.getElementById('stat-active-users').textContent = stats.active_users_today;
+                document.getElementById('stat-documents').textContent = stats.total_documents;
+                document.getElementById('stat-contracts').textContent = stats.total_contracts;
+                document.getElementById('stat-queries-today').textContent = stats.total_queries_today;
+                document.getElementById('stat-queries-month').textContent = stats.total_queries_month;
+                document.getElementById('stat-law-docs').textContent = stats.total_law_documents;
+                document.getElementById('stat-law-chunks').textContent = stats.total_law_chunks;
+                document.getElementById('stat-storage').textContent = stats.storage_used_mb;
+
+                // Top companies
+                const topList = document.getElementById('top-companies-list');
+                if (stats.top_companies && stats.top_companies.length > 0) {
+                    topList.innerHTML = stats.top_companies.map(c => `
+                        <tr>
+                            <td>${c.name}</td>
+                            <td>${c.queries}</td>
+                            <td><span class="badge badge-primary">${stats.companies_by_plan[c.plan] || 'N/A'}</span></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    topList.innerHTML = '<tr><td colspan="3" class="text-muted">Chưa có dữ liệu</td></tr>';
+                }
+
+                // Usage chart
+                if (stats.daily_usage && stats.daily_usage.length > 0) {
+                    const ctx = document.getElementById('usageChart').getContext('2d');
+                    if (usageChart) usageChart.destroy();
+                    usageChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: stats.daily_usage.map(d => d.date),
+                            datasets: [{
+                                label: 'Queries',
+                                data: stats.daily_usage.map(d => d.queries),
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99,102,241,0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Active Users',
+                                data: stats.daily_usage.map(d => d.users),
+                                borderColor: '#22c55e',
+                                backgroundColor: 'rgba(34,197,94,0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { labels: { color: '#a1a1aa' } }
+                            },
+                            scales: {
+                                x: { ticks: { color: '#71717a' }, grid: { color: '#27272a' } },
+                                y: { ticks: { color: '#71717a' }, grid: { color: '#27272a' } }
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Load dashboard error:', err);
+                alert('Lỗi tải dashboard: ' + err.message);
+            }
+        }
+
+        // COMPANIES
+        async function loadCompanies() {
+            try {
+                const search = document.getElementById('company-search').value;
+                const plan = document.getElementById('company-filter-plan').value;
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (plan) params.append('plan', plan);
+
+                const data = await apiCall(`/v1/platform/companies?${params}`);
+                const list = document.getElementById('companies-list');
+
+                if (data.companies.length === 0) {
+                    list.innerHTML = '<tr><td colspan="7" class="text-muted">Không tìm thấy công ty</td></tr>';
+                    return;
+                }
+
+                list.innerHTML = data.companies.map(c => `
+                    <tr>
+                        <td><strong>${c.name}</strong><br><small class="text-muted">${c.slug}</small></td>
+                        <td><span class="badge badge-primary">${c.plan}</span></td>
+                        <td>${c.used_quota} / ${c.monthly_quota}</td>
+                        <td>${c.user_count}</td>
+                        <td>${new Date(c.created_at).toLocaleDateString('vi-VN')}</td>
+                        <td>
+                            ${c.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary btn-small" onclick='editCompany(${JSON.stringify(c)})'>
+                                ✏️ Sửa
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Load companies error:', err);
+                alert('Lỗi tải danh sách công ty: ' + err.message);
+            }
+        }
+
+        function editCompany(company) {
+            currentCompanyEdit = company.id;
+            document.getElementById('edit-company-plan').value = company.plan;
+            document.getElementById('edit-company-quota').value = company.monthly_quota;
+            document.getElementById('edit-company-active').checked = company.is_active;
+            document.getElementById('company-modal').classList.add('active');
+        }
+
+        function closeCompanyModal() {
+            document.getElementById('company-modal').classList.remove('active');
+        }
+
+        async function saveCompanyEdit() {
+            if (!currentCompanyEdit) return;
+
+            try {
+                await apiCall(`/v1/platform/companies/${currentCompanyEdit}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        plan: document.getElementById('edit-company-plan').value,
+                        monthly_quota: parseInt(document.getElementById('edit-company-quota').value),
+                        is_active: document.getElementById('edit-company-active').checked
+                    })
+                });
+
+                alert('Đã cập nhật công ty');
+                closeCompanyModal();
+                loadCompanies();
+            } catch (err) {
+                alert('Lỗi cập nhật: ' + err.message);
+            }
+        }
+
+        // USERS
+        async function loadUsers() {
+            try {
+                const search = document.getElementById('user-search').value;
+                const params = search ? `?search=${search}` : '';
+                const data = await apiCall(`/v1/platform/users${params}`);
+                const list = document.getElementById('users-list');
+
+                if (data.users.length === 0) {
+                    list.innerHTML = '<tr><td colspan="7" class="text-muted">Không tìm thấy người dùng</td></tr>';
+                    return;
+                }
+
+                list.innerHTML = data.users.map(u => `
+                    <tr>
+                        <td>${u.email}</td>
+                        <td>${u.full_name || 'N/A'}</td>
+                        <td>${u.company_name || 'N/A'}</td>
+                        <td><span class="badge badge-info">${u.role}</span></td>
+                        <td>${u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('vi-VN') : 'Chưa đăng nhập'}</td>
+                        <td>
+                            ${u.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary btn-small" onclick="toggleUserStatus('${u.id}', ${u.is_active})">
+                                ${u.is_active ? '⛔ Vô hiệu' : '✅ Kích hoạt'}
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Load users error:', err);
+                alert('Lỗi tải danh sách người dùng: ' + err.message);
+            }
+        }
+
+        async function toggleUserStatus(userId, currentStatus) {
+            try {
+                await apiCall(`/v1/platform/users/${userId}/status`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ is_active: !currentStatus })
+                });
+                alert('Đã cập nhật trạng thái');
+                loadUsers();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        }
+
+        // SETTINGS
+        async function loadSettings() {
+            try {
+                const settings = await apiCall('/v1/platform/settings');
+                document.getElementById('setting-llm-provider').value = settings.default_llm_provider || 'anthropic';
+                document.getElementById('setting-llm-model').value = settings.default_llm_model || '';
+                document.getElementById('setting-max-file-size').value = settings.max_file_size_mb || 50;
+                document.getElementById('setting-max-queries-free').value = settings.max_queries_per_day_free || 10;
+                document.getElementById('setting-registration-enabled').checked = settings.registration_enabled;
+                document.getElementById('setting-maintenance-mode').checked = settings.maintenance_mode;
+                document.getElementById('setting-maintenance-message').value = settings.maintenance_message || '';
+            } catch (err) {
+                console.error('Load settings error:', err);
+                alert('Lỗi tải cài đặt: ' + err.message);
+            }
+        }
+
+        async function saveSettings() {
+            try {
+                await apiCall('/v1/platform/settings', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        default_llm_provider: document.getElementById('setting-llm-provider').value,
+                        default_llm_model: document.getElementById('setting-llm-model').value,
+                        max_file_size_mb: parseInt(document.getElementById('setting-max-file-size').value),
+                        max_queries_per_day_free: parseInt(document.getElementById('setting-max-queries-free').value),
+                        registration_enabled: document.getElementById('setting-registration-enabled').checked,
+                        maintenance_mode: document.getElementById('setting-maintenance-mode').checked,
+                        maintenance_message: document.getElementById('setting-maintenance-message').value
+                    })
+                });
+                alert('Đã lưu cài đặt');
+            } catch (err) {
+                alert('Lỗi lưu cài đặt: ' + err.message);
+            }
+        }
+
+        // LLM USAGE
+        async function loadLLMUsage() {
+            try {
+                const data = await apiCall('/v1/platform/llm-usage');
+                document.getElementById('llm-tokens-today').textContent = data.total_tokens_today.toLocaleString();
+                document.getElementById('llm-tokens-month').textContent = data.total_tokens_month.toLocaleString();
+                document.getElementById('llm-cost').textContent = data.estimated_cost_month_usd;
+
+                // By provider
+                const providerDiv = document.getElementById('llm-by-provider');
+                providerDiv.innerHTML = Object.entries(data.by_provider || {}).map(([provider, tokens]) => `
+                    <div class="flex-between" style="padding: 0.5rem 0;">
+                        <strong>${provider}</strong>
+                        <span>${tokens.toLocaleString()} tokens</span>
+                    </div>
+                `).join('');
+
+                // By company
+                const companyList = document.getElementById('llm-by-company');
+                companyList.innerHTML = (data.by_company || []).map(c => `
+                    <tr>
+                        <td>${c.name}</td>
+                        <td>${c.tokens.toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Load LLM usage error:', err);
+                alert('Lỗi tải LLM usage: ' + err.message);
+            }
+        }
+
+        // LOGS
+        async function loadLogs() {
+            try {
+                const data = await apiCall('/v1/platform/logs');
+                const list = document.getElementById('logs-list');
+
+                if (data.logs.length === 0) {
+                    list.innerHTML = '<tr><td colspan="5" class="text-muted">Chưa có logs</td></tr>';
+                    return;
+                }
+
+                list.innerHTML = data.logs.map(log => `
+                    <tr>
+                        <td>${new Date(log.created_at).toLocaleString('vi-VN')}</td>
+                        <td>${log.user_email || log.user_name || 'System'}</td>
+                        <td><span class="badge badge-primary">${log.action}</span></td>
+                        <td>${log.target_type || '-'}: ${log.target_id || '-'}</td>
+                        <td><small class="text-muted">${JSON.stringify(log.details || {})}</small></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Load logs error:', err);
+                alert('Lỗi tải logs: ' + err.message);
+            }
+        }
+
+        // MAINTENANCE
+        async function loadMaintenance() {
+            try {
+                const stats = await apiCall('/v1/platform/maintenance/db-stats');
+                const content = document.getElementById('db-stats-content');
+                content.innerHTML = Object.entries(stats).map(([key, value]) => `
+                    <div class="flex-between" style="padding: 0.5rem 0; border-bottom: 1px solid var(--card-border);">
+                        <strong>${key}</strong>
+                        <span>${typeof value === 'number' ? value.toLocaleString() : value}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Load maintenance error:', err);
+                alert('Lỗi tải DB stats: ' + err.message);
+            }
+        }
+
+        async function runCleanup() {
+            if (!confirm('Xóa tất cả hợp đồng đã xóa >30 ngày?')) return;
+            try {
+                const result = await apiCall('/v1/platform/maintenance/cleanup', { method: 'POST' });
+                alert(result.message);
+                loadMaintenance();
+            } catch (err) {
+                alert('Lỗi cleanup: ' + err.message);
+            }
+        }
+
+        // REFRESH
+        function refreshData() {
+            const section = document.querySelector('.sidebar-nav-item.active').textContent.trim().toLowerCase();
+            if (section.includes('dashboard')) loadDashboard();
+            if (section.includes('công ty')) loadCompanies();
+            if (section.includes('người dùng')) loadUsers();
+            if (section.includes('cài đặt')) loadSettings();
+            if (section.includes('llm')) loadLLMUsage();
+            if (section.includes('logs')) loadLogs();
+            if (section.includes('bảo trì')) loadMaintenance();
+        }
+
+        // INIT
+        checkAuth();
+        loadDashboard();
+    </script>
+</body>
+</html>

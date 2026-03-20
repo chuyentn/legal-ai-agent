@@ -219,6 +219,47 @@ GET /v1/contracts/{contract_id}/review-ai
 - Template auto-fill
 - Onboarding wizard
 
+### 🏗️ Platform Administration
+
+Self-hosted deployments include a full **Platform Super Admin** panel for system administration:
+
+#### Access
+Navigate to `/platform-admin` (requires superadmin role)
+
+#### Features
+- **📊 Dashboard** — Real-time platform statistics, usage trends, top companies
+- **🏢 Multi-tenant Management** — Manage all companies, change plans, set quotas, activate/deactivate
+- **👥 User Management** — View all users across tenants, change roles, manage permissions
+- **⚙️ System Settings** — Configure LLM provider, file limits, registration settings, feature flags
+- **💰 LLM Usage & Cost Tracking** — Token usage by provider/company, estimated monthly costs
+- **📋 Audit Logs** — Full platform-level action logging with user attribution
+- **🔧 Maintenance Tools** — DB statistics, cleanup scripts, reindex operations
+
+The Platform Admin panel provides complete control over your self-hosted Legal AI deployment:
+
+```bash
+# Navigate to platform admin
+https://your-domain.com/platform-admin
+
+# Available stats:
+- Total companies, users, documents, contracts
+- Vietnamese law database size (60K+ documents, 117K+ chunks)
+- Daily/monthly query volumes
+- Active users, storage usage
+- Usage trends (30-day charts)
+- Revenue estimates by plan
+
+# Management capabilities:
+- Create/edit/deactivate companies
+- Change subscription plans (trial → starter → pro → enterprise)
+- Adjust quota limits per company
+- Reset user passwords, change roles
+- View company-specific usage history
+- Configure system-wide settings
+- Track LLM costs per company
+- Full audit trail of admin actions
+```
+
 ### 📱 Modern UI
 - VSCode-style 3-panel layout
 - Dark/Light theme

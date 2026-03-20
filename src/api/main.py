@@ -56,7 +56,7 @@ from .security_utils import validate_jwt_secret, sanitize_log, rate_limiter as g
 JWT_SECRET = validate_jwt_secret()
 
 # Import new routes
-from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates, crawler, llm_oauth, pricing
+from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates, crawler, llm_oauth, pricing, platform_admin
 # from .middleware.logging import PlatformLoggingMiddleware  # disabled for deploy
 
 # Import agent (initialized after DB functions are defined)
@@ -143,6 +143,7 @@ app.include_router(templates.router)
 app.include_router(crawler.router)
 app.include_router(llm_oauth.router)
 app.include_router(pricing.router)
+app.include_router(platform_admin.router)
 
 # Startup event - seed templates
 @app.on_event("startup")
@@ -162,6 +163,14 @@ async def landing_page():
     if html_file.exists():
         return FileResponse(str(html_file))
     return {"name": "Legal AI Agent API", "version": "1.0.0"}
+
+@app.get("/platform-admin", include_in_schema=False)
+async def platform_admin_page():
+    """Platform Super Admin Panel (superadmin only)"""
+    html_file = static_dir / "platform-admin.html"
+    if html_file.exists():
+        return FileResponse(str(html_file))
+    raise HTTPException(status_code=404, detail="Platform admin page not found")
 
 # ============================================
 # Database
