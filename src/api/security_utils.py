@@ -262,8 +262,8 @@ def validate_column_name(column: str) -> str:
 # ============================================
 
 # Reduced token lifetimes
-ACCESS_TOKEN_EXPIRE_MINUTES = 15  # Was 60, now 15 minutes
-REFRESH_TOKEN_EXPIRE_DAYS = 7     # Was 30, now 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours - reasonable for a work session
+REFRESH_TOKEN_EXPIRE_DAYS = 30    # 30 days
 
 def create_jwt_with_jti(data: dict, token_type: str = "access") -> str:
     """
