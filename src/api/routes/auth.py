@@ -28,7 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from security_utils import rate_limiter, validate_password
 
-# Import webhook helper để gửi lead sang Apps Script CRM
+# Webhook helper gửi lead sang Apps Script CRM
 from ..core.webhook import send_lead_to_apps_script
 
 router = APIRouter(prefix="/v1/auth", tags=["Authentication"])
@@ -98,24 +98,23 @@ def generate_api_key() -> tuple[str, str, str]:
 async def register(data: RegisterRequest):
     """
     Register new user and create company
-    - Có rate limit và kiểm tra độ mạnh mật khẩu
-    - Sau khi tạo user, gửi webhook sang Google Apps Script CRM
-    Trả về: user, company, api_key, access_token, refresh_token
+    - Rate limit + validate password
+    - Gửi thông tin sang Google Apps Script CRM
     """
-    # FIX 8: Rate limiting (3 registration attempts per 10 minutes per email)
+    # Rate limiting (3 registration attempts / 10 phút / email)
     if not rate_limiter.check(f"register:{data.email}", max_req=3, window_sec=600):
         raise HTTPException(
             status_code=429,
             detail="Too many registration attempts. Please try again in 10 minutes.",
         )
 
-    # FIX 9: Validate password strength
+    # Validate password strength
     validate_password(data.password)
 
     with get_db() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        # Check if email exists
+        # Check email tồn tại chưa
         cur.execute("SELECT id FROM users WHERE email = %s", (data.email,))
         if cur.fetchone():
             raise HTTPException(
@@ -123,7 +122,7 @@ async def register(data: RegisterRequest):
                 detail="Email already registered",
             )
 
-        # Create company
+        # Tạo company
         company_slug = data.company_name.lower().replace(" ", "-")
         base_slug = company_slug
         counter = 1
@@ -144,7 +143,7 @@ async def register(data: RegisterRequest):
         )
         company = dict(cur.fetchone())
 
-        # Create user
+        # Tạo user
         password_hash = hash_password(data.password)
         cur.execute(
             """
@@ -156,7 +155,7 @@ async def register(data: RegisterRequest):
         )
         user = dict(cur.fetchone())
 
-        # Generate default API key
+        # Tạo API key mặc định
         api_key, key_hash, key_prefix = generate_api_key()
         cur.execute(
             """
@@ -170,7 +169,7 @@ async def register(data: RegisterRequest):
 
         conn.commit()
 
-    # Gửi lead sang CRM (Apps Script) nhưng không làm fail nếu lỗi
+    # Gửi lead sang CRM (Apps Script) – không làm fail nếu lỗi
     try:
         await send_lead_to_apps_script(
             full_name=data.full_name,
@@ -179,10 +178,9 @@ async def register(data: RegisterRequest):
             source="legal-ai-agent-app",
         )
     except Exception:
-        # Không chặn flow đăng ký nếu webhook lỗi
         pass
 
-    # Create tokens
+    # Tokens
     access_token = create_access_token(
         {"user_id": str(user["id"]), "email": user["email"]}
     )
@@ -214,19 +212,17 @@ async def register(data: RegisterRequest):
 @router.post("/login")
 async def login(data: LoginRequest):
     """
-    Login with email and password - FIX 8: Rate limited (5 attempts per minute)
-    Returns: user, access_token, refresh_token
+    Login with email and password (rate limited)
     """
     import logging
 
-    # FIX 8: Rate limiting (5 login attempts per minute per email)
+    # 5 attempts / phút / email
     if not rate_limiter.check(f"login:{data.email}", max_req=5, window_sec=60):
         raise HTTPException(
             status_code=429,
             detail="Too many login attempts. Please try again in 1 minute.",
         )
 
-    # FIX 7: Sanitize email in logs
     from ..security_utils import sanitize_log
 
     logging.info(f"LOGIN ATTEMPT: email={sanitize_log(data.email)}")
@@ -234,7 +230,6 @@ async def login(data: LoginRequest):
     with get_db() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        # Find user
         cur.execute(
             """
             SELECT u.id, u.company_id, u.email, u.full_name, u.role, 
@@ -262,20 +257,17 @@ async def login(data: LoginRequest):
                 detail="Account is inactive. Contact support.",
             )
 
-        # Verify password
         if not verify_password(data.password, user["password_hash"]):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
             )
 
-        # Update last login
         cur.execute(
             "UPDATE users SET last_login_at = now() WHERE id = %s", (user["id"],)
         )
         conn.commit()
 
-        # Audit log for login
         try:
             from ..main import log_audit
 
@@ -283,7 +275,6 @@ async def login(data: LoginRequest):
         except Exception:
             pass
 
-        # Create tokens
         access_token = create_access_token(
             {"user_id": str(user["id"]), "email": user["email"]}
         )
@@ -417,27 +408,25 @@ async def update_profile(
 async def change_password(
     data: ChangePasswordRequest, current_user: dict = Depends(get_current_active_user)
 ):
-    """Change user password - FIX 9: Password validation"""
-
-    # FIX 9: Validate new password strength
+    """Change user password"""
     validate_password(data.new_password)
 
     with get_db() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        # Get current password hash
         cur.execute(
             "SELECT password_hash FROM users WHERE id = %s", (current_user["id"],)
         )
         result = cur.fetchone()
 
-        if not result or not verify_password(data.old_password, result["password_hash"]):
+        if not result or not verify_password(
+            data.old_password, result["password_hash"]
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current password is incorrect",
             )
 
-        # Update password
         new_hash = hash_password(data.new_password)
         cur.execute(
             "UPDATE users SET password_hash = %s, updated_at = now() WHERE id = %s",
@@ -450,5 +439,5 @@ async def change_password(
 
 @router.post("/logout")
 async def logout(current_user: dict = Depends(get_current_active_user)):
-    """Logout (client should discard tokens)"""
+    """Logout"""
     return {"message": "Logged out successfully"}
