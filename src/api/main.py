@@ -1009,10 +1009,29 @@ async def chat_upload_file(file: UploadFile = File(...), company: dict = Depends
     if not extracted_text or len(extracted_text.strip()) < 10:
         raise HTTPException(status_code=422, detail="Không thể trích xuất nội dung từ file. Vui lòng thử file khác.")
 
+    # Auto-save uploaded file to documents table
+    doc_id = None
+    try:
+        company_id = str(company["company_id"])
+        import unicodedata
+        normalized_text = unicodedata.normalize('NFC', extracted_text)
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO documents (company_id, name, extracted_text, doc_type, status, file_path, file_size, mime_type, uploaded_by)
+                VALUES (%s, %s, %s, 'contract', 'uploaded', 'chat-upload', %s, %s, %s)
+                RETURNING id
+            """, (company_id, filename, normalized_text, len(content), file_ext.replace('.', 'application/'), company.get("user_id")))
+            doc_id = str(cur.fetchone()[0])
+            conn.commit()
+    except Exception as e:
+        print(f"Auto-save uploaded doc error: {e}")
+
     return {
         "filename": filename,
         "content": extracted_text,
-        "file_type": file_ext
+        "file_type": file_ext,
+        "document_id": doc_id
     }
 
 

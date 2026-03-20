@@ -237,7 +237,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "title": {"type": "string", "description": "Tên tài liệu"},
-                "content": {"type": "string", "description": "Nội dung đầy đủ của tài liệu"},
+                "content": {"type": "string", "description": "Nội dung ĐẦY ĐỦ của tài liệu. QUAN TRỌNG: Phải ghi TOÀN BỘ nội dung, KHÔNG được tóm tắt hoặc rút gọn. Nếu đang xử lý file upload, phải copy nguyên văn toàn bộ nội dung gốc."},
                 "type": {"type": "string", "enum": ["contract", "document", "template", "report", "memo"], "description": "Loại tài liệu"},
                 "folder": {"type": "string", "description": "Thư mục lưu (tùy chọn)"},
                 "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags phân loại"}
