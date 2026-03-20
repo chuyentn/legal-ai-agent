@@ -377,6 +377,18 @@ docker compose up -d
 
 This starts PostgreSQL 15 (with pgvector) and the FastAPI app automatically.
 
+**⚠️ Note:** The database schema is created automatically on first startup, but **law documents are empty by default**. To populate the legal database:
+
+```bash
+# Option 1: Crawl Vietnamese legal websites (recommended)
+docker compose exec app python scripts/crawl_thuvien.py
+
+# Option 2: Load from backup (if you have one)
+docker compose exec app python scripts/load_law_data.py
+```
+
+Without legal data, the AI can still review/draft contracts, but legal search won't work.
+
 #### 🖥️ Self-hosted (NAS / Xpenology / Synology)
 
 Works on any Docker-capable device — NAS, Raspberry Pi, VPS, or local server.
