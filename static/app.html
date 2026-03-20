@@ -4920,18 +4920,38 @@ console.log(await resp.json());</code></pre>
         }
         
         // Load LLM settings on settings modal open
-        function loadLLMSettings() {
-            const saved = localStorage.getItem('llmConfig');
+        async function loadLLMSettings() {
+            // Load from server DB first
+            var token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    var resp = await fetch('/v1/llm/status', { headers: { 'Authorization': 'Bearer ' + token } });
+                    if (resp.ok) {
+                        var config = await resp.json();
+                        if (config.configured) {
+                            document.getElementById('llmProvider').value = config.provider || 'anthropic';
+                            document.getElementById('llmApiKey').value = '••••••••' + (config.auth_method === 'api_key' ? ' (đã lưu)' : '');
+                            document.getElementById('llmApiKey').placeholder = 'Key đã được lưu và mã hóa trên server';
+                            updateLLMProviderUI();
+                            document.getElementById('llmModel').value = config.model || '';
+                            // Show status
+                            var statusEl = document.getElementById('llmConnectionStatus');
+                            if (statusEl) { statusEl.innerHTML = '<span style="color:#3fb950">✅ Đã kết nối — ' + config.provider + ' / ' + config.model + '</span>'; }
+                            return;
+                        }
+                    }
+                } catch (e) { console.warn('Could not load LLM config from server:', e); }
+            }
+            // Fallback to localStorage
+            var saved = localStorage.getItem('llmConfig');
             if (saved) {
                 try {
-                    const config = JSON.parse(saved);
-                    document.getElementById('llmProvider').value = config.provider || 'anthropic';
-                    document.getElementById('llmApiKey').value = config.apiKey || '';
+                    var cfg = JSON.parse(saved);
+                    document.getElementById('llmProvider').value = cfg.provider || 'anthropic';
+                    document.getElementById('llmApiKey').value = cfg.apiKey || '';
                     updateLLMProviderUI();
-                    document.getElementById('llmModel').value = config.model || '';
-                } catch (e) {
-                    console.error('Error loading LLM config:', e);
-                }
+                    document.getElementById('llmModel').value = cfg.model || '';
+                } catch (e) { console.error('Error loading LLM config:', e); }
             }
         }
 
