@@ -469,8 +469,9 @@ class LLMProviderManager:
             return AnthropicProvider(api_key=api_key)
         
         # Query company's LLM config from database
+        from psycopg2.extras import RealDictCursor
         with self.db() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
                     "SELECT metadata FROM companies WHERE id = %s",
                     (company_id,)
