@@ -96,13 +96,19 @@ def extract_text_from_pdf(file_path: Path) -> tuple[str, int]:
         return "", 0
 
 def extract_text_from_docx(file_path: Path) -> str:
-    """Extract text from DOCX file"""
+    """Extract text from DOCX file with Unicode normalization"""
+    import unicodedata
     try:
         doc = docx.Document(file_path)
         text_parts = []
         for paragraph in doc.paragraphs:
-            if paragraph.text.strip():
-                text_parts.append(paragraph.text)
+            text = unicodedata.normalize('NFC', paragraph.text.strip())
+            if text:
+                # Preserve heading styles
+                if paragraph.style and paragraph.style.name and 'heading' in paragraph.style.name.lower():
+                    text_parts.append('**' + text + '**')
+                else:
+                    text_parts.append(text)
         
         return "\n\n".join(text_parts)
     except Exception as e:

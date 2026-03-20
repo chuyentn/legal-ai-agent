@@ -48,16 +48,22 @@ def extract_file_text(file_path: str, file_ext: str, content: bytes = None) -> O
             return "\n".join(text_parts) if text_parts else None
         
         elif file_ext in (".docx", ".doc"):
+            import unicodedata
             from docx import Document
             doc = Document(file_path)
             text_parts = []
             for para in doc.paragraphs:
-                if para.text.strip():
-                    text_parts.append(para.text)
+                text = unicodedata.normalize('NFC', para.text.strip())
+                if text:
+                    # Preserve formatting hints
+                    if para.style and para.style.name and 'heading' in para.style.name.lower():
+                        text_parts.append('**' + text + '**')
+                    else:
+                        text_parts.append(text)
             # Also extract from tables
             for table in doc.tables:
                 for row in table.rows:
-                    row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
+                    row_text = " | ".join(unicodedata.normalize('NFC', cell.text.strip()) for cell in row.cells if cell.text.strip())
                     if row_text:
                         text_parts.append(row_text)
             return "\n".join(text_parts) if text_parts else None
