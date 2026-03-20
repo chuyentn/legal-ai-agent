@@ -22,24 +22,26 @@ from security_utils import (
     ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_jwt_with_jti
 )
 
+# ============================================
 # JWT Configuration - FIX 1: Validate JWT secret
+# ============================================
 JWT_SECRET = validate_jwt_secret()
 JWT_ALGORITHM = "HS256"
 
-# Database config
-DB_CONFIG = {
-    "host": os.getenv("SUPABASE_DB_HOST", "localhost"),
-    "port": int(os.getenv("SUPABASE_DB_PORT", "5432")),
-    "dbname": "postgres",
-    "user": "postgres",
-    "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
-    "sslmode": "require"
-}
+# ============================================
+# Database config – dùng DATABASE_URL của Render
+# ============================================
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Please configure it in Render Environment."
+    )
 
 @contextmanager
 def get_db():
     """Database connection context manager"""
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     try:
         yield conn
     finally:
@@ -47,12 +49,16 @@ def get_db():
 
 security = HTTPBearer(auto_error=False)
 
+# ============================================
+# JWT helpers (giữ logic gốc)
+# ============================================
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT access token - FIX 14: Reduced lifetime (15 min) + JTI"""
+    """Create JWT access token - FIX 14: Reduced lifetime + JTI"""
     return create_jwt_with_jti(data, "access")
 
 def create_refresh_token(data: dict) -> str:
-    """Create JWT refresh token - FIX 14: Reduced lifetime (7 days) + JTI"""
+    """Create JWT refresh token - FIX 14: Reduced lifetime + JTI"""
     return create_jwt_with_jti(data, "refresh")
 
 def verify_token(token: str, token_type: str = "access") -> Dict:
@@ -76,7 +82,13 @@ def verify_token(token: str, token_type: str = "access") -> Dict:
             detail="Could not validate credentials"
         )
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict:
+# ============================================
+# Current user helpers
+# ============================================
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> Dict:
     """Get current authenticated user from JWT token"""
     if not credentials:
         raise HTTPException(
@@ -84,43 +96,48 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     token = credentials.credentials
     payload = verify_token(token, "access")
     user_id = payload.get("user_id")
-    
+
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload"
         )
-    
+
     # Fetch user from database
     with get_db() as conn:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("""
+        cur = conn.cursor()
+        cur.execute(
+            """
             SELECT u.id, u.company_id, u.role, u.full_name, u.email, 
                    u.avatar_url, u.preferences, u.user_settings, u.is_active,
                    c.name as company_name, c.plan, c.monthly_quota, c.used_quota
             FROM users u
             LEFT JOIN companies c ON c.id = u.company_id
             WHERE u.id = %s AND u.is_active = true
-        """, (user_id,))
+        """,
+            (user_id,),
+        )
         user = cur.fetchone()
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive"
             )
-        
+
         # Update last login
         cur.execute("UPDATE users SET last_login_at = now() WHERE id = %s", (user_id,))
         conn.commit()
-        
+
         return dict(user)
 
-async def get_current_active_user(current_user: Dict = Depends(get_current_user)) -> Dict:
+async def get_current_active_user(
+    current_user: Dict = Depends(get_current_user)
+) -> Dict:
     """Ensure user is active"""
     if not current_user.get("is_active"):
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -132,7 +149,7 @@ def require_role(required_role: str):
         role_hierarchy = {"viewer": 0, "member": 1, "admin": 2, "owner": 3}
         user_level = role_hierarchy.get(current_user["role"], 0)
         required_level = role_hierarchy.get(required_role, 0)
-        
+
         if user_level < required_level:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -141,7 +158,9 @@ def require_role(required_role: str):
         return current_user
     return role_checker
 
-async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Optional[Dict]:
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> Optional[Dict]:
     """Get user if authenticated, otherwise None (for public endpoints)"""
     if not credentials:
         return None
