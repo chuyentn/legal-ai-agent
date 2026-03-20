@@ -1034,7 +1034,7 @@ async def legal_ask(query: LegalQuery, company: dict = Depends(verify_api_key)):
                     SELECT role, content FROM messages
                     WHERE session_id = %s AND company_id = %s
                     ORDER BY created_at ASC
-                    LIMIT 20
+                    LIMIT 50
                 """, (query.session_id, company["company_id"]))
                 rows = cur.fetchall()
                 for row in rows:
@@ -1156,7 +1156,7 @@ async def legal_ask_stream(query: LegalQuery, company: dict = Depends(verify_api
                     SELECT role, content FROM messages
                     WHERE session_id = %s AND company_id = %s
                     ORDER BY created_at ASC
-                    LIMIT 20
+                    LIMIT 50
                 """, (query.session_id, company["company_id"]))
                 rows = cur.fetchall()
                 for row in rows:
@@ -1237,7 +1237,7 @@ CÂU HỎI: {query.question}"""
                     cur.execute("""
                         INSERT INTO messages (session_id, company_id, role, content, tokens_used, model)
                         VALUES (%s, %s, 'user', %s, 0, '')
-                    """, (saved_session_id, company["company_id"], query.question))
+                    """, (saved_session_id, company["company_id"], actual_question))
 
                     cur.execute("""
                         INSERT INTO messages (session_id, company_id, role, content, citations, confidence, tokens_used, model)
