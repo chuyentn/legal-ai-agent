@@ -346,6 +346,19 @@ TOOLS = [
             },
             "required": ["document_id"]
         }
+    },
+    {
+        "name": "edit_and_diff_document",
+        "description": "Chỉnh sửa hợp đồng/tài liệu và hiển thị diff view (so sánh bản gốc vs bản đã sửa, giống VSCode). Dùng khi người dùng yêu cầu 'rà soát và sửa', 'chỉnh sửa hợp đồng', 'fix hợp đồng'. AI sẽ tự động: (1) Phân tích tài liệu, (2) Tìm các vấn đề/lỗi pháp lý, (3) Tạo bản chỉnh sửa, (4) Hiển thị diff view inline trong chat, (5) Cho phép tải xuống bản đã sửa.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "document_id": {"type": "string", "description": "ID tài liệu hoặc hợp đồng cần chỉnh sửa"},
+                "edit_instructions": {"type": "string", "description": "Hướng dẫn chỉnh sửa cụ thể (ví dụ: 'Bổ sung điều khoản bảo mật theo BLLĐ 2019', 'Sửa lỗi chính tả', 'Cập nhật mức phạt')"},
+                "auto_fix": {"type": "boolean", "description": "Tự động sửa các lỗi pháp lý phổ biến (default: True)", "default": True}
+            },
+            "required": ["document_id"]
+        }
     }
 ]
 
@@ -383,6 +396,7 @@ Luôn báo cáo những gì bạn đã làm sau khi hoàn thành.
   - Đọc tài liệu → read_document
   - Tạo tài liệu mới → write_document
   - Sửa tài liệu → edit_document
+  - **Rà soát và sửa hợp đồng → edit_and_diff_document** (hiển thị diff view như VSCode)
   - So sánh 2 tài liệu → compare_documents
   - Tạo thư mục → create_folder
   - Di chuyển file → move_document
@@ -1448,6 +1462,9 @@ Trả về văn bản hoàn chỉnh, đúng format, đầy đủ các điều kh
                 } for e in edits]
             }
     
+    elif tool_name == "edit_and_diff_document":
+        return await _tool_edit_and_diff_document(tool_input, company_id)
+    
     else:
         return {"error": f"Unknown tool: {tool_name}"}
 
@@ -1875,6 +1892,115 @@ async def _tool_crawl_legal_document(tool_input: dict, company_id: str) -> dict:
         return {"error": f"❌ Lỗi crawl: {str(e)}"}
 
 
+async def _tool_edit_and_diff_document(tool_input: dict, company_id: str) -> dict:
+    """
+    Edit a document and generate diff view.
+    This tool will:
+    1. Read the document
+    2. Analyze it for legal issues
+    3. Generate an edited version
+    4. Create a diff view
+    5. Return both versions for display
+    """
+    from ..services.diff_utils import generate_inline_diff
+    
+    document_id = tool_input.get("document_id", "")
+    edit_instructions = tool_input.get("edit_instructions", "")
+    auto_fix = tool_input.get("auto_fix", True)
+    
+    if not document_id:
+        return {"error": "Thiếu document_id"}
+    
+    # Read the document
+    with _get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Try documents table first
+        cur.execute("""
+            SELECT id, name, extracted_text, doc_type FROM documents
+            WHERE id::text = %s AND company_id = %s AND deleted_at IS NULL
+        """, (document_id, company_id))
+        doc = cur.fetchone()
+        
+        # If not found, try contracts table
+        if not doc:
+            cur.execute("""
+                SELECT id, name, content as extracted_text, contract_type as doc_type FROM contracts
+                WHERE id::text = %s AND company_id = %s AND status != 'deleted' AND deleted_at IS NULL
+            """, (document_id, company_id))
+            doc = cur.fetchone()
+    
+    if not doc:
+        return {"error": f"Không tìm thấy tài liệu với ID: {document_id}"}
+    
+    original_text = doc.get("extracted_text") or doc.get("content", "")
+    doc_name = doc.get("name", "document")
+    
+    if not original_text:
+        return {"error": "Tài liệu không có nội dung"}
+    
+    # Generate edited version using AI
+    # For now, we'll use a simple approach: use the LLM to generate the edited version
+    if _llm_provider_manager:
+        try:
+            # Build edit prompt
+            edit_prompt = f"""Bạn là trợ lý pháp lý AI. Hãy chỉnh sửa văn bản sau đây để khắc phục các vấn đề pháp lý.
+
+ĐỂ BẢO CHẤT LƯỢNG: Chỉ thực hiện các thay đổi hợp lý, không thay đổi quá 20% nội dung gốc.
+
+VĂN BẢN GỐC:
+{original_text[:10000]}
+
+YÊU CẦU CHỈNH SỬA:
+{edit_instructions if edit_instructions else "Tự động phát hiện và sửa các lỗi pháp lý, bổ sung điều khoản thiếu theo luật Việt Nam"}
+
+{"CHỈNH SỬA TỰ ĐỘNG: Bổ sung điều khoản bảo mật, phạt vi phạm, chấm dứt hợp đồng nếu thiếu." if auto_fix else ""}
+
+Hãy trả về TOÀN BỘ văn bản đã chỉnh sửa (không chỉ phần sửa). Giữ nguyên định dạng, chỉ sửa nội dung cần thiết."""
+
+            # Call LLM
+            from anthropic import AsyncAnthropic
+            client = AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            
+            response = await client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=16000,
+                messages=[{"role": "user", "content": edit_prompt}]
+            )
+            
+            edited_text = ""
+            for block in response.content:
+                if block.type == "text":
+                    edited_text += block.text
+            
+            if not edited_text:
+                return {"error": "Không thể tạo bản chỉnh sửa"}
+            
+            # Generate diff
+            diff_result = generate_inline_diff(original_text, edited_text)
+            
+            # Return result with diff metadata
+            return {
+                "success": True,
+                "document_id": document_id,
+                "document_name": doc_name,
+                "original": original_text,
+                "edited": edited_text,
+                "diff_html": diff_result["diff_html"],
+                "diff_lines": diff_result["diff_lines"],
+                "additions": diff_result["additions"],
+                "deletions": diff_result["deletions"],
+                "changes_count": diff_result["changes_count"],
+                "summary": diff_result["summary"],
+                "edit_instructions": edit_instructions or "Tự động rà soát và sửa lỗi pháp lý"
+            }
+            
+        except Exception as e:
+            return {"error": f"Lỗi khi chỉnh sửa: {str(e)}"}
+    else:
+        return {"error": "LLM provider chưa được cấu hình"}
+
+
 # ============================================
 # Agent Loop (non-streaming)
 # ============================================
@@ -1998,7 +2124,8 @@ TOOL_STATUS_LABELS = {
     "compare_contracts": "⚖️ Đang so sánh hợp đồng...",
     "summarize_contract": "📋 Đang tóm tắt hợp đồng...",
     "check_legal_compliance": "✅ Đang kiểm tra tuân thủ...",
-    "generate_clause": "✍️ Đang soạn điều khoản..."
+    "generate_clause": "✍️ Đang soạn điều khoản...",
+    "edit_and_diff_document": "✏️ Đang chỉnh sửa và tạo diff view..."
 }
 
 
@@ -2239,6 +2366,10 @@ async def run_agent_stream_final_text(
 
             if tool_name == "search_law" and "citations" in result:
                 all_citations.extend(result["citations"])
+            
+            # Special handling for edit_and_diff_document — emit diff event
+            if tool_name == "edit_and_diff_document" and result.get("success"):
+                yield f"data: {json.dumps({'type': 'document_edit', 'original': result['original'], 'edited': result['edited'], 'filename': result['document_name'], 'changes': result['summary'], 'diff_html': result['diff_html'], 'additions': result['additions'], 'deletions': result['deletions'], 'changes_count': result['changes_count']}, ensure_ascii=False)}\n\n"
 
             # Store tool result data for inline actions extraction
             all_tool_results_data.append({"tool": tool_name, "data": result})

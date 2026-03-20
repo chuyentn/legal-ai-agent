@@ -1408,6 +1408,127 @@
             .command-palette { width: 95vw; }
         }
 
+        /* ===== DIFF VIEW STYLES ===== */
+        .diff-container {
+            font-family: 'Courier New', Consolas, monospace;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+            background: var(--bg-editor);
+            font-size: 13px;
+        }
+        .diff-header {
+            background: var(--bg-surface);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+        .diff-header-title {
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .diff-header-stats {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .diff-body {
+            max-height: 500px;
+            overflow-y: auto;
+            background: var(--code-bg);
+        }
+        .diff-line {
+            padding: 2px 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            position: relative;
+        }
+        .diff-add {
+            background: rgba(46, 160, 67, 0.15);
+            color: #3fb950;
+        }
+        .diff-add::before {
+            content: '+';
+            margin-right: 12px;
+            font-weight: bold;
+            color: #3fb950;
+        }
+        .diff-del {
+            background: rgba(248, 81, 73, 0.15);
+            color: #f85149;
+            text-decoration: line-through;
+        }
+        .diff-del::before {
+            content: '−';
+            margin-right: 12px;
+            font-weight: bold;
+            color: #f85149;
+        }
+        .diff-unchanged {
+            color: var(--text-muted);
+        }
+        .diff-unchanged::before {
+            content: ' ';
+            margin-right: 12px;
+        }
+        .diff-ellipsis {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 8px;
+            font-style: italic;
+        }
+        .diff-actions {
+            padding: 12px 16px;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .diff-btn {
+            padding: 7px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+        .diff-btn-accept {
+            background: var(--accent);
+            color: white;
+        }
+        .diff-btn-accept:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+        .diff-btn-download {
+            background: var(--bg-elevated);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .diff-btn-download:hover {
+            background: var(--bg-overlay);
+            border-color: var(--border-hover);
+        }
+        .diff-btn-cancel {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .diff-btn-cancel:hover {
+            background: var(--bg-elevated);
+            color: var(--text);
+        }
+
     </style>
 </head>
 <body>
@@ -3670,6 +3791,95 @@ console.log(await resp.json());</code></pre>
 
         function toggleCitations(header) { const list = header.parentElement.querySelector('.citations-list'); list.classList.toggle('hidden'); header.parentElement.classList.toggle('expanded'); }
 
+        function renderDiffView(original, edited, filename, changesSummary, additions, deletions, changesCount) {
+            // Generate diff HTML from original and edited text
+            const originalLines = (original || '').split('\n');
+            const editedLines = (edited || '').split('\n');
+            
+            // Simple inline diff
+            let diffHtml = '';
+            let i = 0, j = 0;
+            const maxLines = Math.max(originalLines.length, editedLines.length);
+            
+            // Show first 100 lines of diff max
+            const displayLimit = 100;
+            let linesShown = 0;
+            
+            while (linesShown < displayLimit && (i < originalLines.length || j < editedLines.length)) {
+                const origLine = originalLines[i] || '';
+                const editLine = editedLines[j] || '';
+                
+                if (origLine === editLine) {
+                    // Unchanged line
+                    if (linesShown < displayLimit) {
+                        diffHtml += `<div class="diff-line diff-unchanged">${escapeHtml(origLine)}</div>`;
+                        linesShown++;
+                    }
+                    i++;
+                    j++;
+                } else {
+                    // Changed lines - show both
+                    if (i < originalLines.length) {
+                        diffHtml += `<div class="diff-line diff-del">${escapeHtml(origLine)}</div>`;
+                        linesShown++;
+                        i++;
+                    }
+                    if (j < editedLines.length && linesShown < displayLimit) {
+                        diffHtml += `<div class="diff-line diff-add">${escapeHtml(editLine)}</div>`;
+                        linesShown++;
+                        j++;
+                    }
+                }
+            }
+            
+            if (linesShown >= displayLimit) {
+                diffHtml += '<div class="diff-ellipsis">... (hiển thị 100 dòng đầu, tải xuống để xem đầy đủ)</div>';
+            }
+            
+            const stats = `${additions || 0} thêm, ${deletions || 0} xóa`;
+            
+            return `
+<div class="diff-container">
+    <div class="diff-header">
+        <div class="diff-header-title">
+            📄 <strong>${escapeHtml(filename || 'document.txt')}</strong>
+        </div>
+        <div class="diff-header-stats">
+            ${changesCount || 0} thay đổi (${stats})
+        </div>
+    </div>
+    <div class="diff-body">
+        ${diffHtml}
+    </div>
+    <div class="diff-actions">
+        <button class="diff-btn diff-btn-download" onclick="downloadEditedDocument(\`${edited.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, '${escapeHtml(filename || 'edited_document.txt')}')">
+            📥 Tải xuống bản đã sửa
+        </button>
+        <button class="diff-btn diff-btn-cancel" onclick="this.closest('.diff-container').remove()">
+            ❌ Đóng
+        </button>
+    </div>
+</div>`;
+        }
+
+        function downloadEditedDocument(text, filename) {
+            try {
+                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Đã tải xuống: ' + filename, 'success');
+            } catch (e) {
+                console.error('Download error:', e);
+                showToast('Lỗi khi tải xuống file', 'error');
+            }
+        }
+
         function showTyping(statusText) {
             removeTyping(); // Remove any existing typing indicator first
             const container = document.getElementById('chatMessages');
@@ -5302,6 +5512,12 @@ console.log(await resp.json());</code></pre>
                                 }
                                 container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
                             } else if (event.type === 'citations') { citations = event.citations || event.content; }
+                            else if (event.type === 'document_edit' || event.type === 'diff') {
+                                // Render diff view
+                                var diffHtml = renderDiffView(event.original, event.edited, event.filename, event.changes, event.additions, event.deletions, event.changes_count);
+                                textDiv.innerHTML += diffHtml;
+                                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                            }
                             else if (event.type === 'done') {
                                 if (event.session_id && !currentSessionId) { currentSessionId = event.session_id; loadChatHistory(); }
                             }
