@@ -3459,7 +3459,7 @@ console.log(await resp.json());</code></pre>
                     const responseTime = ((Date.now() - startTime) / 1000).toFixed(1);
                     addMessageWithStreaming('ai', data.answer, data.citations, responseTime);
                     if (!currentSessionId && data.session_id) { currentSessionId = data.session_id; loadChatHistory(); }
-                } else { removeTyping(); const err = await response.json().catch(() => ({})); const errMsg = typeof err.detail === 'string' ? err.detail : Array.isArray(err.detail) ? err.detail.map(e => e.msg || e).join(', ') : `Lỗi ${response.status}`; showToast(errMsg, 'error'); addMessage('ai', `⚠️ ${errMsg}. Thử lại.`); }
+                } else { removeTyping(); const err = await response.json().catch(() => ({})); const errMsg = typeof err.detail === 'string' ? err.detail : Array.isArray(err.detail) ? err.detail.map(e => e.msg || e).join(', ') : `Lỗi ${response.status}`; showToast(errMsg, 'error'); if (errMsg.includes('API key') || errMsg.includes('Cài đặt') || errMsg.includes('configured')) { addMessage('ai', `⚠️ ${errMsg}\n\n👉 Vào **Cài đặt → AI Provider** để nhập API key của bạn.`); } else { addMessage('ai', `⚠️ ${errMsg}. Thử lại.`); } }
             } catch (e) { removeTyping(); showToast('Không thể kết nối', 'error'); addMessage('ai', 'Không thể kết nối. Thử lại.'); }
         }
 
@@ -5217,7 +5217,7 @@ console.log(await resp.json());</code></pre>
                         var lastMsg = document.querySelector('#chatMessages .message:last-child');
                         if (lastMsg) addQuickReplies(document.getElementById('chatMessages'), data.answer);
                     }, 500);
-                } else { removeTyping(); var errData = await response.json().catch(function() { return {}; }); showToast('Lỗi: ' + (errData.detail || response.status), 'error'); addMessage('ai', '⚠️ ' + (errData.detail || 'Lỗi') + '. Thử lại.'); }
+                } else { removeTyping(); var errData = await response.json().catch(function() { return {}; }); var errMsg2 = errData.detail || 'Lỗi ' + response.status; showToast('Lỗi: ' + errMsg2, 'error'); if (errMsg2.indexOf('API key') >= 0 || errMsg2.indexOf('Cài đặt') >= 0 || errMsg2.indexOf('configured') >= 0) { addMessage('ai', '⚠️ ' + errMsg2 + '\n\n👉 Vào **Cài đặt → AI Provider** để nhập API key của bạn.'); } else { addMessage('ai', '⚠️ ' + errMsg2 + '. Thử lại.'); } }
             } catch (e) { removeTyping(); showToast('Không thể kết nối', 'error'); addMessage('ai', 'Không thể kết nối. Thử lại.'); }
             setStreamingState(false);
         };

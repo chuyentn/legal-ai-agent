@@ -432,7 +432,7 @@ def _get_claude_headers():
     elif api_key:
         headers["x-api-key"] = api_key
     else:
-        raise ValueError("No Claude API key or OAuth token configured")
+        raise ValueError("Chưa cấu hình API key. Vui lòng vào Cài đặt → AI Provider để nhập API key.")
 
     return headers
 
