@@ -643,8 +643,26 @@ async def _call_claude_with_tools_stream(messages: list, tools: list, system: st
                         continue
 
 
-async def _stream_final_text(messages: list, system: str = AGENT_SYSTEM_PROMPT) -> AsyncGenerator[str, None]:
+async def _stream_final_text(messages: list, system: str = AGENT_SYSTEM_PROMPT, company_id: str = None) -> AsyncGenerator[str, None]:
     """Stream Claude response without tools — for fast path"""
+    # Try company provider first (supports OAuth tokens from DB)
+    if _llm_provider_manager and company_id:
+        try:
+            provider = _llm_provider_manager.get_company_provider(company_id)
+            async for event in provider.chat_stream(messages=messages, system=system, max_tokens=4096):
+                # Anthropic SDK stream events
+                event_type = getattr(event, 'type', '')
+                if event_type == 'content_block_delta':
+                    delta = getattr(event, 'delta', None)
+                    if delta and getattr(delta, 'type', '') == 'text_delta':
+                        text = getattr(delta, 'text', '')
+                        if text:
+                            yield f"data: {json.dumps({'type': 'delta', 'text': text}, ensure_ascii=False)}\n\n"
+            return
+        except Exception as e:
+            print(f"Provider stream error, falling back: {e}")
+
+    # Fallback: raw httpx with env headers
     headers = _get_claude_headers()
     payload = {
         "model": "claude-sonnet-4-20250514",
@@ -2097,7 +2115,7 @@ async def run_agent_stream_final_text(
                 messages.append({"role": msg["role"], "content": msg["content"]})
         messages.append({"role": "user", "content": question})
         
-        async for event in _stream_final_text(messages, system=system_prompt):
+        async for event in _stream_final_text(messages, system=system_prompt, company_id=company_id):
             yield event
         # Emit suggestions for simple/greeting messages
         suggestions = generate_quick_replies(question, "", [])
@@ -2114,7 +2132,7 @@ async def run_agent_stream_final_text(
         messages.append({"role": "user", "content": question})
 
         full_text_parts = []
-        async for event in _stream_final_text(messages, system=system_prompt):
+        async for event in _stream_final_text(messages, system=system_prompt, company_id=company_id):
             yield event
             # Collect text for suggestions
             if event.startswith("data: "):
