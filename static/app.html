@@ -313,7 +313,14 @@
         .toolbar-btn { padding: 4px 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit; transition: all 0.15s; }
         .toolbar-btn:hover { border-color: var(--border-active); color: var(--accent); background: var(--accent-dim); }
         .document-content-area { flex: 1; overflow-y: auto; padding: 1.5rem; }
-        .doc-text-content { font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; color: var(--text); font-family: 'Courier New', monospace; background: var(--code-bg); border-radius: 8px; padding: 1.5rem; min-height: 300px; }
+        .doc-text-content { font-size: 0.88rem; line-height: 1.75; color: var(--text); background: var(--bg-elevated); border-radius: 8px; padding: 1.5rem 2rem; min-height: 300px; border: 1px solid var(--border); }
+        .doc-formatted { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        .doc-title { font-size: 1.05rem; font-weight: 700; color: var(--accent); text-align: center; margin: 1.2rem 0 0.8rem; letter-spacing: 0.5px; }
+        .doc-heading { font-size: 0.95rem; font-weight: 600; color: var(--text-active); margin: 1rem 0 0.4rem; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .doc-para { margin-bottom: 0.5rem; }
+        .doc-num { color: var(--accent); font-weight: 600; }
+        .doc-sub-num { color: var(--text-muted); font-weight: 500; margin-left: 1rem; }
+        .doc-bullet { color: var(--accent); }
 
         /* Template form tab */
         .template-form-tab { padding: 1.5rem; max-width: 700px; }
@@ -2684,19 +2691,18 @@
                     const el = document.getElementById('contractContent-' + id);
                     if (el) {
                         const content = contract.content || contract.extracted_text || 'Không có nội dung';
-                        el.innerHTML = `
-                            <div style="padding: 1rem; background: var(--bg-surface); border-radius: 6px; margin-bottom: 1rem;">
-                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.8rem;">
-                                    <div><strong>Loại:</strong> ${getContractTypeText(contract.contract_type)}</div>
-                                    <div><strong>Trạng thái:</strong> <span class="status-badge status-${getContractStatus(contract)}">${getStatusText(getContractStatus(contract))}</span></div>
-                                    <div><strong>Bắt đầu:</strong> ${formatDate(contract.start_date)}</div>
-                                    <div><strong>Kết thúc:</strong> ${formatDate(contract.end_date)}</div>
-                                    <div><strong>Các bên:</strong> ${escapeHtml(Array.isArray(contract.parties) ? contract.parties.join(', ') : (contract.parties || '-'))}</div>
-                                    <div><strong>Giá trị:</strong> ${formatCurrency(contract.value)}</div>
+                        var meta = `
+                            <div style="padding: 0.75rem 1rem; background: var(--bg-surface); border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);">
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; color: var(--text-muted);">
+                                    <span>📄 <strong style="color:var(--text)">${escapeHtml(contract.name || contract.title || 'Hợp đồng')}</strong></span>
+                                    <span>📏 ${(content.length / 1024).toFixed(1)} KB</span>
+                                    <span>📋 ${getContractTypeText(contract.contract_type)}</span>
+                                    <span>🏷️ ${getStatusText(getContractStatus(contract))}</span>
                                 </div>
-                            </div>
-                            <div class="doc-text-content">${escapeHtml(content)}</div>
-                        `;
+                            </div>`;
+                        // Render content with proper formatting
+                        var formattedContent = renderDocumentContent(content);
+                        el.innerHTML = meta + '<div class="doc-text-content">' + formattedContent + '</div>';
                     }
                 }
             } catch (e) { console.error('Load contract content error:', e); }
@@ -2726,7 +2732,7 @@
                                 </div>
                             </div>
                             ${isImage ? `<div style="text-align: center;"><img src="/uploads/${doc.file_path}" style="max-width: 100%; border-radius: 6px;" /></div>` :
-                            `<div class="doc-text-content">${escapeHtml(doc.extracted_text || 'Không có nội dung')}</div>`}
+                            `<div class="doc-text-content">${renderDocumentContent(doc.extracted_text || 'Không có nội dung')}</div>`}
                         `;
                     }
                 }
@@ -3774,6 +3780,26 @@ console.log(await resp.json());</code></pre>
             }
             // Fallback: basic text with line breaks
             return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+        }
+
+        function renderDocumentContent(text) {
+            // Format contract/legal document for beautiful display
+            var html = escapeHtml(text);
+            // Bold: **text**
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--text-active)">$1</strong>');
+            // Headers: lines that look like "ĐIỀU X." or "Điều X:" or all caps lines
+            html = html.replace(/^((?:ĐIỀU|Điều|CHƯƠNG|Chương|MỤC|Mục|PHẦN|Phần)\s*\d*[.:].*)$/gm, '<h3 class="doc-heading">$1</h3>');
+            // All-caps lines (titles)
+            html = html.replace(/^([A-ZÀ-ỸĐĂÂÊÔƠƯ\s]{10,})$/gm, '<h2 class="doc-title">$1</h2>');
+            // Numbered items: 1.1, 1.2, a), b)
+            html = html.replace(/^(\d+\.\d+\.?\s)/gm, '<span class="doc-num">$1</span>');
+            html = html.replace(/^([a-zđ]\)\s)/gm, '<span class="doc-sub-num">$1</span>');
+            // Dash bullets
+            html = html.replace(/^([-–]\s)/gm, '<span class="doc-bullet">$1</span>');
+            // Line breaks
+            html = html.replace(/\n\n/g, '</p><p class="doc-para">');
+            html = html.replace(/\n/g, '<br>');
+            return '<div class="doc-formatted"><p class="doc-para">' + html + '</p></div>';
         }
 
         function scrollToCitation(num) {
