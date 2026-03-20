@@ -1019,7 +1019,7 @@ async def chat_upload_file(file: UploadFile = File(...), company: dict = Depends
             cur = conn.cursor()
             cur.execute("""
                 INSERT INTO documents (company_id, name, extracted_text, doc_type, status, file_path, file_size, mime_type, uploaded_by)
-                VALUES (%s, %s, %s, 'contract', 'uploaded', 'chat-upload', %s, %s, %s)
+                VALUES (%s, %s, %s, 'other', 'uploaded', 'chat-upload', %s, %s, %s)
                 RETURNING id
             """, (company_id, filename, normalized_text, len(content), file_ext.replace('.', 'application/'), company.get("user_id")))
             doc_id = str(cur.fetchone()[0])
