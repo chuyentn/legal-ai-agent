@@ -1916,7 +1916,7 @@ async def run_agent(
     all_citations = []
     total_input_tokens = 0
     total_output_tokens = 0
-    max_iterations = 5
+    max_iterations = 10
 
     for i in range(max_iterations):
         response = await _call_claude_with_tools(messages, TOOLS, system=system_prompt, company_id=company_id)
@@ -2025,7 +2025,7 @@ async def run_agent_stream(
     messages.append({"role": "user", "content": question})
 
     all_citations = []
-    max_iterations = 5
+    max_iterations = 10
     full_response_text = []
 
     for iteration in range(max_iterations):
@@ -2165,7 +2165,7 @@ async def run_agent_stream_final_text(
     all_citations = []
     all_tools_used = []
     all_tool_results_data = []  # For inline actions extraction
-    max_iterations = 5
+    max_iterations = 10
     full_response_parts = []
 
     for iteration in range(max_iterations):
