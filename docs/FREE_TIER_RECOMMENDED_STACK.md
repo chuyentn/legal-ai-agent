@@ -104,7 +104,7 @@ UPLOAD_DIR=/tmp/legal-ai-agent-uploads
 
 1. Use `SUPABASE_JWT_SECRET` (not `JWT_SECRET`).
 2. Use `OAUTH_REDIRECT_URI` (not `OAUTH_REDIRECT_UR`).
-3. `DATABASE_URL` does not replace the explicit DB vars used by this app (`SUPABASE_DB_*`, `DB_*`).
+3. App now supports `DATABASE_URL` fallback. If set, it is used first; otherwise app uses explicit DB vars (`SUPABASE_DB_*`, `DB_*`).
 
 ## Deploy checklist
 

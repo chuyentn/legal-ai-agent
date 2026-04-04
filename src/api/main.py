@@ -26,6 +26,7 @@ from io import BytesIO
 from datetime import datetime
 from contextlib import contextmanager
 from collections import defaultdict
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 import jwt
 from dotenv import load_dotenv
 
@@ -213,18 +214,57 @@ async def platform_admin_page():
 # Database
 # ============================================
 
-DB_CONFIG = {
-    "host": os.getenv("SUPABASE_DB_HOST", "localhost"),
-    "port": int(os.getenv("SUPABASE_DB_PORT", "5432")),
-    "dbname": os.getenv("DB_NAME", "postgres"),
-    "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
-    "sslmode": os.getenv("DB_SSL_MODE", "require"),
-}
+def _normalize_db_host(raw_host: str) -> str:
+    host = (raw_host or "").strip()
+    if not host:
+        return "localhost"
+    if "://" in host:
+        parsed = urlparse(host)
+        if parsed.hostname:
+            return parsed.hostname
+    if "/" in host:
+        return host.split("/")[0]
+    return host
+
+
+def _build_database_url_with_ssl(url: str, sslmode: str) -> str:
+    parsed = urlparse(url)
+    query_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    if "sslmode" not in query_params and sslmode:
+        query_params["sslmode"] = sslmode
+    return urlunparse(parsed._replace(query=urlencode(query_params)))
+
+
+def _build_db_connect_args():
+    sslmode = os.getenv("DB_SSL_MODE", "require")
+    database_url = (os.getenv("DATABASE_URL") or "").strip()
+    if database_url:
+        return {
+            "dsn": _build_database_url_with_ssl(database_url, sslmode),
+            "kwargs": {},
+        }
+
+    return {
+        "dsn": None,
+        "kwargs": {
+            "host": _normalize_db_host(os.getenv("SUPABASE_DB_HOST", "localhost")),
+            "port": int(os.getenv("SUPABASE_DB_PORT", "5432")),
+            "dbname": os.getenv("DB_NAME", "postgres"),
+            "user": os.getenv("DB_USER", "postgres"),
+            "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
+            "sslmode": sslmode,
+        },
+    }
+
+
+DB_CONNECT = _build_db_connect_args()
 
 @contextmanager
 def get_db():
-    conn = psycopg2.connect(**DB_CONFIG)
+    if DB_CONNECT["dsn"]:
+        conn = psycopg2.connect(DB_CONNECT["dsn"], **DB_CONNECT["kwargs"])
+    else:
+        conn = psycopg2.connect(**DB_CONNECT["kwargs"])
     try:
         yield conn
     finally:
