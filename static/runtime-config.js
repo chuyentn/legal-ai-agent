@@ -6,3 +6,4 @@
  */
 window.LEGAL_API_BASE_URL = window.LEGAL_API_BASE_URL || "";
 window.LEGAL_APP_ENV = window.LEGAL_APP_ENV || "production";
+window.LEGAL_ALLOW_API_BASE_QUERY = window.LEGAL_ALLOW_API_BASE_QUERY || false;

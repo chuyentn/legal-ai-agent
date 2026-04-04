@@ -2325,11 +2325,21 @@
     </div>
 
     <script>
-        // Runtime API base for split deployments (Cloudflare Pages frontend + separate API backend)
-        const queryApiBase = new URLSearchParams(window.location.search).get('api_base');
+        // Runtime API base is locked down in production to avoid leaking/changing data source via shared URLs.
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryApiBase = urlParams.get('api_base');
+        const allowQueryApiBase = window.LEGAL_ALLOW_API_BASE_QUERY === true;
+
         if (queryApiBase) {
-            localStorage.setItem('LEGAL_API_BASE_URL', queryApiBase);
+            if (allowQueryApiBase) {
+                localStorage.setItem('LEGAL_API_BASE_URL', queryApiBase);
+            }
+            urlParams.delete('api_base');
+            const newQuery = urlParams.toString();
+            const cleanUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, '', cleanUrl);
         }
+
         const API_BASE_URL = (window.LEGAL_API_BASE_URL || localStorage.getItem('LEGAL_API_BASE_URL') || '').replace(/\/+$/, '');
         window.__LEGAL_API_BASE_URL = API_BASE_URL;
 
