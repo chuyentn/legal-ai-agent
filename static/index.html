@@ -14,7 +14,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -32,28 +32,54 @@
             --accent-glow: rgba(129,140,248,0.15);
             --accent-glow-strong: rgba(129,140,248,0.3);
             --green: #34d399;
+            --cyan: #22d3ee;
         }
 
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-base);
             color: var(--text);
-            line-height: 1.6;
+            line-height: 1.7;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            background:
+                radial-gradient(700px 300px at 10% -10%, rgba(34,211,238,0.08), transparent 60%),
+                radial-gradient(820px 340px at 90% -20%, rgba(129,140,248,0.14), transparent 65%);
+        }
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0;
+            z-index: 1300;
+            background: linear-gradient(90deg, var(--cyan), var(--accent));
+            box-shadow: 0 0 16px rgba(129,140,248,0.6);
+            transition: width 0.08s linear;
         }
 
         /* ===== NAV ===== */
         nav {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            background: rgba(15,15,23,0.8);
+            background: rgba(12,12,22,0.72);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
-            transition: box-shadow 0.3s;
+            transition: box-shadow 0.3s, background 0.3s;
         }
-        nav.scrolled { box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+        nav.scrolled {
+            box-shadow: 0 8px 36px rgba(0,0,0,0.45);
+            background: rgba(10,10,20,0.9);
+        }
         .nav-inner {
             max-width: 1200px; margin: 0 auto;
             padding: 0.875rem 2rem;
@@ -73,7 +99,7 @@
         .nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; }
         .nav-links a {
             color: var(--text-secondary); text-decoration: none;
-            font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
+            font-size: 0.88rem; font-weight: 600; transition: color 0.2s;
         }
         .nav-links a:hover { color: var(--text); }
         .nav-cta {
@@ -95,12 +121,14 @@
             text-align: center;
         }
         .section-title {
-            font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800;
-            text-align: center; margin-bottom: 1rem; line-height: 1.15;
+            font-size: clamp(1.85rem, 4vw, 2.8rem); font-weight: 800;
+            text-align: center; margin-bottom: 1rem; line-height: 1.28;
+            letter-spacing: -0.01em;
         }
         .section-subtitle {
             text-align: center; color: var(--text-secondary);
-            max-width: 600px; margin: 0 auto 3rem; font-size: 1rem;
+            max-width: 660px; margin: 0 auto 3rem; font-size: 1.04rem;
+            line-height: 1.75;
         }
 
         /* Scroll reveal */
@@ -173,12 +201,24 @@
             display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.85rem 2rem; border-radius: 10px; font-size: 0.95rem;
             font-weight: 600; cursor: pointer; transition: all 0.3s;
-            text-decoration: none; border: none;
+            text-decoration: none; border: none; position: relative; overflow: hidden;
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-dark), var(--accent));
             color: #fff; box-shadow: 0 4px 20px var(--accent-glow);
         }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 60%;
+            height: 100%;
+            transform: skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            transition: left 0.55s ease;
+        }
+        .btn-primary:hover::after { left: 140%; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow-strong); }
         .btn-ghost {
             background: transparent; color: var(--text);
@@ -191,7 +231,8 @@
             display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;
             padding: 2.5rem 0;
             border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-            background: rgba(15,15,23,0.5);
+            background: rgba(15,15,23,0.56);
+            backdrop-filter: blur(6px);
         }
         .stat-item { text-align: center; }
         .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--accent); display: block; }
@@ -209,6 +250,16 @@
             border-radius: 16px; padding: 2rem; position: relative;
             transition: all 0.35s ease; overflow: hidden;
         }
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            pointer-events: none;
+            background: radial-gradient(400px 80px at 0% 0%, rgba(129,140,248,0.16), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.35s;
+        }
         .feature-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
             background: linear-gradient(90deg, transparent, var(--accent), transparent);
@@ -218,10 +269,11 @@
             border-color: var(--border-hover); transform: translateY(-6px);
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
+        .feature-card:hover::after { opacity: 1; }
         .feature-card:hover::before { opacity: 1; }
         .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
-        .feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .feature-card h3 { font-size: 1.13rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.45; }
+        .feature-card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.75; }
 
         /* ===== HOW IT WORKS ===== */
         .steps-container {
@@ -263,7 +315,7 @@
             border-radius: 16px; padding: 2.5rem 2rem; position: relative;
             transition: all 0.3s; display: flex; flex-direction: column;
         }
-        .price-card:hover { transform: translateY(-4px); }
+        .price-card:hover { transform: translateY(-4px); border-color: rgba(129,140,248,0.35); }
         .price-card.featured {
             border-color: var(--accent);
             box-shadow: 0 0 60px var(--accent-glow);
@@ -437,6 +489,8 @@
     </style>
 </head>
 <body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- NAV -->
 <nav id="navbar">
@@ -737,7 +791,13 @@
 <script>
     // Navbar scroll
     const nav = document.getElementById('navbar');
-    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 50));
+    const progress = document.getElementById('scrollProgress');
+    window.addEventListener('scroll', () => {
+        nav.classList.toggle('scrolled', window.scrollY > 50);
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const percent = Math.min(100, (window.scrollY / maxScroll) * 100);
+        progress.style.width = percent + '%';
+    });
 
     // Mobile menu
     document.getElementById('menuToggle').addEventListener('click', () => {
