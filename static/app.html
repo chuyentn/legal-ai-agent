@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -112,10 +112,11 @@
             --bg-card: #f9f9f9;
             --text-primary: #1e1e1e;
             --accent-hover: #4f46e5;
+            --cyan: #22d3ee;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 13px;
             line-height: 1.5;
             color: var(--text);
@@ -123,6 +124,17 @@
             -webkit-font-smoothing: antialiased;
             overflow: hidden;
             height: 100vh;
+            text-rendering: optimizeLegibility;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(600px 260px at 5% -10%, rgba(34,211,238,0.06), transparent 60%),
+                radial-gradient(760px 320px at 95% -15%, rgba(129,140,248,0.12), transparent 65%);
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -179,9 +191,21 @@
         .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
         .form-input::placeholder { color: var(--text-muted); }
 
-        .btn { padding: 0.65rem 1.25rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; }
+        .btn { padding: 0.65rem 1.25rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative; overflow: hidden; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background: var(--accent-gradient); color: white; box-shadow: 0 2px 8px rgba(129,140,248,0.3); }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -130%;
+            width: 60%;
+            height: 100%;
+            transform: skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-primary:hover::after { left: 130%; }
         .btn-primary:hover { box-shadow: 0 4px 16px rgba(129,140,248,0.4); }
         .btn-secondary { background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { border-color: var(--border-active); color: var(--text-active); }
