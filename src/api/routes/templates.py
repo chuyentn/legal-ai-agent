@@ -138,6 +138,12 @@ def seed_default_templates():
     try:
         with get_db() as conn:
             cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            # Backward compatibility for older DB schema versions.
+            cur.execute("""
+                ALTER TABLE document_templates
+                ADD COLUMN IF NOT EXISTS sections JSONB DEFAULT '[]'::jsonb NOT NULL
+            """)
             
             # Check if templates already exist
             cur.execute("SELECT COUNT(*) as count FROM document_templates")

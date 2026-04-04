@@ -205,13 +205,17 @@ DB_CONFIG = {
     "port": int(os.getenv("SUPABASE_DB_PORT", "5432")),
     "dbname": os.getenv("DB_NAME", "postgres"),
     "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
+    "password": os.getenv("SUPABASE_DB_PASSWORD") or os.getenv("DB_PASSWORD", ""),
     "sslmode": os.getenv("DB_SSL_MODE", "require"),
 }
 
 @contextmanager
 def get_db():
-    conn = psycopg2.connect(**DB_CONFIG)
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        conn = psycopg2.connect(database_url)
+    else:
+        conn = psycopg2.connect(**DB_CONFIG)
     try:
         yield conn
     finally:
