@@ -650,6 +650,12 @@ Post-sync smoke QA script:
 
 - [scripts/qa_post_sync.ps1](scripts/qa_post_sync.ps1)
 
+## 🆓 Recommended Free Stack
+
+For the current architecture, the best free setup and operational checklist:
+
+- [docs/FREE_TIER_RECOMMENDED_STACK.md](docs/FREE_TIER_RECOMMENDED_STACK.md)
+
 ## 📝 Vietnamese Law Database
 
 The search engine indexes Vietnamese legal documents including:
