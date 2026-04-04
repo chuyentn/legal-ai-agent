@@ -978,13 +978,29 @@ async def health():
     try:
         with get_db() as conn:
             cur = conn.cursor()
-            cur.execute("SELECT count(*) FROM law_documents")
-            status["documents"] = cur.fetchone()[0]
-            cur.execute("SELECT count(*) FROM law_chunks")
-            status["chunks"] = cur.fetchone()[0]
-            cur.execute("SELECT count(*) FROM companies")
-            status["companies"] = cur.fetchone()[0]
             status["database"] = "connected"
+
+            # Optional table stats: keep health green if DB is reachable but
+            # some data/index tables are not initialized yet.
+            table_queries = {
+                "documents": "SELECT count(*) FROM law_documents",
+                "chunks": "SELECT count(*) FROM law_chunks",
+                "companies": "SELECT count(*) FROM companies",
+            }
+            table_errors = {}
+
+            for key, query in table_queries.items():
+                try:
+                    cur.execute(query)
+                    status[key] = cur.fetchone()[0]
+                except Exception as e:
+                    status[key] = None
+                    table_errors[key] = str(e)
+
+            if table_errors:
+                status["warnings"] = {
+                    "missing_or_unavailable_tables": list(table_errors.keys())
+                }
     except Exception:
         status["database"] = "error"
         status["status"] = "degraded"

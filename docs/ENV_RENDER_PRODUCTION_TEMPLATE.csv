@@ -1,0 +1,30 @@
+KEY,VALUE,REQUIRED,NOTE
+ENV,production,yes,Runtime mode
+APP_PORT,8080,no,Render usually injects PORT automatically
+ALLOWED_ORIGINS,https://legal-ai-agent.coach.io.vn,yes,Your production domain
+ALLOWED_ORIGIN_REGEX,,no,Leave blank if not using preview domains
+SUPABASE_DB_HOST,db.cjkrsnqdsfucngmrsnpm.supabase.co,yes,Supabase Postgres host
+SUPABASE_DB_PORT,5432,yes,Postgres port
+SUPABASE_DB_PASSWORD,REPLACE_DB_PASSWORD,yes,From Supabase database settings
+DB_NAME,postgres,yes,Default Supabase DB name
+DB_USER,postgres,yes,Default Supabase DB user
+DB_SSL_MODE,require,yes,Use require for managed Postgres
+SUPABASE_URL,https://cjkrsnqdsfucngmrsnpm.supabase.co,yes,Supabase API URL
+SUPABASE_ANON_KEY,REPLACE_SUPABASE_ANON_OR_PUBLISHABLE_KEY,yes,Publishable/anon key
+SUPABASE_SERVICE_KEY,REPLACE_SUPABASE_SERVICE_ROLE_KEY,yes,Service role secret key
+SUPABASE_JWT_SECRET,REPLACE_SUPABASE_JWT_SECRET,yes,From Supabase JWT keys page
+SECRET_KEY,REPLACE_RANDOM_32_PLUS_CHARS,yes,App secret
+API_KEY_SECRET,REPLACE_RANDOM_32_PLUS_CHARS,yes,HMAC key for API key hashing
+LLM_ENCRYPTION_KEY,REPLACE_FERNET_KEY,yes,Fernet key for provider secrets
+ANTHROPIC_API_KEY,REPLACE_ANTHROPIC_API_KEY,yes,Claude API key
+ANTHROPIC_MODEL,claude-sonnet-4-20250514,no,Default model
+CLAUDE_OAUTH_TOKEN,,no,Optional
+OAUTH_REDIRECT_URI,https://legal-ai-agent.coach.io.vn/v1/llm/oauth/callback,no,Needed only if OAuth flow is enabled
+OPENAI_API_KEY,,no,Optional provider
+GOOGLE_API_KEY,,no,Optional provider
+OPENAI_CLIENT_ID,,no,Optional OAuth
+OPENAI_CLIENT_SECRET,,no,Optional OAuth
+GOOGLE_CLIENT_ID,,no,Optional OAuth
+GOOGLE_CLIENT_SECRET,,no,Optional OAuth
+CRAWLKIT_API_KEY,,no,Optional crawler integration
+UPLOAD_DIR,/tmp/legal-ai-agent-uploads,no,Upload temp folder

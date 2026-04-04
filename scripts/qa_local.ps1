@@ -38,7 +38,7 @@ try {
     Write-Host "Health status: $($health.status)"
     Write-Host "Database status: $($health.database)"
 
-    if ($health.database -ne "ok") {
+    if ($health.database -ne "ok" -and $health.database -ne "connected") {
         Write-Host "[WARN] Database is not healthy. Fix DB env/connection before pushing release."
         if (-not ($failed -contains "Health")) {
             $failed += "Health(database)"

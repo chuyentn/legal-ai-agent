@@ -10,6 +10,7 @@ Production templates and runbook:
 - [.env.production.example](../.env.production.example)
 - [docs/GITHUB_DEPLOY_ONLINE_PLAN.md](GITHUB_DEPLOY_ONLINE_PLAN.md)
 - [docs/CLOUDFLARE_PAGES_ENV.md](CLOUDFLARE_PAGES_ENV.md)
+- [docs/SUPABASE_PROD_ENV_MAPPING.md](SUPABASE_PROD_ENV_MAPPING.md)
 
 ## 1) Deploy backend API first
 
