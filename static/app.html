@@ -12,8 +12,7 @@
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="/static/runtime-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -113,10 +112,11 @@
             --bg-card: #f9f9f9;
             --text-primary: #1e1e1e;
             --accent-hover: #4f46e5;
+            --cyan: #22d3ee;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 13px;
             line-height: 1.5;
             color: var(--text);
@@ -124,6 +124,17 @@
             -webkit-font-smoothing: antialiased;
             overflow: hidden;
             height: 100vh;
+            text-rendering: optimizeLegibility;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(600px 260px at 5% -10%, rgba(34,211,238,0.06), transparent 60%),
+                radial-gradient(760px 320px at 95% -15%, rgba(129,140,248,0.12), transparent 65%);
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -180,9 +191,21 @@
         .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
         .form-input::placeholder { color: var(--text-muted); }
 
-        .btn { padding: 0.65rem 1.25rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; }
+        .btn { padding: 0.65rem 1.25rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative; overflow: hidden; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background: var(--accent-gradient); color: white; box-shadow: 0 2px 8px rgba(129,140,248,0.3); }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -130%;
+            width: 60%;
+            height: 100%;
+            transform: skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-primary:hover::after { left: 130%; }
         .btn-primary:hover { box-shadow: 0 4px 16px rgba(129,140,248,0.4); }
         .btn-secondary { background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { border-color: var(--border-active); color: var(--text-active); }
@@ -2293,7 +2316,7 @@
                             <div style="display:flex;justify-content:space-between;"><span>Ngày đăng ký:</span><span id="settingsCreated">—</span></div>
                         </div>
                         <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-                            <button class="btn btn-primary btn-small" onclick="showToast('Liên hệ: contact@legal-ai.vn', 'info')">⬆️ Nâng cấp</button>
+                            <button class="btn btn-primary btn-small" onclick="showToast('Liên hệ: contact@coach.io.vn', 'info')">⬆️ Nâng cấp</button>
                             <button class="btn btn-secondary btn-small" onclick="logout()">🚪 Đăng xuất</button>
                         </div>
                     </div>
@@ -2325,32 +2348,82 @@
     </div>
 
     <script>
-        // Runtime API base is locked down in production to avoid leaking/changing data source via shared URLs.
-        const urlParams = new URLSearchParams(window.location.search);
-        const queryApiBase = urlParams.get('api_base');
-        const allowQueryApiBase = window.LEGAL_ALLOW_API_BASE_QUERY === true;
+        const __nativeFetch = window.fetch.bind(window);
+        let __wakeServerPromise = null;
+        let __firstApiRequest = true;
 
-        if (queryApiBase) {
-            if (allowQueryApiBase) {
-                localStorage.setItem('LEGAL_API_BASE_URL', queryApiBase);
-            }
-            urlParams.delete('api_base');
-            const newQuery = urlParams.toString();
-            const cleanUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}${window.location.hash || ''}`;
-            window.history.replaceState({}, '', cleanUrl);
+        function __sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
         }
 
-        const API_BASE_URL = (window.LEGAL_API_BASE_URL || localStorage.getItem('LEGAL_API_BASE_URL') || '').replace(/\/+$/, '');
-        window.__LEGAL_API_BASE_URL = API_BASE_URL;
+        async function __wakeServer(maxRetries = 2) {
+            if (__wakeServerPromise) return __wakeServerPromise;
+            __wakeServerPromise = (async () => {
+                let lastError = null;
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 12000);
+                    try {
+                        const response = await __nativeFetch(`/v1/health?ts=${Date.now()}`, {
+                            method: 'GET',
+                            cache: 'no-store',
+                            signal: controller.signal,
+                        });
+                        clearTimeout(timeout);
+                        if (response.ok || response.status === 503) return true;
+                        lastError = new Error(`Health check ${response.status}`);
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        lastError = error;
+                    }
+                    await __sleep(1200 * (attempt + 1));
+                }
+                throw lastError || new Error('Wake-up failed');
+            })();
 
-        // Keep existing relative fetch calls working by auto-prefixing /v1/* when API base is configured.
-        const __nativeFetch = window.fetch.bind(window);
-        window.fetch = function(input, init) {
-            if (typeof input === 'string' && API_BASE_URL && input.startsWith('/v1/')) {
-                return __nativeFetch(`${API_BASE_URL}${input}`, init);
+            try {
+                return await __wakeServerPromise;
+            } finally {
+                __wakeServerPromise = null;
             }
-            return __nativeFetch(input, init);
+        }
+
+        // Keep existing calls unchanged, but transparently retry cold-start API calls.
+        window.fetch = async function(input, init) {
+            const requestUrl = typeof input === 'string' ? input : ((input && input.url) || '');
+            const isApiRequest = requestUrl.startsWith('/v1/');
+            if (!isApiRequest) return __nativeFetch(input, init);
+
+            if (__firstApiRequest) {
+                __firstApiRequest = false;
+                __wakeServer().catch(() => {});
+            }
+
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const response = await __nativeFetch(input, init);
+                    if (response.status >= 500 && attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                }
+            }
+            throw lastError || new Error('Request failed');
         };
+
+        window.addEventListener('load', () => {
+            __wakeServer().catch(() => {});
+        }, { once: true });
 
         // ===== GLOBAL STATE =====
         let currentUser = null;

@@ -14,7 +14,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -32,28 +32,54 @@
             --accent-glow: rgba(129,140,248,0.15);
             --accent-glow-strong: rgba(129,140,248,0.3);
             --green: #34d399;
+            --cyan: #22d3ee;
         }
 
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-base);
             color: var(--text);
-            line-height: 1.6;
+            line-height: 1.7;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            background:
+                radial-gradient(700px 300px at 10% -10%, rgba(34,211,238,0.08), transparent 60%),
+                radial-gradient(820px 340px at 90% -20%, rgba(129,140,248,0.14), transparent 65%);
+        }
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0;
+            z-index: 1300;
+            background: linear-gradient(90deg, var(--cyan), var(--accent));
+            box-shadow: 0 0 16px rgba(129,140,248,0.6);
+            transition: width 0.08s linear;
         }
 
         /* ===== NAV ===== */
         nav {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            background: rgba(15,15,23,0.8);
+            background: rgba(12,12,22,0.72);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
-            transition: box-shadow 0.3s;
+            transition: box-shadow 0.3s, background 0.3s;
         }
-        nav.scrolled { box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+        nav.scrolled {
+            box-shadow: 0 8px 36px rgba(0,0,0,0.45);
+            background: rgba(10,10,20,0.9);
+        }
         .nav-inner {
             max-width: 1200px; margin: 0 auto;
             padding: 0.875rem 2rem;
@@ -73,7 +99,7 @@
         .nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; }
         .nav-links a {
             color: var(--text-secondary); text-decoration: none;
-            font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
+            font-size: 0.88rem; font-weight: 600; transition: color 0.2s;
         }
         .nav-links a:hover { color: var(--text); }
         .nav-cta {
@@ -95,12 +121,14 @@
             text-align: center;
         }
         .section-title {
-            font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800;
-            text-align: center; margin-bottom: 1rem; line-height: 1.15;
+            font-size: clamp(1.85rem, 4vw, 2.8rem); font-weight: 800;
+            text-align: center; margin-bottom: 1rem; line-height: 1.28;
+            letter-spacing: -0.01em;
         }
         .section-subtitle {
             text-align: center; color: var(--text-secondary);
-            max-width: 600px; margin: 0 auto 3rem; font-size: 1rem;
+            max-width: 660px; margin: 0 auto 3rem; font-size: 1.04rem;
+            line-height: 1.75;
         }
 
         /* Scroll reveal */
@@ -173,12 +201,24 @@
             display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.85rem 2rem; border-radius: 10px; font-size: 0.95rem;
             font-weight: 600; cursor: pointer; transition: all 0.3s;
-            text-decoration: none; border: none;
+            text-decoration: none; border: none; position: relative; overflow: hidden;
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-dark), var(--accent));
             color: #fff; box-shadow: 0 4px 20px var(--accent-glow);
         }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 60%;
+            height: 100%;
+            transform: skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            transition: left 0.55s ease;
+        }
+        .btn-primary:hover::after { left: 140%; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow-strong); }
         .btn-ghost {
             background: transparent; color: var(--text);
@@ -191,7 +231,8 @@
             display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;
             padding: 2.5rem 0;
             border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-            background: rgba(15,15,23,0.5);
+            background: rgba(15,15,23,0.56);
+            backdrop-filter: blur(6px);
         }
         .stat-item { text-align: center; }
         .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--accent); display: block; }
@@ -209,6 +250,16 @@
             border-radius: 16px; padding: 2rem; position: relative;
             transition: all 0.35s ease; overflow: hidden;
         }
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            pointer-events: none;
+            background: radial-gradient(400px 80px at 0% 0%, rgba(129,140,248,0.16), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.35s;
+        }
         .feature-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
             background: linear-gradient(90deg, transparent, var(--accent), transparent);
@@ -218,10 +269,11 @@
             border-color: var(--border-hover); transform: translateY(-6px);
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
+        .feature-card:hover::after { opacity: 1; }
         .feature-card:hover::before { opacity: 1; }
         .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
-        .feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .feature-card h3 { font-size: 1.13rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.45; }
+        .feature-card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.75; }
 
         /* ===== HOW IT WORKS ===== */
         .steps-container {
@@ -263,7 +315,7 @@
             border-radius: 16px; padding: 2.5rem 2rem; position: relative;
             transition: all 0.3s; display: flex; flex-direction: column;
         }
-        .price-card:hover { transform: translateY(-4px); }
+        .price-card:hover { transform: translateY(-4px); border-color: rgba(129,140,248,0.35); }
         .price-card.featured {
             border-color: var(--accent);
             box-shadow: 0 0 60px var(--accent-glow);
@@ -300,19 +352,41 @@
 
         /* ===== CONTACT ===== */
         .contact-section {
-            background: linear-gradient(180deg, #0d0d16, var(--bg-base));
+            background:
+                radial-gradient(1200px 420px at 50% -15%, rgba(129,140,248,0.16), transparent 55%),
+                linear-gradient(180deg, #0d0d16, var(--bg-base));
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
         }
-        .contact-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 1.5rem; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 1.5rem; align-items: start; }
         .contact-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
+            border-radius: 18px;
+            padding: 1.6rem;
+            box-shadow: 0 16px 45px rgba(0,0,0,0.25);
         }
-        .contact-card h3 { font-size: 1.15rem; margin-bottom: 0.65rem; }
+        .contact-card--info {
+            background: linear-gradient(150deg, rgba(129,140,248,0.14), rgba(22,22,37,0.9) 50%);
+            border-color: rgba(129,140,248,0.25);
+        }
+        .contact-card h3 { font-size: 1.2rem; margin-bottom: 0.65rem; }
         .contact-card p { color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem; }
+        .contact-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .contact-badge {
+            padding: 0.35rem 0.65rem;
+            border: 1px solid rgba(129,140,248,0.3);
+            border-radius: 999px;
+            font-size: 0.76rem;
+            color: #c7d2fe;
+            background: rgba(99,102,241,0.14);
+            font-weight: 600;
+        }
         .contact-points { list-style: none; display: grid; gap: 0.6rem; margin-bottom: 1rem; }
         .contact-points li {
             color: var(--text-secondary);
@@ -324,6 +398,17 @@
         .contact-channels { display: grid; gap: 0.5rem; font-size: 0.9rem; }
         .contact-channels a { color: var(--accent); text-decoration: none; }
         .contact-channels a:hover { text-decoration: underline; }
+        .contact-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .contact-meta {
+            margin-top: 0.9rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
 
         .contact-form { display: grid; gap: 0.9rem; }
         .contact-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
@@ -359,10 +444,12 @@
             background: #0f1020;
             font-size: 0.84rem;
             color: var(--text-secondary);
+            transition: border-color 0.2s, background 0.2s;
         }
+        .need-item:hover { border-color: rgba(129,140,248,0.45); background: rgba(99,102,241,0.08); }
         .need-item input { width: auto; }
         .contact-note { font-size: 0.82rem; color: var(--text-muted); }
-        .contact-status { font-size: 0.86rem; color: var(--green); min-height: 1.2rem; }
+        .contact-status { font-size: 0.86rem; color: var(--green); min-height: 1.2rem; font-weight: 600; }
 
         /* ===== FOOTER ===== */
         footer { padding: 3rem 0 2rem; border-top: 1px solid var(--border); }
@@ -402,6 +489,8 @@
     </style>
 </head>
 <body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- NAV -->
 <nav id="navbar">
@@ -569,7 +658,7 @@
                     <li><span class="check">✓</span> SSO & bảo mật nâng cao</li>
                     <li><span class="check">✓</span> Dedicated account manager</li>
                 </ul>
-                <a href="mailto:contact@legal-ai.vn" class="btn btn-ghost">Liên hệ tư vấn</a>
+                <a href="mailto:contact@coach.io.vn" class="btn btn-ghost">Liên hệ tư vấn</a>
             </div>
         </div>
     </div>
@@ -584,9 +673,14 @@
             <p class="section-subtitle">Thiết kế lộ trình phù hợp cho văn phòng luật chưa ứng dụng AI: bắt đầu nhỏ, an toàn dữ liệu, đo được hiệu quả theo từng tháng.</p>
         </div>
         <div class="contact-grid">
-            <div class="contact-card reveal">
+            <div class="contact-card contact-card--info reveal">
                 <h3>Gói tư vấn theo thực trạng vận hành</h3>
                 <p>Chúng tôi tập trung vào các nhu cầu thường gặp của Công ty Luật khi bắt đầu chuyển đổi số với AI.</p>
+                <div class="contact-badges">
+                    <span class="contact-badge">Dành riêng ngành luật</span>
+                    <span class="contact-badge">Phản hồi trong ngày</span>
+                    <span class="contact-badge">Bảo mật dữ liệu</span>
+                </div>
                 <ul class="contact-points">
                     <li>Chuẩn hóa quy trình tiếp nhận hồ sơ và quản lý tiến độ xử lý vụ việc.</li>
                     <li>Tự động hóa rà soát hợp đồng và tra cứu pháp lý nội bộ.</li>
@@ -594,14 +688,21 @@
                     <li>Đào tạo đội ngũ luật sư sử dụng AI đúng chuẩn nghề nghiệp và bảo mật.</li>
                 </ul>
                 <div class="contact-channels">
-                    <div>Email: <a href="mailto:contact@legal-ai.vn">contact@legal-ai.vn</a></div>
+                    <div>Email: <a href="mailto:contact@coach.io.vn">contact@coach.io.vn</a></div>
                     <div>Hotline: <a href="tel:0989890022">0989 890 022</a></div>
+                    <div>Đặt lịch 30 phút: <a href="https://cal.com/legal-ai-agent/30min" target="_blank" rel="noopener">cal.com/legal-ai-agent/30min</a></div>
                     <div>Zalo: <a href="https://zalo.me/0989890022" target="_blank" rel="noopener">Chat với tư vấn viên</a></div>
                 </div>
+                <div class="contact-actions">
+                    <a href="mailto:contact@coach.io.vn" class="btn btn-ghost">Gửi email ngay</a>
+                    <a href="https://cal.com/legal-ai-agent/30min" target="_blank" rel="noopener" class="btn btn-primary">Đặt lịch 30 phút</a>
+                </div>
+                <div class="contact-meta">Cam kết tư vấn thực tế theo nguồn lực hiện tại của công ty bạn, không đề xuất lộ trình quá tải.</div>
             </div>
 
             <div class="contact-card reveal">
                 <h3>Gửi nhu cầu triển khai</h3>
+                <p>Điền thông tin một lần để nhận lộ trình chuyển đổi số AI phù hợp với đội ngũ pháp chế và luật sư của bạn.</p>
                 <form id="contactForm" class="contact-form">
                     <div class="contact-row">
                         <div class="field">
@@ -688,9 +789,80 @@
 </footer>
 
 <script>
+    let wakeServerPromise = null;
+
+    function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function wakeServer(maxRetries = 2) {
+        if (wakeServerPromise) return wakeServerPromise;
+        wakeServerPromise = (async () => {
+            let lastError = null;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 12000);
+                try {
+                    const response = await fetch(`/v1/health?ts=${Date.now()}`, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        signal: controller.signal,
+                    });
+                    clearTimeout(timeout);
+                    if (response.ok || response.status === 503) return true;
+                    lastError = new Error(`Health check ${response.status}`);
+                } catch (error) {
+                    clearTimeout(timeout);
+                    lastError = error;
+                }
+                await sleep(1200 * (attempt + 1));
+            }
+            throw lastError || new Error('Wake-up failed');
+        })();
+
+        try {
+            return await wakeServerPromise;
+        } finally {
+            wakeServerPromise = null;
+        }
+    }
+
+    async function postWithWakeRetry(url, options = {}) {
+        let lastError = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                await wakeServer();
+                const response = await fetch(url, options);
+                if (response.status >= 500 && attempt === 0) {
+                    await sleep(1500);
+                    continue;
+                }
+                return response;
+            } catch (error) {
+                lastError = error;
+                if (attempt === 0) {
+                    await sleep(1500);
+                    continue;
+                }
+            }
+        }
+        throw lastError || new Error('Request failed');
+    }
+
+    // Warm up server as soon as page loads to reduce first-action latency.
+    wakeServer().catch(() => {
+        // Ignore warm-up failures here; action handlers will retry.
+    });
+
     // Navbar scroll
     const nav = document.getElementById('navbar');
-    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 50));
+    const progress = document.getElementById('scrollProgress');
+    window.addEventListener('scroll', () => {
+        nav.classList.toggle('scrolled', window.scrollY > 50);
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const percent = Math.min(100, (window.scrollY / maxScroll) * 100);
+        progress.style.width = percent + '%';
+    });
 
     // Mobile menu
     document.getElementById('menuToggle').addEventListener('click', () => {
@@ -718,7 +890,7 @@
                 'Mo ta bai toan:',
                 payload.detail || 'Chua cung cap',
             ].join('\n');
-            window.location.href = `mailto:contact@legal-ai.vn?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = `mailto:contact@coach.io.vn?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         };
 
         contactForm.addEventListener('submit', (event) => {
@@ -737,12 +909,14 @@
 
             const statusEl = document.getElementById('contactStatus');
             if (!payload.fullName || !payload.lawFirm || !payload.email || !payload.phone || !payload.aiLevel) {
+                statusEl.style.color = '#f59e0b';
                 statusEl.textContent = 'Vui lòng điền đầy đủ thông tin bắt buộc.';
                 return;
             }
 
-            statusEl.textContent = 'Dang gui yeu cau...';
-            fetch('/v1/contact/lead', {
+            statusEl.style.color = '#93c5fd';
+            statusEl.textContent = 'He thong dang khoi dong. Dang gui yeu cau...';
+            postWithWakeRetry('/v1/contact/lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -770,10 +944,12 @@
                     return response.json();
                 })
                 .then(() => {
+                    statusEl.style.color = '#34d399';
                     statusEl.textContent = 'Da gui yeu cau thanh cong. Team se lien he ban som.';
                     contactForm.reset();
                 })
                 .catch((error) => {
+                    statusEl.style.color = '#f59e0b';
                     statusEl.textContent = `Khong gui duoc qua he thong (${error.message}). Dang mo email de ban gui thu cong.`;
                     openMailClient(payload);
                 });

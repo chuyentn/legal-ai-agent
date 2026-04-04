@@ -6,8 +6,7 @@
     <title>Admin Dashboard - Legal AI Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="/static/runtime-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -40,14 +39,27 @@
             --violet: #8b5cf6;
             --rose: #f43f5e;
             --amber: #f59e0b;
+            --cyan-soft: rgba(34,211,238,0.12);
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(640px 280px at 10% -20%, var(--cyan-soft), transparent 60%),
+                radial-gradient(860px 340px at 100% -18%, rgba(99,102,241,0.16), transparent 65%);
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -205,11 +217,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(9,9,11,0.8);
+            background: rgba(9,9,11,0.76);
             backdrop-filter: blur(12px);
             position: sticky;
             top: 0;
             z-index: 50;
+            box-shadow: 0 8px 26px rgba(0,0,0,0.22);
         }
 
         .topbar-left { display: flex; align-items: center; gap: 1rem; }
@@ -281,6 +294,7 @@
             transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.2);
         }
 
         .stat-card::before {
@@ -294,7 +308,7 @@
             transition: opacity 0.2s;
         }
 
-        .stat-card:hover { border-color: #3f3f46; transform: translateY(-1px); }
+        .stat-card:hover { border-color: #52525b; transform: translateY(-2px); box-shadow: 0 16px 34px rgba(0,0,0,0.3); }
         .stat-card:hover::before { opacity: 1; }
 
         .stat-card.purple::before { background: var(--primary); }
@@ -364,6 +378,7 @@
             border-radius: 12px;
             overflow: hidden;
             margin-bottom: 1.5rem;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.2);
         }
 
         .card-header {
@@ -497,9 +512,23 @@
             align-items: center;
             gap: 0.375rem;
             font-family: inherit;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-primary { background: var(--primary); color: white; }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -130%;
+            width: 60%;
+            height: 100%;
+            transform: skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-primary:hover::after { left: 130%; }
         .btn-primary:hover { background: var(--primary-hover); }
 
         .btn-ghost {
@@ -1504,21 +1533,70 @@
     (function() {
         'use strict';
 
-        // ======================== CONFIG ========================
-        const urlParams = new URLSearchParams(window.location.search);
-        const queryApiBase = urlParams.get('api_base');
-        const allowQueryApiBase = window.LEGAL_ALLOW_API_BASE_QUERY === true;
-        if (queryApiBase) {
-            if (allowQueryApiBase) {
-                localStorage.setItem('LEGAL_API_BASE_URL', queryApiBase);
-            }
-            urlParams.delete('api_base');
-            const newQuery = urlParams.toString();
-            const cleanUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}${window.location.hash || ''}`;
-            window.history.replaceState({}, '', cleanUrl);
+        const __nativeFetch = window.fetch.bind(window);
+        let __wakeServerPromise = null;
+
+        function __sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
         }
-        const configuredApiBase = (window.LEGAL_API_BASE_URL || localStorage.getItem('LEGAL_API_BASE_URL') || '').replace(/\/+$/, '');
-        const API_URL = configuredApiBase || window.location.origin;
+
+        async function __wakeServer(maxRetries = 2) {
+            if (__wakeServerPromise) return __wakeServerPromise;
+            __wakeServerPromise = (async () => {
+                let lastError = null;
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 12000);
+                    try {
+                        const response = await __nativeFetch(`/v1/health?ts=${Date.now()}`, {
+                            method: 'GET',
+                            cache: 'no-store',
+                            signal: controller.signal,
+                        });
+                        clearTimeout(timeout);
+                        if (response.ok || response.status === 503) return true;
+                        lastError = new Error(`Health check ${response.status}`);
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        lastError = error;
+                    }
+                    await __sleep(1200 * (attempt + 1));
+                }
+                throw lastError || new Error('Wake-up failed');
+            })();
+
+            try {
+                return await __wakeServerPromise;
+            } finally {
+                __wakeServerPromise = null;
+            }
+        }
+
+        async function __fetchWithWakeRetry(url, options) {
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const response = await __nativeFetch(url, options);
+                    if (response.status >= 500 && attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                }
+            }
+            throw lastError || new Error('Request failed');
+        }
+
+        // ======================== CONFIG ========================
+        const API_URL = window.location.origin;
         let authToken = localStorage.getItem('token');
         let refreshIntervals = [];
 
@@ -1552,7 +1630,7 @@
         // ======================== API HELPER ========================
         async function api(endpoint, options = {}) {
             try {
-                const response = await fetch(`${API_URL}${endpoint}`, {
+                const response = await __fetchWithWakeRetry(`${API_URL}${endpoint}`, {
                     ...options,
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -2713,6 +2791,7 @@
         };
 
         // ======================== INITIAL LOAD ========================
+        __wakeServer().catch(() => {});
         loadDashboard();
 
         // Check API health periodically
