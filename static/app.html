@@ -2348,6 +2348,83 @@
     </div>
 
     <script>
+        const __nativeFetch = window.fetch.bind(window);
+        let __wakeServerPromise = null;
+        let __firstApiRequest = true;
+
+        function __sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        async function __wakeServer(maxRetries = 2) {
+            if (__wakeServerPromise) return __wakeServerPromise;
+            __wakeServerPromise = (async () => {
+                let lastError = null;
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 12000);
+                    try {
+                        const response = await __nativeFetch(`/v1/health?ts=${Date.now()}`, {
+                            method: 'GET',
+                            cache: 'no-store',
+                            signal: controller.signal,
+                        });
+                        clearTimeout(timeout);
+                        if (response.ok || response.status === 503) return true;
+                        lastError = new Error(`Health check ${response.status}`);
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        lastError = error;
+                    }
+                    await __sleep(1200 * (attempt + 1));
+                }
+                throw lastError || new Error('Wake-up failed');
+            })();
+
+            try {
+                return await __wakeServerPromise;
+            } finally {
+                __wakeServerPromise = null;
+            }
+        }
+
+        // Keep existing calls unchanged, but transparently retry cold-start API calls.
+        window.fetch = async function(input, init) {
+            const requestUrl = typeof input === 'string' ? input : ((input && input.url) || '');
+            const isApiRequest = requestUrl.startsWith('/v1/');
+            if (!isApiRequest) return __nativeFetch(input, init);
+
+            if (__firstApiRequest) {
+                __firstApiRequest = false;
+                __wakeServer().catch(() => {});
+            }
+
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const response = await __nativeFetch(input, init);
+                    if (response.status >= 500 && attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                }
+            }
+            throw lastError || new Error('Request failed');
+        };
+
+        window.addEventListener('load', () => {
+            __wakeServer().catch(() => {});
+        }, { once: true });
+
         // ===== GLOBAL STATE =====
         let currentUser = null;
         let selectedDomain = '';

@@ -1533,6 +1533,68 @@
     (function() {
         'use strict';
 
+        const __nativeFetch = window.fetch.bind(window);
+        let __wakeServerPromise = null;
+
+        function __sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        async function __wakeServer(maxRetries = 2) {
+            if (__wakeServerPromise) return __wakeServerPromise;
+            __wakeServerPromise = (async () => {
+                let lastError = null;
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 12000);
+                    try {
+                        const response = await __nativeFetch(`/v1/health?ts=${Date.now()}`, {
+                            method: 'GET',
+                            cache: 'no-store',
+                            signal: controller.signal,
+                        });
+                        clearTimeout(timeout);
+                        if (response.ok || response.status === 503) return true;
+                        lastError = new Error(`Health check ${response.status}`);
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        lastError = error;
+                    }
+                    await __sleep(1200 * (attempt + 1));
+                }
+                throw lastError || new Error('Wake-up failed');
+            })();
+
+            try {
+                return await __wakeServerPromise;
+            } finally {
+                __wakeServerPromise = null;
+            }
+        }
+
+        async function __fetchWithWakeRetry(url, options) {
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const response = await __nativeFetch(url, options);
+                    if (response.status >= 500 && attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt === 0) {
+                        await __wakeServer().catch(() => {});
+                        await __sleep(1500);
+                        continue;
+                    }
+                }
+            }
+            throw lastError || new Error('Request failed');
+        }
+
         // ======================== CONFIG ========================
         const API_URL = window.location.origin;
         let authToken = localStorage.getItem('token');
@@ -1568,7 +1630,7 @@
         // ======================== API HELPER ========================
         async function api(endpoint, options = {}) {
             try {
-                const response = await fetch(`${API_URL}${endpoint}`, {
+                const response = await __fetchWithWakeRetry(`${API_URL}${endpoint}`, {
                     ...options,
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -2729,6 +2791,7 @@
         };
 
         // ======================== INITIAL LOAD ========================
+        __wakeServer().catch(() => {});
         loadDashboard();
 
         // Check API health periodically

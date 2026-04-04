@@ -789,6 +789,71 @@
 </footer>
 
 <script>
+    let wakeServerPromise = null;
+
+    function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function wakeServer(maxRetries = 2) {
+        if (wakeServerPromise) return wakeServerPromise;
+        wakeServerPromise = (async () => {
+            let lastError = null;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 12000);
+                try {
+                    const response = await fetch(`/v1/health?ts=${Date.now()}`, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        signal: controller.signal,
+                    });
+                    clearTimeout(timeout);
+                    if (response.ok || response.status === 503) return true;
+                    lastError = new Error(`Health check ${response.status}`);
+                } catch (error) {
+                    clearTimeout(timeout);
+                    lastError = error;
+                }
+                await sleep(1200 * (attempt + 1));
+            }
+            throw lastError || new Error('Wake-up failed');
+        })();
+
+        try {
+            return await wakeServerPromise;
+        } finally {
+            wakeServerPromise = null;
+        }
+    }
+
+    async function postWithWakeRetry(url, options = {}) {
+        let lastError = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                await wakeServer();
+                const response = await fetch(url, options);
+                if (response.status >= 500 && attempt === 0) {
+                    await sleep(1500);
+                    continue;
+                }
+                return response;
+            } catch (error) {
+                lastError = error;
+                if (attempt === 0) {
+                    await sleep(1500);
+                    continue;
+                }
+            }
+        }
+        throw lastError || new Error('Request failed');
+    }
+
+    // Warm up server as soon as page loads to reduce first-action latency.
+    wakeServer().catch(() => {
+        // Ignore warm-up failures here; action handlers will retry.
+    });
+
     // Navbar scroll
     const nav = document.getElementById('navbar');
     const progress = document.getElementById('scrollProgress');
@@ -850,8 +915,8 @@
             }
 
             statusEl.style.color = '#93c5fd';
-            statusEl.textContent = 'Dang gui yeu cau...';
-            fetch('/v1/contact/lead', {
+            statusEl.textContent = 'He thong dang khoi dong. Dang gui yeu cau...';
+            postWithWakeRetry('/v1/contact/lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
