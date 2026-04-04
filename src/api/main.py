@@ -153,6 +153,7 @@ async def startup_event():
     """Seed default templates and ensure audit table on startup"""
     templates.seed_default_templates()
     ensure_audit_table()
+    ensure_customer_leads_table()
 
 # Static files
 static_dir = pathlib.Path(__file__).parent.parent.parent / "static"
@@ -258,6 +259,41 @@ def ensure_audit_table():
             conn.commit()
     except Exception as e:
         print(f"Audit table error: {e}")
+
+
+def ensure_customer_leads_table():
+    """Ensure customer leads table exists for superadmin pipeline."""
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS customer_leads (
+                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                    source VARCHAR(50) NOT NULL DEFAULT 'contact_form',
+                    full_name VARCHAR(120) NOT NULL,
+                    company_name VARCHAR(180) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    phone VARCHAR(40),
+                    ai_level VARCHAR(80),
+                    needs JSONB DEFAULT '[]'::jsonb,
+                    detail TEXT,
+                    status VARCHAR(30) NOT NULL DEFAULT 'new',
+                    assigned_to UUID,
+                    note TEXT,
+                    converted_company_id UUID,
+                    converted_user_id UUID,
+                    converted_at TIMESTAMPTZ,
+                    metadata JSONB DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ DEFAULT now(),
+                    updated_at TIMESTAMPTZ DEFAULT now()
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_customer_leads_email ON customer_leads(email)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_customer_leads_status_created ON customer_leads(status, created_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_customer_leads_source_created ON customer_leads(source, created_at DESC)")
+            conn.commit()
+    except Exception as e:
+        print(f"Customer leads table error: {e}")
 
 # ============================================
 # Auth

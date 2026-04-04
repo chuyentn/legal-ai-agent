@@ -634,6 +634,10 @@
                     <span class="icon">👥</span>
                     <span>Người dùng</span>
                 </div>
+                <div class="sidebar-nav-item" onclick="showSection('leads')">
+                    <span class="icon">🎯</span>
+                    <span>Leads</span>
+                </div>
                 <div class="sidebar-nav-item" onclick="showSection('settings')">
                     <span class="icon">⚙️</span>
                     <span>Cài đặt</span>
@@ -795,7 +799,7 @@
                                 <option value="">Tất cả plans</option>
                                 <option value="trial">Trial</option>
                                 <option value="starter">Starter</option>
-                                <option value="professional">Professional</option>
+                                <option value="pro">Pro</option>
                                 <option value="enterprise">Enterprise</option>
                             </select>
                         </div>
@@ -858,6 +862,59 @@
                                     </tr>
                                 </thead>
                                 <tbody id="users-list">
+                                    <tr>
+                                        <td colspan="7" class="text-muted">Đang tải...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LEADS SECTION -->
+                <div id="section-leads" class="section hidden">
+                    <div class="flex-between mb-2">
+                        <div class="flex gap-1">
+                            <input type="text" id="lead-search" class="input" placeholder="Tìm theo email / tên / công ty..." style="width: 320px;">
+                            <select id="lead-filter-status" class="input" style="width: 150px;">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="new">new</option>
+                                <option value="contacted">contacted</option>
+                                <option value="qualified">qualified</option>
+                                <option value="converted">converted</option>
+                                <option value="lost">lost</option>
+                            </select>
+                            <select id="lead-filter-source" class="input" style="width: 170px;">
+                                <option value="">Tất cả nguồn</option>
+                                <option value="contact_form">contact_form</option>
+                                <option value="legal-ai-landing">legal-ai-landing</option>
+                                <option value="registration">registration</option>
+                                <option value="legal-ai-agent-app">legal-ai-agent-app</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadLeads()">
+                            🔍 Tìm kiếm
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Leads đăng ký và liên hệ</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Thời gian</th>
+                                        <th>Lead</th>
+                                        <th>Nguồn</th>
+                                        <th>AI level</th>
+                                        <th>Trạng thái</th>
+                                        <th>Convert</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads-list">
                                     <tr>
                                         <td colspan="7" class="text-muted">Đang tải...</td>
                                     </tr>
@@ -1043,7 +1100,7 @@
                     <select id="edit-company-plan" class="input">
                         <option value="trial">Trial</option>
                         <option value="starter">Starter</option>
-                        <option value="professional">Professional</option>
+                        <option value="pro">Pro</option>
                         <option value="enterprise">Enterprise</option>
                     </select>
                 </div>
@@ -1135,6 +1192,7 @@
             if (section === 'dashboard') loadDashboard();
             if (section === 'companies') loadCompanies();
             if (section === 'users') loadUsers();
+            if (section === 'leads') loadLeads();
             if (section === 'settings') loadSettings();
             if (section === 'llm-usage') loadLLMUsage();
             if (section === 'logs') loadLogs();
@@ -1336,6 +1394,100 @@
             }
         }
 
+        // LEADS
+        async function loadLeads() {
+            try {
+                const search = document.getElementById('lead-search').value;
+                const status = document.getElementById('lead-filter-status').value;
+                const source = document.getElementById('lead-filter-source').value;
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (status) params.append('status', status);
+                if (source) params.append('source', source);
+
+                const data = await apiCall(`/v1/platform/leads?${params}`);
+                const list = document.getElementById('leads-list');
+
+                if (!data.leads || data.leads.length === 0) {
+                    list.innerHTML = '<tr><td colspan="7" class="text-muted">Không có leads</td></tr>';
+                    return;
+                }
+
+                list.innerHTML = data.leads.map(l => {
+                    const detail = [
+                        `<strong>${l.full_name}</strong>`,
+                        `<div class="text-muted">${l.company_name}</div>`,
+                        `<div><small>${l.email}${l.phone ? ` · ${l.phone}` : ''}</small></div>`,
+                    ].join('');
+
+                    const convertedInfo = l.converted_company_name
+                        ? `<small>${l.converted_company_name}${l.converted_user_email ? ` · ${l.converted_user_email}` : ''}</small>`
+                        : '<small class="text-muted">-</small>';
+
+                    return `
+                        <tr>
+                            <td>${new Date(l.created_at).toLocaleString('vi-VN')}</td>
+                            <td>${detail}</td>
+                            <td><span class="badge badge-primary">${l.source}</span></td>
+                            <td>${l.ai_level || '-'}</td>
+                            <td>
+                                <select class="input" style="width: 140px;" onchange="updateLeadStatus('${l.id}', this.value)">
+                                    ${['new','contacted','qualified','converted','lost'].map(s => `<option value="${s}" ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                                </select>
+                            </td>
+                            <td>${convertedInfo}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-small" onclick="convertLeadOneClick('${l.id}')">⚡ Convert 1 chạm</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Load leads error:', err);
+                alert('Lỗi tải leads: ' + err.message);
+            }
+        }
+
+        async function updateLeadStatus(leadId, status) {
+            try {
+                await apiCall(`/v1/platform/leads/${leadId}/status`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status })
+                });
+            } catch (err) {
+                alert('Lỗi cập nhật lead: ' + err.message);
+                loadLeads();
+            }
+        }
+
+        async function convertLeadOneClick(leadId) {
+            const monthlyQuotaRaw = prompt('Nhập monthly quota cho khách (mặc định 100000):', '100000');
+            if (monthlyQuotaRaw === null) return;
+
+            const monthlyQuota = parseInt(monthlyQuotaRaw, 10);
+            if (Number.isNaN(monthlyQuota) || monthlyQuota < 0) {
+                alert('Monthly quota không hợp lệ');
+                return;
+            }
+
+            try {
+                const result = await apiCall(`/v1/platform/leads/${leadId}/convert`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        plan: 'enterprise',
+                        monthly_quota: monthlyQuota,
+                        user_role: 'owner',
+                        note: 'Converted from Platform Admin one-click flow'
+                    })
+                });
+                alert(`Đã convert lead thành công: ${result.company.name} (${result.company.plan})`);
+                loadLeads();
+                loadCompanies();
+            } catch (err) {
+                alert('Convert thất bại: ' + err.message);
+            }
+        }
+
         // SETTINGS
         async function loadSettings() {
             try {
@@ -1464,6 +1616,7 @@
             if (section.includes('dashboard')) loadDashboard();
             if (section.includes('công ty')) loadCompanies();
             if (section.includes('người dùng')) loadUsers();
+            if (section.includes('leads')) loadLeads();
             if (section.includes('cài đặt')) loadSettings();
             if (section.includes('llm')) loadLLMUsage();
             if (section.includes('logs')) loadLogs();

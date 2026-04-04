@@ -11,6 +11,8 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
 
+from ..middleware.auth import get_db
+
 router = APIRouter(prefix="/v1/contact", tags=["contact"])
 
 
@@ -27,6 +29,40 @@ class ContactLeadRequest(BaseModel):
 
 @router.post("/lead")
 async def submit_contact_lead(payload: ContactLeadRequest, request: Request):
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO customer_leads (
+                    source, full_name, company_name, email, phone, ai_level, needs, detail, status, metadata
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, 'new', %s::jsonb)
+                """,
+                (
+                    payload.source,
+                    payload.full_name,
+                    payload.law_firm,
+                    str(payload.email),
+                    payload.phone,
+                    payload.ai_level,
+                    json.dumps(payload.needs, ensure_ascii=False),
+                    payload.detail or "",
+                    json.dumps(
+                        {
+                            "origin": request.headers.get("origin") or "",
+                            "referer": request.headers.get("referer") or "",
+                            "user_agent": request.headers.get("user-agent", ""),
+                            "client_ip": request.client.host if request.client else "",
+                        },
+                        ensure_ascii=False,
+                    ),
+                ),
+            )
+            conn.commit()
+    except Exception:
+        # Internal lead storage should not block public lead capture.
+        pass
+
     webhook_url = (os.getenv("GOOGLE_APPS_SCRIPT_WEBHOOK_URL") or "").strip()
     if not webhook_url:
         raise HTTPException(

@@ -169,6 +169,32 @@ async def register(data: RegisterRequest):
 
         conn.commit()
 
+    # Save registration lead to internal CRM pipeline.
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO customer_leads (
+                    source, full_name, company_name, email, status, converted_company_id, converted_user_id, converted_at, metadata
+                ) VALUES (
+                    'registration', %s, %s, %s, 'converted', %s, %s, now(), %s::jsonb
+                )
+                ON CONFLICT DO NOTHING
+                """,
+                (
+                    data.full_name,
+                    data.company_name,
+                    str(data.email),
+                    str(company["id"]),
+                    str(user["id"]),
+                    '{"auto_created": true}',
+                ),
+            )
+            conn.commit()
+    except Exception:
+        pass
+
     # Gửi lead sang CRM (Apps Script) – không làm fail nếu lỗi
     try:
         await send_lead_to_apps_script(

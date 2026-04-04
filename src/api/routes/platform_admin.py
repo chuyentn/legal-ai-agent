@@ -3,7 +3,7 @@ Platform Admin Routes - Super Admin Only
 Full system administration for self-hosted deployments
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, Body
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from psycopg2.extras import RealDictCursor
@@ -40,6 +40,18 @@ class UserRoleUpdate(BaseModel):
 
 class UserStatusUpdate(BaseModel):
     is_active: bool
+
+
+class LeadStatusUpdate(BaseModel):
+    status: str
+    note: Optional[str] = None
+
+
+class LeadConvertRequest(BaseModel):
+    plan: str = "enterprise"
+    monthly_quota: int = 100000
+    user_role: str = "owner"
+    note: Optional[str] = None
 
 class PlatformSettings(BaseModel):
     default_llm_provider: Optional[str] = None
@@ -480,6 +492,248 @@ async def change_user_status(
         result["id"] = str(result["id"])
         
         return result
+
+
+# ============================================
+# LEADS MANAGEMENT
+# ============================================
+
+@router.get("/leads")
+async def list_leads(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    source: Optional[str] = None,
+    limit: int = Query(200, le=1000),
+    offset: int = 0,
+    admin: Dict = Depends(require_superadmin),
+):
+    """List captured customer leads for superadmin operations."""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        query = """
+            SELECT
+                l.id, l.source, l.full_name, l.company_name, l.email, l.phone,
+                l.ai_level, l.needs, l.detail, l.status, l.note,
+                l.converted_company_id, l.converted_user_id, l.converted_at,
+                l.created_at, l.updated_at,
+                c.name as converted_company_name,
+                u.full_name as converted_user_name,
+                u.email as converted_user_email
+            FROM customer_leads l
+            LEFT JOIN companies c ON c.id = l.converted_company_id
+            LEFT JOIN users u ON u.id = l.converted_user_id
+            WHERE 1=1
+        """
+        params: List[Any] = []
+
+        if search:
+            query += " AND (l.email ILIKE %s OR l.full_name ILIKE %s OR l.company_name ILIKE %s)"
+            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+
+        if status:
+            query += " AND l.status = %s"
+            params.append(status)
+
+        if source:
+            query += " AND l.source = %s"
+            params.append(source)
+
+        query += " ORDER BY l.created_at DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+
+        cur.execute(query, params)
+        rows = cur.fetchall()
+
+        leads = []
+        for row in rows:
+            lead = dict(row)
+            lead["id"] = str(lead["id"])
+            if lead.get("converted_company_id"):
+                lead["converted_company_id"] = str(lead["converted_company_id"])
+            if lead.get("converted_user_id"):
+                lead["converted_user_id"] = str(lead["converted_user_id"])
+            if lead.get("created_at"):
+                lead["created_at"] = lead["created_at"].isoformat()
+            if lead.get("updated_at"):
+                lead["updated_at"] = lead["updated_at"].isoformat()
+            if lead.get("converted_at"):
+                lead["converted_at"] = lead["converted_at"].isoformat()
+            leads.append(lead)
+
+        return {"leads": leads}
+
+
+@router.put("/leads/{lead_id}/status")
+async def update_lead_status(
+    lead_id: str,
+    update: LeadStatusUpdate,
+    admin: Dict = Depends(require_superadmin),
+):
+    """Update lead status (new/contacted/qualified/converted/lost)."""
+    allowed_statuses = {"new", "contacted", "qualified", "converted", "lost"}
+    if update.status not in allowed_statuses:
+        raise HTTPException(400, f"Invalid status. Allowed: {', '.join(sorted(allowed_statuses))}")
+
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            """
+            UPDATE customer_leads
+            SET status = %s, note = COALESCE(%s, note), updated_at = now(), assigned_to = %s
+            WHERE id::text = %s
+            RETURNING *
+            """,
+            (update.status, update.note, admin["id"], lead_id),
+        )
+        lead = cur.fetchone()
+        if not lead:
+            raise HTTPException(404, "Lead không tồn tại")
+        conn.commit()
+
+        result = dict(lead)
+        result["id"] = str(result["id"])
+        return result
+
+
+@router.post("/leads/{lead_id}/convert")
+async def convert_lead(
+    lead_id: str,
+    body: LeadConvertRequest,
+    admin: Dict = Depends(require_superadmin),
+):
+    """One-click convert lead to upgraded customer account."""
+    allowed_plans = {"trial", "starter", "pro", "enterprise"}
+    if body.plan not in allowed_plans:
+        raise HTTPException(400, f"Invalid plan. Allowed: {', '.join(sorted(allowed_plans))}")
+
+    allowed_roles = {"owner", "admin", "member", "viewer"}
+    if body.user_role not in allowed_roles:
+        raise HTTPException(400, f"Invalid role. Allowed: {', '.join(sorted(allowed_roles))}")
+
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT * FROM customer_leads WHERE id::text = %s", (lead_id,))
+        lead = cur.fetchone()
+        if not lead:
+            raise HTTPException(404, "Lead không tồn tại")
+
+        cur.execute(
+            """
+            SELECT id, company_id, role
+            FROM users
+            WHERE lower(email) = lower(%s)
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (lead["email"],),
+        )
+        user = cur.fetchone()
+        if not user:
+            raise HTTPException(
+                404,
+                "Chưa tìm thấy tài khoản theo email lead. Vui lòng yêu cầu khách đăng ký trước.",
+            )
+
+        cur.execute(
+            """
+            UPDATE companies
+            SET plan = %s::plan_type,
+                monthly_quota = %s,
+                is_active = true,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING id, name, plan, monthly_quota, is_active
+            """,
+            (body.plan, body.monthly_quota, user["company_id"]),
+        )
+        company = cur.fetchone()
+        if not company:
+            raise HTTPException(404, "Không tìm thấy công ty của user")
+
+        cur.execute(
+            """
+            UPDATE users
+            SET role = %s::user_role,
+                is_active = true
+            WHERE id = %s
+            RETURNING id, email, role, company_id, is_active
+            """,
+            (body.user_role, user["id"]),
+        )
+        updated_user = cur.fetchone()
+
+        cur.execute(
+            """
+            UPDATE customer_leads
+            SET status = 'converted',
+                assigned_to = %s,
+                note = COALESCE(%s, note),
+                converted_company_id = %s,
+                converted_user_id = %s,
+                converted_at = now(),
+                updated_at = now()
+            WHERE id::text = %s
+            RETURNING id, status, converted_at
+            """,
+            (
+                admin["id"],
+                body.note,
+                user["company_id"],
+                user["id"],
+                lead_id,
+            ),
+        )
+        converted = cur.fetchone()
+
+        try:
+            cur.execute(
+                """
+                INSERT INTO platform_logs (user_id, action, target_type, target_id, details)
+                VALUES (%s, 'convert_lead', 'lead', %s, %s)
+                """,
+                (
+                    admin["id"],
+                    lead_id,
+                    json.dumps(
+                        {
+                            "plan": body.plan,
+                            "monthly_quota": body.monthly_quota,
+                            "user_role": body.user_role,
+                            "email": lead["email"],
+                            "company_id": str(user["company_id"]),
+                            "user_id": str(user["id"]),
+                        }
+                    ),
+                ),
+            )
+        except Exception:
+            pass
+
+        conn.commit()
+
+        return {
+            "ok": True,
+            "lead": {
+                "id": str(converted["id"]),
+                "status": converted["status"],
+                "converted_at": converted["converted_at"].isoformat() if converted.get("converted_at") else None,
+            },
+            "company": {
+                "id": str(company["id"]),
+                "name": company["name"],
+                "plan": company["plan"],
+                "monthly_quota": company["monthly_quota"],
+                "is_active": company["is_active"],
+            },
+            "user": {
+                "id": str(updated_user["id"]),
+                "email": updated_user["email"],
+                "role": updated_user["role"],
+                "is_active": updated_user["is_active"],
+            },
+        }
 
 # ============================================
 # SYSTEM SETTINGS
