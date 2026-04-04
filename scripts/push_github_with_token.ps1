@@ -81,4 +81,8 @@ else {
 $authHeader = "AUTHORIZATION: bearer $token"
 git -c "http.https://github.com/.extraheader=$authHeader" push -u origin $Branch
 
+if ($LASTEXITCODE -ne 0) {
+    throw "Git push failed. Check token scopes or repository permissions."
+}
+
 Write-Host "Push completed: $Repo ($Branch)"
