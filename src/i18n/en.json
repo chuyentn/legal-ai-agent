@@ -1,0 +1,110 @@
+{
+  "app": {
+    "name": "Legal AI Agent",
+    "tagline": "AI Legal Assistant for Vietnamese Businesses"
+  },
+  "api": {
+    "error": {
+      "not_found": "Not found",
+      "unauthorized": "Unauthorized. Please provide API key or token.",
+      "forbidden": "Access denied",
+      "bad_request": "Bad request",
+      "internal_error": "Internal server error",
+      "quota_exceeded": "Monthly quota exceeded ({limit} requests)",
+      "rate_limit": "Too many requests. Please wait.",
+      "invalid_api_key": "Invalid API key",
+      "file_too_large": "File too large. Maximum {max_size}MB",
+      "file_type_not_allowed": "File type not allowed",
+      "missing_required_field": "Missing required field: {field}"
+    },
+    "success": {
+      "created": "Created successfully",
+      "updated": "Updated successfully",
+      "deleted": "Deleted successfully",
+      "uploaded": "Uploaded successfully",
+      "sent": "Sent successfully"
+    }
+  },
+  "contract": {
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "expired": "Expired",
+      "terminated": "Terminated",
+      "pending_review": "Pending Review"
+    },
+    "type": {
+      "hop_dong_lao_dong": "Employment Contract",
+      "hop_dong_dich_vu": "Service Contract",
+      "hop_dong_mua_ban": "Sales Contract",
+      "hop_dong_thue": "Lease Agreement",
+      "hop_dong_hop_tac": "Business Cooperation Contract (BCC)",
+      "nda": "Non-Disclosure Agreement",
+      "hop_dong_vay": "Loan Agreement",
+      "hop_dong_dai_ly": "Agency Agreement",
+      "other": "Other"
+    },
+    "review": {
+      "risk_low": "Low Risk",
+      "risk_medium": "Medium Risk",
+      "risk_high": "High Risk",
+      "issue_violation": "Legal Violation",
+      "issue_missing": "Missing Clause",
+      "issue_risk": "Risk Identified",
+      "issue_unfavorable": "Unfavorable",
+      "severity_critical": "Critical",
+      "severity_high": "High",
+      "severity_medium": "Medium",
+      "severity_low": "Low"
+    }
+  },
+  "legal": {
+    "domain": {
+      "lao_dong": "Labor Law",
+      "doanh_nghiep": "Corporate Law",
+      "dan_su": "Civil Law",
+      "thue": "Tax Law",
+      "dat_dai": "Land Law",
+      "hinh_su": "Criminal Law",
+      "hanh_chinh": "Administrative Law",
+      "thuong_mai": "Commercial Law"
+    },
+    "source": {
+      "bo_luat": "Code",
+      "luat": "Law",
+      "nghi_dinh": "Decree",
+      "thong_tu": "Circular",
+      "quyet_dinh": "Decision"
+    }
+  },
+  "agent": {
+    "system_prompt_en": "You are Legal AI Agent, an AI legal assistant specializing in Vietnamese law.\n\nYour capabilities:\n- Provide legal advice based on Vietnamese legal documents database\n- Review contracts and identify legal risks\n- Draft legal documents upon request\n- Answer questions about labor, corporate, tax, civil, land, and administrative law\n\nPrinciples:\n1. Cite specific articles and clauses from legal texts\n2. Use clear, easy-to-understand language\n3. Warn about risks when necessary\n4. Recommend consulting a lawyer for complex issues\n5. Always follow current Vietnamese law\n\nNote: You do NOT replace a lawyer. For specific cases with disputes, recommend seeking direct legal counsel."
+  },
+  "pricing": {
+    "tier": {
+      "free": "Free",
+      "starter": "Starter",
+      "professional": "Professional",
+      "enterprise": "Enterprise"
+    },
+    "feature": {
+      "queries_per_day": "Queries/day",
+      "contracts": "Contracts",
+      "documents": "Documents",
+      "contract_review": "AI Contract Review",
+      "templates": "Templates",
+      "api_access": "API Access",
+      "custom_llm": "Custom LLM",
+      "sla": "SLA Guarantee",
+      "dedicated_support": "Dedicated Support",
+      "unlimited": "Unlimited",
+      "all": "All"
+    }
+  },
+  "notification": {
+    "contract_expiring": "Contract {name} will expire in {days} days",
+    "contract_expired": "Contract {name} has expired",
+    "quota_warning": "Usage quota almost exceeded ({used}/{limit})",
+    "review_ready": "Contract review for {name} is ready"
+  }
+}

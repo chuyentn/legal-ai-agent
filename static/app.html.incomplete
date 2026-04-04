@@ -1,0 +1,3529 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal AI — Trợ lý pháp lý AI cho doanh nghiệp Việt Nam</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Dark theme (default) */
+            --bg-primary: #09090b;
+            --bg-secondary: #18181b;
+            --bg-tertiary: #27272a;
+            --bg-card: #1c1c1f;
+            --border: #2e2e32;
+            --border-hover: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --accent-bg: rgba(129, 140, 248, 0.1);
+            --accent-gradient: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --code-bg: #1e1e2e;
+            --glass-bg: rgba(28, 28, 31, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f4f4f5;
+            --bg-tertiary: #e4e4e7;
+            --bg-card: #fafafa;
+            --border: #e4e4e7;
+            --border-hover: #d4d4d8;
+            --text-primary: #18181b;
+            --text-secondary: #52525b;
+            --text-muted: #a1a1aa;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-bg: rgba(99, 102, 241, 0.1);
+            --code-bg: #f4f4f5;
+            --glass-bg: rgba(250, 250, 250, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+
+        .hidden { display: none !important; }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes slideIndicator {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes gridDots {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ===== TOAST NOTIFICATIONS ===== */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: all;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent);
+            animation: shrink 3s linear;
+        }
+
+        @keyframes shrink {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.warning { border-left: 3px solid var(--warning); }
+        .toast.info { border-left: 3px solid var(--accent); }
+
+        .toast-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.125rem;
+        }
+
+        .toast-message {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .toast-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* ===== LOADING SPINNER ===== */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        .spinner-large {
+            width: 40px;
+            height: 40px;
+            border-width: 3px;
+        }
+
+        /* ===== SKELETON LOADING ===== */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-secondary) 0%, var(--bg-tertiary) 50%, var(--bg-secondary) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        .skeleton-text {
+            height: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .skeleton-text:last-child {
+            width: 60%;
+        }
+
+        .skeleton-card {
+            height: 200px;
+            border-radius: 12px;
+        }
+
+        /* ===== PAGE TRANSITIONS ===== */
+        .page {
+            display: none;
+            animation: crossfade 0.3s ease-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes crossfade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== BREADCRUMBS ===== */
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .breadcrumb-item:not(:last-child)::after {
+            content: '›';
+            color: var(--text-muted);
+        }
+
+        .breadcrumb-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .breadcrumb-link:hover {
+            color: var(--accent);
+        }
+
+        /* ===== AUTH PAGES ===== */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+            padding: 2rem;
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--accent-bg) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -250px;
+            right: -250px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .auth-container::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -200px;
+            left: -200px;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        .auth-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 420px;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .auth-logo-icon {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .auth-logo-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-logo-tagline {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: var(--danger);
+        }
+
+        .form-input {
+            padding: 0.875rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+            box-shadow: 0 0 0 4px var(--accent-bg);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 24px rgba(129, 140, 248, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .auth-switch a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+
+        .auth-switch a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* ===== DASHBOARD LAYOUT ===== */
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        /* ===== SIDEBAR V5 ===== */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-card);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .sidebar-section {
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .section-label {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-collapse-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .section-collapse-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .section-collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+        }
+
+        /* Active indicator sliding effect */
+        .nav-items {
+            position: relative;
+        }
+
+        .active-indicator {
+            position: absolute;
+            left: 0.5rem;
+            width: calc(100% - 1rem);
+            height: 40px;
+            background: var(--accent-bg);
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .nav-item {
+            padding: 0.625rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin: 0.25rem 0.5rem;
+            border-radius: 8px;
+            position: relative;
+            z-index: 1;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transform: translateX(4px);
+            border-left-color: var(--accent);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+            background: var(--accent-bg);
+            border-left-color: var(--accent);
+        }
+
+        .nav-item-icon {
+            font-size: 1.125rem;
+            transition: transform 0.2s;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .nav-item:hover .nav-item-icon {
+            transform: scale(1.15);
+        }
+
+        .nav-item-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        /* Chat history with search */
+        .chat-history-search {
+            padding: 0 0.5rem 0.75rem 0.5rem;
+        }
+
+        .search-box-small {
+            position: relative;
+        }
+
+        .search-box-small input {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .search-box-small input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-bg);
+        }
+
+        .search-box-small::before {
+            content: '🔍';
+            position: absolute;
+            left: 0.625rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.875rem;
+        }
+
+        .chat-history-item {
+            padding: 0.625rem 1rem;
+            margin: 0.25rem 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .chat-history-item:hover {
+            background: var(--bg-tertiary);
+            transform: translateX(4px);
+        }
+
+        .chat-history-item.active {
+            background: var(--accent-bg);
+            border-left: 3px solid var(--accent);
+        }
+
+        .chat-history-title {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-history-item.active .chat-history-title {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .chat-history-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Context menu */
+        .context-menu {
+            position: fixed;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 0.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            min-width: 180px;
+            animation: scaleIn 0.15s ease-out;
+        }
+
+        .context-menu-item {
+            padding: 0.625rem 0.875rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            transition: all 0.15s;
+        }
+
+        .context-menu-item:hover {
+            background: var(--accent-bg);
+            color: var(--accent);
+        }
+
+        .context-menu-item.danger:hover {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--danger);
+        }
+
+        .new-chat-btn {
+            margin: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
+        }
+
+        .new-chat-btn:hover {
+            box-shadow: 0 8px 20px rgba(129, 140, 248, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .new-chat-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Sidebar resize handle */
+        .sidebar-resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            cursor: ew-resize;
+            background: transparent;
+            transition: background 0.2s;
+        }
+
+        .sidebar-resize-handle:hover {
+            background: var(--accent);
+        }
+
+        .sidebar-user {
+            margin-top: auto;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .user-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px var(--accent-bg);
+            transform: translateY(-2px);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-company {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* ===== CHAT PAGE V5 ===== */
+        .chat-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .chat-header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-secondary);
+        }
+
+        .chat-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            animation: pulse 2s ease-in-out;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 1.125rem;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-card);
+            color: var(--accent);
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Scroll to bottom button */
+        .scroll-to-bottom {
+            position: fixed;
+            bottom: 120px;
+            right: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: var(--accent);
+            padding: 0.75rem;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .scroll-to-bottom.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .scroll-to-bottom:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(129, 140, 248, 0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            scroll-behavior: smooth;
+        }
+
+        /* Welcome screen V5 */
+        .chat-welcome {
+            max-width: 700px;
+            margin: auto;
+            text-align: center;
+            padding: 3rem 1rem;
+            animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .welcome-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background grid */
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            animation: gridDots 4s ease-in-out infinite;
+        }
+
+        .welcome-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-text {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Suggestion chips V5 - 2 column grid */
+        .suggestion-chips {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.875rem;
+            max-width: 700px;
+        }
+
+        .suggestion-chip {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            animation: slideInUp 0.4s ease-out backwards;
+        }
+
+        .suggestion-chip:nth-child(1) { animation-delay: 0.05s; }
+        .suggestion-chip:nth-child(2) { animation-delay: 0.1s; }
+        .suggestion-chip:nth-child(3) { animation-delay: 0.15s; }
+        .suggestion-chip:nth-child(4) { animation-delay: 0.2s; }
+        .suggestion-chip:nth-child(5) { animation-delay: 0.25s; }
+        .suggestion-chip:nth-child(6) { animation-delay: 0.3s; }
+
+        .suggestion-chip:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: var(--accent-bg);
+            box-shadow: 0 8px 24px var(--accent-bg);
+            transform: translateY(-4px);
+        }
+
+        .suggestion-chip:active {
+            transform: scale(0.97);
+        }
+
+        /* Message bubbles V5 */
+        .message {
+            display: flex;
+            gap: 0.875rem;
+            max-width: 900px;
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .message-user {
+            flex-direction: row-reverse;
+            margin-left: auto;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+        }
+
+        .message-ai .message-avatar {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--accent);
+            font-size: 1.125rem;
+            box-shadow: 0 4px 12px var(--accent-bg);
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+        }
+
+        .message-user .message-content {
+            background: var(--accent-bg);
+            border: 1px solid var(--accent);
+            border-left: 3px solid var(--accent);
+            padding: 0.875rem 1.125rem;
+            border-radius: 12px;
+            color: var(--text-primary);
+        }
+
+        .message-ai .message-content {
+            color: var(--text-primary);
+            border-left: 3px solid var(--accent);
+            padding-left: 1rem;
+        }
+
+        .message-text {
+            line-height: 1.7;
+        }
+
+        .message-text h1, .message-text h2, .message-text h3 {
+            margin: 1.5rem 0 0.875rem 0;
+            color: var(--text-primary);
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .message-text h1 { font-size: 1.625rem; }
+        .message-text h2 { font-size: 1.375rem; }
+        .message-text h3 { font-size: 1.125rem; }
+
+        .message-text p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .message-text strong, .message-text b {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .message-text ul, .message-text ol {
+            margin: 1rem 0;
+            padding-left: 1.875rem;
+        }
+
+        .message-text li {
+            margin-bottom: 0.625rem;
+            color: var(--text-secondary);
+        }
+
+        .message-text a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.15s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .message-text a:hover {
+            color: var(--accent-hover);
+            border-bottom-color: var(--accent-hover);
+        }
+
+        .message-text code {
+            background: var(--code-bg);
+            color: var(--accent);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .message-text pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            padding: 1.125rem;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 1.125rem 0;
+            position: relative;
+        }
+
+        .message-text pre code {
+            background: none;
+            color: var(--text-primary);
+            padding: 0;
+        }
+
+        .code-copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 0.875rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .code-copy-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        .code-copy-btn.copied::before {
+            content: '✓ ';
+        }
+
+        /* Citations V5 - inline pills */
+        .citation-pill {
+            display: inline-flex;
+            align-items: center;
+            background: var(--accent-bg);
+            color: var(--accent);
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0 0.25rem;
+            border: 1px solid var(--accent);
+        }
+
+        .citation-pill:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--accent-bg);
+        }
+
+        .citations {
+            margin-top: 1.125rem;
+            padding-top: 1.125rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .citations-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.625rem 0;
+            transition: color 0.15s ease;
+        }
+
+        .citations-header:hover {
+            color: var(--accent);
+        }
+
+        .citations-toggle {
+            transition: transform 0.3s ease;
+        }
+
+        .citations.expanded .citations-toggle {
+            transform: rotate(180deg);
+        }
+
+        .citations-list {
+            margin-top: 0.875rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+        }
+
+        .citation-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 1.125rem;
+            transition: all 0.2s ease;
+        }
+
+        .citation-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px var(--accent-bg);
+            transform: translateX(4px);
+        }
+
+        .citation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.625rem;
+        }
+
+        .citation-law-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .citation-article {
+            background: var(--accent-bg);
+            color: var(--accent);
+            padding: 0.25rem 0.625rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            margin-left: 0.625rem;
+        }
+
+        .citation-content {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .citation-law-number {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.625rem;
+        }
+
+        /* Message actions */
+        .message-actions {
+            position: absolute;
+            top: -10px;
+            right: 0;
+            display: flex;
+            gap: 0.375rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+
+        .message-action-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .message-action-btn:hover {
+            background: var(--accent-bg);
+            color: var(--accent);
+            border-color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .message-feedback {
+            display: flex;
+            gap: 0.625rem;
+            margin-top: 0.875rem;
+            padding-top: 0.875rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .feedback-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.5rem 0.875rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feedback-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        .feedback-btn.active {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .response-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.625rem;
+            font-style: italic;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 0.875rem;
+            max-width: 900px;
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.875rem 1.125rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-4px); }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background: var(--accent);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        /* Chat input V5 */
+        .chat-input-container {
+            padding: 1.5rem 2rem 2rem 2rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-primary);
+        }
+
+        .chat-input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .input-box {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            display: flex;
+            align-items: flex-end;
+            gap: 0.75rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-box:focus-within {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+            box-shadow: 0 0 0 4px var(--accent-bg);
+        }
+
+        .input-icon {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-icon:hover {
+            background: var(--accent-bg);
+            color: var(--accent);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            font-family: inherit;
+            resize: none;
+            max-height: 150px;
+            line-height: 1.5;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .char-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            position: absolute;
+            bottom: -1.5rem;
+            right: 1rem;
+        }
+
+        .send-btn {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 0.625rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(129, 140, 248, 0.4);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .send-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .send-btn .spinner {
+            border-color: rgba(255,255,255,0.3);
+            border-top-color: white;
+        }
+
+        /* ===== TEMPLATES PAGE V5 ===== */
+        .page-container {
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        .page-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.625rem;
+            letter-spacing: -0.02em;
+        }
+
+        .page-description {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .page-content {
+            padding: 2rem;
+        }
+
+        /* Templates grid V5 */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+            max-width: 1400px;
+        }
+
+        .template-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .template-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .template-card:hover::before {
+            opacity: 0.05;
+        }
+
+        .template-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 12px 32px rgba(129, 140, 248, 0.2);
+            transform: translateY(-8px);
+        }
+
+        .template-card:active {
+            transform: translateY(-4px) scale(0.98);
+        }
+
+        .template-category {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1.125rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .template-category.hop_dong {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .template-category.hanh_chinh {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .template-category.noi_bo {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+        }
+
+        .template-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.125rem;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s;
+        }
+
+        .template-card:hover .template-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .template-title {
+            font-size: 1.0625rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.625rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .template-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1.125rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .template-usage {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== CONTRACTS PAGE V5 - Cards View ===== */
+        .contracts-view-toggle {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.375rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .view-toggle-btn {
+            padding: 0.5rem 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .view-toggle-btn.active {
+            background: var(--accent-bg);
+            color: var(--accent);
+        }
+
+        .view-toggle-btn:hover:not(.active) {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .contracts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .contract-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contract-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 12px 32px rgba(129, 140, 248, 0.2);
+            transform: translateY(-6px);
+        }
+
+        .contract-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .contract-title-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .contract-parties {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .contract-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.875rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .contract-meta-item {
+            font-size: 0.8125rem;
+        }
+
+        .contract-meta-label {
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .contract-meta-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .contract-quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .contract-card:hover .contract-quick-actions {
+            opacity: 1;
+        }
+
+        .page-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            max-width: 400px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-bg);
+        }
+
+        .filter-pills {
+            display: flex;
+            gap: 0.625rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-pill {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.625rem 1.125rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-pill:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: var(--accent-bg);
+        }
+
+        .filter-pill.active {
+            background: var(--accent-gradient);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--warning);
+        }
+
+        .status-expired {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--danger);
+        }
+
+        .status-draft {
+            background: rgba(161, 161, 170, 0.15);
+            color: var(--text-muted);
+        }
+
+        /* ===== SEARCH PAGE V5 ===== */
+        .search-hero {
+            padding: 4rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, var(--accent-bg) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .search-box {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .search-input-large {
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            font-size: 1.125rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-input-large:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 12px 32px var(--accent-bg);
+        }
+
+        .domain-pills {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .domain-pill {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.625rem 1.125rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .domain-pill:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: var(--accent-bg);
+        }
+
+        .domain-pill.active {
+            background: var(--accent-gradient);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+        }
+
+        .search-results {
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .result-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.125rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .result-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px var(--accent-bg);
+            transform: translateX(6px);
+        }
+
+        /* ===== MODALS V5 ===== */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2rem;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            line-height: 1;
+            transition: all 0.2s;
+            border-radius: 8px;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-actions {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.875rem;
+            justify-content: flex-end;
+        }
+
+        /* ===== TABLES ===== */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            padding: 1rem 1.125rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1.125rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        tr {
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* ===== EMPTY STATES ===== */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .empty-state-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.625rem;
+        }
+
+        .empty-state-text {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* ===== TOOLTIPS ===== */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-8px);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            color: var(--text-primary);
+            padding: 0.5rem 0.875rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        [data-tooltip]::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--glass-bg);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s;
+        }
+
+        [data-tooltip]:hover::before,
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+        }
+
+        /* ===== UTILITIES ===== */
+        .btn-small {
+            padding: 0.625rem 1.125rem;
+            font-size: 0.8125rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.625rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        /* ===== DOCUMENTS & API PAGES (keep existing styles) ===== */
+        .upload-zone {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .document-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .document-card:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-secondary);
+            box-shadow: 0 4px 16px rgba(129, 140, 248, 0.1);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-item {
+            padding: 0.875rem 1.125rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-item:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-item.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .chat-messages {
+                padding: 1rem;
+            }
+
+            .chat-input-container {
+                padding: 1rem;
+            }
+
+            .page-content {
+                padding: 1rem;
+            }
+
+            .page-header {
+                padding: 1.5rem 1rem;
+            }
+
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contracts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .suggestion-chips {
+                grid-template-columns: 1fr;
+            }
+
+            .contract-meta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                max-width: 100%;
+            }
+
+            .toast-container {
+                top: 0.5rem;
+                right: 0.5rem;
+                left: 0.5rem;
+            }
+
+            .toast {
+                min-width: auto;
+            }
+
+            .scroll-to-bottom {
+                bottom: 100px;
+                right: 1rem;
+            }
+        }
+
+        /* Mobile hamburger */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 101;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            padding: 0.625rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.25rem;
+            min-width: 44px;
+            min-height: 44px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .mobile-menu-btn:hover {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Settings page */
+        .settings-grid {
+            max-width: 800px;
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .settings-card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* API page */
+        .api-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .api-section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .code-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .code-tab {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.625rem 1.125rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .code-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .code-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .code-example {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.125rem;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-example pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 0.875rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Additional contract/doc review styles */
+        .alert-banner {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid var(--warning);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .risk-low { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+        .risk-medium { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+        .risk-high { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+
+        .review-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .review-section-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .review-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .review-list li {
+            padding: 0.625rem 0;
+            padding-left: 1.75rem;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .review-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0.625rem;
+            color: var(--accent);
+            font-size: 1.25rem;
+        }
+
+        .document-content {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            font-size: 0.875rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .doc-list-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .doc-list-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px var(--accent-bg);
+            transform: translateX(4px);
+        }
+
+        .doc-info {
+            flex: 1;
+        }
+
+        .doc-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .doc-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .doc-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .doc-action-btn {
+            padding: 0.5rem 0.875rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .doc-action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .document-icon {
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .document-meta {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .api-keys-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .api-key-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .api-key-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .api-key-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .result-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .result-badge {
+            background: var(--accent-bg);
+            color: var(--accent);
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .result-excerpt {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Mobile hamburger menu -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+
+    <!-- Scroll to bottom button -->
+    <button class="scroll-to-bottom" id="scrollToBottom" onclick="scrollToBottom()" data-tooltip="Scroll to bottom">
+        ⬇️
+    </button>
+
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="loginPage" class="auth-container">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">⚖️</div>
+                <div class="auth-logo-text">Legal AI</div>
+                <div class="auth-logo-tagline">Trợ lý pháp lý AI cho doanh nghiệp Việt Nam</div>
+            </div>
+            <form class="auth-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" placeholder="your@company.com" required id="loginEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" class="form-input" placeholder="••••••••" required id="loginPassword">
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            </form>
+            <div class="auth-switch">
+                Chưa có tài khoản? <a href="#" onclick="showRegister(); return false;">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== REGISTER PAGE ===== -->
+    <div id="registerPage" class="auth-container hidden">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">⚖️</div>
+                <div class="auth-logo-text">Legal AI</div>
+                <div class="auth-logo-tagline">Tạo tài khoản cho doanh nghiệp</div>
+            </div>
+            <form class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">Họ tên</label>
+                    <input type="text" class="form-input" placeholder="Nguyễn Văn A" required id="registerName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tên công ty</label>
+                    <input type="text" class="form-input" placeholder="Công ty TNHH ABC" required id="registerCompany">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" placeholder="your@company.com" required id="registerEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" class="form-input" placeholder="••••••••" required id="registerPassword">
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng ký</button>
+            </form>
+            <div class="auth-switch">
+                Đã có tài khoản? <a href="#" onclick="showLogin(); return false;">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboard" class="dashboard hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
+            
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span>⚖️</span>
+                    <span>Legal AI</span>
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" data-tooltip="Toggle theme">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+            
+            <div class="sidebar-section">
+                <button class="new-chat-btn" onclick="startNewChat()">
+                    ➕ Cuộc hội thoại mới
+                </button>
+            </div>
+
+            <div class="sidebar-section" id="chatHistorySection">
+                <div class="section-label">
+                    Lịch sử
+                    <button class="section-collapse-btn" onclick="toggleSection(this)">▼</button>
+                </div>
+                <div class="section-content">
+                    <div class="chat-history-search">
+                        <div class="search-box-small">
+                            <input type="text" placeholder="Tìm kiếm..." oninput="filterChatHistory(this.value)">
+                        </div>
+                    </div>
+                    <div id="chatHistoryContainer">
+                        <!-- Chat history will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-label">
+                    Công cụ
+                    <button class="section-collapse-btn" onclick="toggleSection(this)">▼</button>
+                </div>
+                <div class="section-content">
+                    <div class="nav-item" onclick="showPage('templates')">
+                        <span class="nav-item-icon">📋</span>
+                        <span>Mẫu văn bản</span>
+                    </div>
+                    <div class="nav-item" onclick="showPage('contracts')">
+                        <span class="nav-item-icon">📁</span>
+                        <span>Hợp đồng</span>
+                        <span class="nav-item-badge hidden" id="contractBadge">0</span>
+                    </div>
+                    <div class="nav-item" onclick="showPage('documents')">
+                        <span class="nav-item-icon">📂</span>
+                        <span>Văn bản</span>
+                    </div>
+                    <div class="nav-item" onclick="showPage('search')">
+                        <span class="nav-item-icon">🔍</span>
+                        <span>Tra cứu</span>
+                    </div>
+                    <div class="nav-item" onclick="showPage('api')">
+                        <span class="nav-item-icon">🔑</span>
+                        <span>API</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="user-card" onclick="showPage('settings')">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">User</div>
+                        <div class="user-company" id="userCompany">HRVN · Trial</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ===== CHAT PAGE ===== -->
+            <div id="chatPage" class="page active">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div>
+                            <div class="breadcrumbs">
+                                <div class="breadcrumb-item">
+                                    <a href="#" class="breadcrumb-link" onclick="showPage('chat'); return false;">Trang chủ</a>
+                                </div>
+                                <div class="breadcrumb-item">Chat</div>
+                            </div>
+                            <div class="chat-title" id="chatHeaderTitle">Cuộc hội thoại mới</div>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="icon-btn" title="Cài đặt" onclick="showPage('settings')" data-tooltip="Settings">⚙️</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages" onscroll="handleChatScroll()">
+                        <div class="chat-welcome" id="chatWelcome">
+                            <div class="welcome-card">
+                                <div class="welcome-icon">⚖️</div>
+                                <div class="welcome-title">Xin chào! Tôi là trợ lý pháp lý AI.</div>
+                                <div class="welcome-text">Hỏi tôi bất kỳ câu hỏi nào về luật pháp Việt Nam, soạn thảo văn bản, hoặc rà soát hợp đồng.</div>
+                            </div>
+                            <div class="suggestion-chips">
+                                <div class="suggestion-chip" onclick="useSuggestion('Soạn hợp đồng lao động')">
+                                    📄 Soạn HĐLĐ
+                                </div>
+                                <div class="suggestion-chip" onclick="useSuggestion('Rà soát hợp đồng')">
+                                    🔍 Rà soát hợp đồng
+                                </div>
+                                <div class="suggestion-chip" onclick="useSuggestion('Tra cứu luật lao động')">
+                                    📋 Tra cứu luật
+                                </div>
+                                <div class="suggestion-chip" onclick="useSuggestion('Thời gian thử việc là bao lâu?')">
+                                    ❓ Thử việc
+                                </div>
+                                <div class="suggestion-chip" onclick="useSuggestion('Thuế TNDN là gì?')">
+                                    💰 Thuế TNDN
+                                </div>
+                                <div class="suggestion-chip" onclick="useSuggestion('Thành lập công ty cần gì?')">
+                                    🏢 Thành lập công ty
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <div class="input-box">
+                                <div class="input-icon" onclick="document.getElementById('fileInput').click()" title="Đính kèm" data-tooltip="Attach file">📎</div>
+                                <textarea 
+                                    class="chat-input" 
+                                    id="chatInput" 
+                                    placeholder="Hỏi bất kỳ câu hỏi pháp lý nào..."
+                                    rows="1"
+                                    onkeydown="handleChatKeydown(event)"
+                                    oninput="autoResize(this)"
+                                ></textarea>
+                                <div class="input-icon" data-tooltip="Voice input (coming soon)">🎤</div>
+                                <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled data-tooltip="Send">
+                                    <span id="sendIcon">▶</span>
+                                </button>
+                                <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
+                            </div>
+                            <div class="char-count" id="charCount">0 / 2000</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TEMPLATES PAGE ===== -->
+            <div id="templatesPage" class="page page-container">
+                <div class="page-header">
+                    <div class="breadcrumbs">
+                        <div class="breadcrumb-item">
+                            <a href="#" class="breadcrumb-link" onclick="showPage('chat'); return false;">Trang chủ</a>
+                        </div>
+                        <div class="breadcrumb-item">Mẫu văn bản</div>
+                    </div>
+                    <div class="page-title">Mẫu văn bản</div>
+                    <div class="page-description">Chọn mẫu văn bản để tạo tài liệu pháp lý chuyên nghiệp</div>
+                </div>
+                <div class="page-content">
+                    <div class="tab-nav">
+                        <div class="tab-item active" onclick="switchTemplateTab('templates', event)">Mẫu văn bản</div>
+                        <div class="tab-item" onclick="switchTemplateTab('generated', event)">Văn bản đã tạo</div>
+                    </div>
+                    
+                    <div id="templatesTab" class="tab-content active">
+                        <div class="templates-grid" id="templatesGrid">
+                            <div class="skeleton skeleton-card"></div>
+                            <div class="skeleton skeleton-card"></div>
+                            <div class="skeleton skeleton-card"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="generatedTab" class="tab-content">
+                        <div id="generatedDocsList">
+                            <div class="loading-spinner">⚖️ Đang tải văn bản...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CONTRACTS PAGE ===== -->
+            <div id="contractsPage" class="page page-container">
+                <div class="page-header">
+                    <div class="breadcrumbs">
+                        <div class="breadcrumb-item">
+                            <a href="#" class="breadcrumb-link" onclick="showPage('chat'); return false;">Trang chủ</a>
+                        </div>
+                        <div class="breadcrumb-item">Hợp đồng</div>
+                    </div>
+                    <div class="page-title">Quản lý hợp đồng</div>
+                    <div class="page-description">Quản lý và theo dõi tất cả hợp đồng của công ty</div>
+                </div>
+                <div class="page-content">
+                    <div id="expiringAlert" class="hidden"></div>
+                    <div class="page-actions">
+                        <div style="display: flex; gap: 1rem; flex: 1;">
+                            <input type="text" class="search-input" placeholder="🔍 Tìm kiếm hợp đồng..." onkeyup="filterContracts(this.value)">
+                            <div class="contracts-view-toggle">
+                                <button class="view-toggle-btn active" onclick="toggleContractsView('cards', this)">📇 Cards</button>
+                                <button class="view-toggle-btn" onclick="toggleContractsView('table', this)">📋 Table</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openUploadModal()">📤 Tải lên</button>
+                    </div>
+                    <div class="filter-pills">
+                        <div class="filter-pill active" data-filter="all" onclick="filterByStatus('all', this)">Tất cả</div>
+                        <div class="filter-pill" data-filter="active" onclick="filterByStatus('active', this)">Hiệu lực</div>
+                        <div class="filter-pill" data-filter="pending" onclick="filterByStatus('pending', this)">Sắp hết hạn</div>
+                        <div class="filter-pill" data-filter="expired" onclick="filterByStatus('expired', this)">Hết hạn</div>
+                    </div>
+                    
+                    <!-- Cards View -->
+                    <div class="contracts-grid" id="contractsGrid">
+                        <!-- Contracts cards will be rendered here -->
+                    </div>
+                    
+                    <!-- Table View -->
+                    <div class="table-container hidden" id="contractsTable">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tên hợp đồng</th>
+                                    <th>Loại</th>
+                                    <th>Bên liên quan</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Giá trị</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contractsTableBody">
+                                <!-- Contracts will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== DOCUMENTS PAGE ===== -->
+            <div id="documentsPage" class="page page-container">
+                <div class="page-header">
+                    <div class="breadcrumbs">
+                        <div class="breadcrumb-item">
+                            <a href="#" class="breadcrumb-link" onclick="showPage('chat'); return false;">Trang chủ</a>
+                        </div>
+                        <div class="breadcrumb-item">Văn bản</div>
+                    </div>
+                    <div class="page-title">📂 Quản lý văn bản</div>
+                    <div class="page-description">Quản lý tất cả văn bản pháp lý (PDF, DOCX, ảnh scan) với phân tích AI</div>
+                </div>
+                <div class="page-content">
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('documentUpload').click()">
+                        <div style="font-size: 3rem; margin-bottom: 0.5rem;">📤</div>
+                        <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.25rem;">Kéo thả file hoặc bấm để upload</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">PDF, DOCX, TXT, JPG, PNG • Tối đa 10MB</div>
+                        <input type="file" id="documentUpload" style="display: none" accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png" onchange="uploadDocument(event)">
+                    </div>
+
+                    <div class="page-actions" style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="filter-pill active" onclick="filterDocuments('all', this)">Tất cả</button>
+                            <button class="filter-pill" onclick="filterDocuments('pdf', this)">PDF</button>
+                            <button class="filter-pill" onclick="filterDocuments('docx', this)">DOCX</button>
+                            <button class="filter-pill" onclick="filterDocuments('image', this)">Ảnh</button>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select class="form-input" style="width: auto; padding: 0.5rem;" onchange="sortDocuments(this.value)">
+                                <option value="newest">Mới nhất</option>
+                                <option value="name">Tên</option>
+                                <option value="size">Kích thước</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="selectAllDocuments()" id="selectAllBtn">Chọn tất cả</button>
+                            <button class="btn btn-secondary hidden" onclick="batchDelete()" id="batchDeleteBtn">🗑️ Xóa đã chọn</button>
+                            <button class="btn btn-primary hidden" onclick="batchAnalyze()" id="batchAnalyzeBtn">🔍 Phân tích đã chọn</button>
+                        </div>
+                    </div>
+
+                    <div id="documentsContainer" style="display: grid; gap: 1rem; margin-top: 1.5rem;">
+                        <!-- Documents will be rendered here -->
+                    </div>
+
+                    <div id="documentsStats" style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; font-size: 0.875rem; color: var(--text-secondary);">
+                        📊 Tổng: <span id="totalDocs">0</span> văn bản | <span id="totalSize">0</span> MB
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SEARCH PAGE ===== -->
+            <div id="searchPage" class="page page-container">
+                <div class="search-hero">
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            class="search-input-large" 
+                            placeholder="🔍 Tìm kiếm điều luật, nghị định, thông tư..." 
+                            id="searchInput"
+                            onkeydown="if(event.key==='Enter') performSearch()"
+                        >
+                        <div class="domain-pills">
+                            <div class="domain-pill active" data-domain="" onclick="selectDomain('', this)">Tất cả</div>
+                            <div class="domain-pill" data-domain="lao_dong" onclick="selectDomain('lao_dong', this)">Lao động</div>
+                            <div class="domain-pill" data-domain="thue" onclick="selectDomain('thue', this)">Thuế</div>
+                            <div class="domain-pill" data-domain="doanh_nghiep" onclick="selectDomain('doanh_nghiep', this)">Doanh nghiệp</div>
+                            <div class="domain-pill" data-domain="dan_su" onclick="selectDomain('dan_su', this)">Dân sự</div>
+                            <div class="domain-pill" data-domain="hinh_su" onclick="selectDomain('hinh_su', this)">Hình sự</div>
+                            <div class="domain-pill" data-domain="dat_dai" onclick="selectDomain('dat_dai', this)">Đất đai</div>
+                            <div class="domain-pill" data-domain="hanh_chinh" onclick="selectDomain('hanh_chinh', this)">Hành chính</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <!-- Results will be rendered here -->
+                </div>
+            </div>
+
+            <!-- ===== API PAGE ===== -->
+            <div id="apiPage" class="page page-container">
+                <div class="page-header">
+                    <div class="breadcrumbs">
+                        <div class="breadcrumb-item">
+                            <a href="#" class="breadcrumb-link" onclick="showPage('chat'); return false;">Trang chủ</a>
+                        </div>
+                        <div class="breadcrumb-item">API</div>
+                    </div>
+                    <div class="page-title">API & Tích hợp</div>
+                    <div class="page-description">Tích hợp Legal AI vào ứng dụng của bạn</div>
+                </div>
+                <div class="page-content">
+                    <div class="api-section">
+                        <div class="api-section-title">API Keys</div>
+                        <div class="api-keys-list" id="apiKeysList">
+                            <div style="color: var(--text-muted); font-size: 0.875rem;">Chưa có API key nào.</div>
+                        </div>
+                        <button class="btn btn-primary btn-small" onclick="createApiKey()">➕ Tạo API Key</button>
+                    </div>
+
+                    <div class="api-section">
+                        <div class="api-section-title">Ví dụ sử dụng</div>
+                        <div class="code-tabs">
+                            <button class="code-tab active" onclick="showCodeTab('curl', this)">cURL</button>
+                            <button class="code-tab" onclick="showCodeTab('python', this)">Python</button>
+                            <button class="code-tab" onclick="showCodeTab('javascript', this)">JavaScript</button>
+                        </div>
+                        <div class="code-example" id="codeExampleCurl">
+                            <button class="copy-btn" onclick="copyCode('curl')">📋 Copy</button>
+                            <pre><code>curl -X POST https://api.legalai.vn/v1/legal/ask \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Thời hạn thử việc tối đa là bao nhiêu?"
+  }'</code></pre>
+                        </div>
+                        <div class="code-example hidden" id="codeExamplePython">
+                            <button class="copy-btn" onclick="copyCode('python')">📋 Copy</button>
+                            <pre><code>import requests
+
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+response = requests.post(
+    "https://api.legalai.vn/v1/legal/ask",
+    headers=headers,
+    json={"question": "Thời hạn thử việc tối đa?"}
+)
+
+print(response.json())</code></pre>
+                        </div>
+                        <div class="code-example hidden" id="codeExampleJavascript">
+                            <button class="copy-btn" onclick="copyCode('javascript')">📋 Copy</button>
+                            <pre><code>const response = await fetch('https://api.legalai.vn/v1/legal/ask', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    question: 'Thời hạn thử việc tối đa?'
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-section">
+                        <div class="api-section-title">Thống kê sử dụng</div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                            Tháng này: <strong style="color: var(--text-primary);">0</strong> requests
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SETTINGS PAGE ===== -->
+            <div id="settingsPage" class="page page-container">
+                <div class="page-header">
+                    <div class="breadcrumbs">
+                        <div class="breadcrumb-item">
+                            <a href="#" class="breadcrumb-link" onclick="showPage('chat'); return false;">Trang chủ</a>
+                        </div>
+                        <div class="breadcrumb-item">Cài đặt</div>
+                    </div>
+                    <div class="page-title">Cài đặt</div>
+                    <div class="page-description">Quản lý thông tin tài khoản và cài đặt</div>
+                </div>
+                <div class="page-content">
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <div class="settings-card-title">Thông tin cá nhân</div>
+                            <form class="settings-form" onsubmit="saveSettings(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Họ tên</label>
+                                    <input type="text" class="form-input" id="settingsName">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-input" id="settingsEmail" disabled>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tên công ty</label>
+                                    <input type="text" class="form-input" id="settingsCompany">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-small">💾 Lưu thay đổi</button>
+                            </form>
+                        </div>
+
+                        <div class="settings-card">
+                            <div class="settings-card-title">Bảo mật</div>
+                            <button class="btn btn-secondary btn-small" onclick="logout()">🚪 Đăng xuất</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ===== MODALS ===== -->
+        <!-- Upload Contract Modal -->
+        <div id="uploadContractModal" class="modal-backdrop hidden" onclick="closeModalBackdrop(event, 'uploadContractModal')">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title">Tải lên hợp đồng</div>
+                    <button class="modal-close" onclick="closeModal('uploadContractModal')">✕</button>
+                </div>
+                <form id="uploadContractForm" onsubmit="handleContractUpload(event)">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">File hợp đồng (PDF, DOCX, hoặc ảnh)</label>
+                            <div id="dropZone" class="drop-zone">
+                                <input type="file" id="contractFile" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.txt" style="display:none" onchange="handleFileSelected(event)">
+                                <div id="dropZoneContent">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📎</div>
+                                    <div>Kéo thả file vào đây hoặc <span style="color: var(--accent); cursor: pointer;" onclick="document.getElementById('contractFile').click()">chọn file</span></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">AI sẽ tự động quét và điền thông tin</div>
+                                </div>
+                                <div id="filePreview" class="hidden"></div>
+                            </div>
+                        </div>
+                        <div id="aiAnalysisStatus" class="hidden" style="padding: 0.75rem 1rem; background: var(--accent-bg); border: 1px solid var(--accent); border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="spinner" style="width: 18px; height: 18px;"></div>
+                            <span style="color: var(--accent); font-size: 0.875rem;">🤖 AI đang phân tích hợp đồng...</span>
+                        </div>
+                        <div id="aiAnalysisDone" class="hidden" style="padding: 0.75rem 1rem; background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); border-radius: 8px; margin-bottom: 1rem;">
+                            <span style="color: var(--success); font-size: 0.875rem;">✅ AI đã tự động điền thông tin — kiểm tra và chỉnh sửa nếu cần</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Tên hợp đồng</label>
+                            <input type="text" class="form-input" id="contractTitle" required placeholder="AI sẽ tự động điền...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Loại hợp đồng</label>
+                            <select class="form-input" id="contractType" required>
+                                <option value="">Chọn loại hợp đồng</option>
+                                <option value="hop_dong_lao_dong">Hợp đồng lao động</option>
+                                <option value="hop_dong_dich_vu">Hợp đồng dịch vụ</option>
+                                <option value="hop_dong_thue">Hợp đồng thuê</option>
+                                <option value="hop_dong_mua_ban">Hợp đồng mua bán</option>
+                                <option value="hop_dong_hop_tac">Hợp đồng hợp tác</option>
+                                <option value="khac">Khác</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Các bên tham gia</label>
+                            <input type="text" class="form-input" id="contractParties" placeholder="AI sẽ tự động điền...">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Ngày bắt đầu</label>
+                                <input type="date" class="form-input" id="contractStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ngày kết thúc</label>
+                                <input type="date" class="form-input" id="contractEndDate">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Giá trị hợp đồng (VNĐ)</label>
+                            <input type="number" class="form-input" id="contractValue" placeholder="0">
+                        </div>
+                        <div id="aiSummary" class="hidden form-group">
+                            <label class="form-label">📝 Tóm tắt AI</label>
+                            <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;" id="aiSummaryText"></div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('uploadContractModal')">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="contractSubmitBtn">📤 Tải lên</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Contract Detail Modal -->
+        <div id="contractDetailModal" class="modal-backdrop hidden" onclick="closeModalBackdrop(event, 'contractDetailModal')">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title" id="contractDetailTitle">Chi tiết hợp đồng</div>
+                    <button class="modal-close" onclick="closeModal('contractDetailModal')">✕</button>
+                </div>
+                <div class="modal-body" id="contractDetailContent">
+                    <!-- Content will be injected -->
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Review Results Modal -->
+        <div id="reviewResultModal" class="modal-backdrop hidden" onclick="closeModalBackdrop(event, 'reviewResultModal')">
+            <div class="modal" onclick="event.stopPropagation()" style="max-width: 1200px;">
+                <div class="modal-header">
+                    <div class="modal-title">Kết quả rà soát AI</div>
+                    <button class="modal-close" onclick="closeModal('reviewResultModal')">✕</button>
+                </div>
+                <div class="modal-body" id="reviewResultContent">
+                    <!-- Results will be injected -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL STATE =====
+        let currentUser = null;
+        let selectedDomain = 'all';
+        let currentFilter = 'all';
+        let currentSessionId = null;
+        let chatSessions = [];
+        let allTemplates = [];
+        let allGeneratedDocs = [];
+        let currentTemplate = null;
+        let allContracts = [];
+        let expiringContracts = [];
+        let allDocuments = [];
+        let selectedDocuments = new Set();
+        let currentDocFilter = 'all';
+        let currentContractsView = 'cards';
+
+        const categoryIcons = {
+            'hop_dong': '📝',
+            'hanh_chinh': '📄',
+            'noi_bo': '📋'
+        };
+        
+        const categoryNames = {
+            'hop_dong': 'Hợp đồng',
+            'hanh_chinh': 'Hành chính',
+            'noi_bo': 'Nội bộ'
+        };
+
+        // ===== THEME TOGGLE =====
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            document.getElementById('themeIcon').textContent = newTheme === 'light' ? '☀️' : '🌙';
+            localStorage.setItem('theme', newTheme);
+            showToast(`Đã chuyển sang ${newTheme === 'light' ? 'sáng' : 'tối'} mode`, 'success');
+        }
+
+        // Load theme from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                document.getElementById('themeIcon').textContent = savedTheme === 'light' ? '☀️' : '🌙';
+            }
+        });
+
+        // ===== SCROLL TO BOTTOM =====
+        function handleChatScroll() {
+            const chatMessages = document.getElementById('chatMessages');
+            const scrollBtn = document.getElementById('scrollToBottom');
+            const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 200;
+            
+            if (!isNearBottom && chatMessages.scrollHeight > chatMessages.clientHeight) {
+                scrollBtn.classList.add('visible');
+            } else {
+                scrollBtn.classList.remove('visible');
+            }
+        }
+
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        // ===== SIDEBAR SECTION COLLAPSE =====
+        function toggleSection(btn) {
+            const section = btn.closest('.sidebar-section');
+            const content = section.querySelector('.section-content');
+            content.classList.toggle('collapsed');
+            btn.classList.toggle('collapsed');
+        }
+
+        // ===== CHAT HISTORY SEARCH =====
+        function filterChatHistory(query) {
+            const items = document.querySelectorAll('.chat-history-item');
+            items.forEach(item => {
+                const title = item.querySelector('.chat-history-title').textContent.toLowerCase();
+                item.style.display = title.includes(query.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        // ===== CONTEXT MENU FOR CHAT HISTORY =====
+        let contextMenuTarget = null;
+
+        document.addEventListener('contextmenu', (e) => {
+            const chatItem = e.target.closest('.chat-history-item');
+            if (chatItem) {
+                e.preventDefault();
+                showContextMenu(e.clientX, e.clientY, chatItem);
+            }
+        });
+
+        function showContextMenu(x, y
