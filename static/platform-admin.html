@@ -756,6 +756,30 @@
                                 <span>MB used</span>
                             </div>
                         </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Leads mở</span>
+                                <span class="stat-card-icon">🎯</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-open-leads">0</div>
+                            <div class="stat-card-change">
+                                <span id="stat-new-leads">0</span>
+                                <span>lead mới</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">SLA quá hạn</span>
+                                <span class="stat-card-icon">⏰</span>
+                            </div>
+                            <div class="stat-card-value" id="stat-overdue-leads">0</div>
+                            <div class="stat-card-change">
+                                <span id="stat-total-leads">0</span>
+                                <span>tổng leads</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card">
@@ -909,6 +933,8 @@
                                         <th>Lead</th>
                                         <th>Nguồn</th>
                                         <th>AI level</th>
+                                        <th>SLA</th>
+                                        <th>Phụ trách</th>
                                         <th>Trạng thái</th>
                                         <th>Convert</th>
                                         <th>Hành động</th>
@@ -916,7 +942,7 @@
                                 </thead>
                                 <tbody id="leads-list">
                                     <tr>
-                                        <td colspan="7" class="text-muted">Đang tải...</td>
+                                        <td colspan="9" class="text-muted">Đang tải...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1128,6 +1154,7 @@
         let authToken = localStorage.getItem('auth_token');
         let currentCompanyEdit = null;
         let usageChart = null;
+        let leadAssignees = [];
 
         // AUTH
         async function checkAuth() {
@@ -1214,6 +1241,10 @@
                 document.getElementById('stat-law-docs').textContent = stats.total_law_documents;
                 document.getElementById('stat-law-chunks').textContent = stats.total_law_chunks;
                 document.getElementById('stat-storage').textContent = stats.storage_used_mb;
+                document.getElementById('stat-open-leads').textContent = stats.open_leads ?? 0;
+                document.getElementById('stat-new-leads').textContent = stats.new_leads ?? 0;
+                document.getElementById('stat-overdue-leads').textContent = stats.overdue_leads ?? 0;
+                document.getElementById('stat-total-leads').textContent = stats.total_leads ?? 0;
 
                 // Top companies
                 const topList = document.getElementById('top-companies-list');
@@ -1222,7 +1253,7 @@
                         <tr>
                             <td>${c.name}</td>
                             <td>${c.queries}</td>
-                            <td><span class="badge badge-primary">${stats.companies_by_plan[c.plan] || 'N/A'}</span></td>
+                            <td><span class="badge badge-primary">${c.plan || 'N/A'}</span></td>
                         </tr>
                     `).join('');
                 } else {
@@ -1397,6 +1428,10 @@
         // LEADS
         async function loadLeads() {
             try {
+                if (!leadAssignees.length) {
+                    await loadLeadAssignees();
+                }
+
                 const search = document.getElementById('lead-search').value;
                 const status = document.getElementById('lead-filter-status').value;
                 const source = document.getElementById('lead-filter-source').value;
@@ -1409,7 +1444,7 @@
                 const list = document.getElementById('leads-list');
 
                 if (!data.leads || data.leads.length === 0) {
-                    list.innerHTML = '<tr><td colspan="7" class="text-muted">Không có leads</td></tr>';
+                    list.innerHTML = '<tr><td colspan="9" class="text-muted">Không có leads</td></tr>';
                     return;
                 }
 
@@ -1424,6 +1459,12 @@
                         ? `<small>${l.converted_company_name}${l.converted_user_email ? ` · ${l.converted_user_email}` : ''}</small>`
                         : '<small class="text-muted">-</small>';
 
+                    const slaTarget = l.sla_target_minutes ? `${l.sla_target_minutes}m` : '-';
+                    const slaColor = l.sla_state === 'overdue' ? 'badge-danger' : (l.sla_state === 'on_track' ? 'badge-success' : 'badge-info');
+                    const assigneeOptions = [`<option value="">Chưa gán</option>`].concat(
+                        leadAssignees.map(a => `<option value="${a.id}" ${l.assigned_to === a.id ? 'selected' : ''}>${a.full_name || a.email} (${a.role})</option>`)
+                    ).join('');
+
                     return `
                         <tr>
                             <td>${new Date(l.created_at).toLocaleString('vi-VN')}</td>
@@ -1431,13 +1472,26 @@
                             <td><span class="badge badge-primary">${l.source}</span></td>
                             <td>${l.ai_level || '-'}</td>
                             <td>
+                                <div><span class="badge ${slaColor}">${l.sla_state}</span></div>
+                                <small>${l.sla_age_minutes ?? 0}m / ${slaTarget}</small>
+                            </td>
+                            <td>
+                                <select class="input" style="width: 220px;" onchange="assignLead('${l.id}', this.value)">
+                                    ${assigneeOptions}
+                                </select>
+                            </td>
+                            <td>
                                 <select class="input" style="width: 140px;" onchange="updateLeadStatus('${l.id}', this.value)">
                                     ${['new','contacted','qualified','converted','lost'].map(s => `<option value="${s}" ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                 </select>
                             </td>
                             <td>${convertedInfo}</td>
                             <td>
-                                <button class="btn btn-secondary btn-small" onclick="convertLeadOneClick('${l.id}')">⚡ Convert 1 chạm</button>
+                                <div class="flex" style="gap:6px; flex-wrap: wrap;">
+                                    <button class="btn btn-secondary btn-small" onclick="convertLeadPreset('${l.id}','starter',1000)">Starter</button>
+                                    <button class="btn btn-secondary btn-small" onclick="convertLeadPreset('${l.id}','pro',5000)">Pro</button>
+                                    <button class="btn btn-secondary btn-small" onclick="convertLeadPreset('${l.id}','enterprise',100000)">Enterprise</button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -1460,29 +1514,38 @@
             }
         }
 
-        async function convertLeadOneClick(leadId) {
-            const monthlyQuotaRaw = prompt('Nhập monthly quota cho khách (mặc định 100000):', '100000');
-            if (monthlyQuotaRaw === null) return;
+        async function loadLeadAssignees() {
+            const data = await apiCall('/v1/platform/leads/assignees');
+            leadAssignees = data.assignees || [];
+        }
 
-            const monthlyQuota = parseInt(monthlyQuotaRaw, 10);
-            if (Number.isNaN(monthlyQuota) || monthlyQuota < 0) {
-                alert('Monthly quota không hợp lệ');
-                return;
+        async function assignLead(leadId, userId) {
+            try {
+                await apiCall(`/v1/platform/leads/${leadId}/assign`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ assigned_to_user_id: userId || null })
+                });
+            } catch (err) {
+                alert('Lỗi gán lead: ' + err.message);
+                loadLeads();
             }
+        }
 
+        async function convertLeadPreset(leadId, plan, monthlyQuota) {
             try {
                 const result = await apiCall(`/v1/platform/leads/${leadId}/convert`, {
                     method: 'POST',
                     body: JSON.stringify({
-                        plan: 'enterprise',
+                        plan,
                         monthly_quota: monthlyQuota,
                         user_role: 'owner',
-                        note: 'Converted from Platform Admin one-click flow'
+                        note: `Converted from platform admin preset ${plan}`
                     })
                 });
                 alert(`Đã convert lead thành công: ${result.company.name} (${result.company.plan})`);
                 loadLeads();
                 loadCompanies();
+                loadDashboard();
             } catch (err) {
                 alert('Convert thất bại: ' + err.message);
             }

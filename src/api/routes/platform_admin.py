@@ -47,6 +47,10 @@ class LeadStatusUpdate(BaseModel):
     note: Optional[str] = None
 
 
+class LeadAssignRequest(BaseModel):
+    assigned_to_user_id: Optional[str] = None
+
+
 class LeadConvertRequest(BaseModel):
     plan: str = "enterprise"
     monthly_quota: int = 100000
@@ -175,6 +179,60 @@ async def get_platform_stats(admin: Dict = Depends(require_superadmin)):
             stats["daily_usage"] = [dict(r) for r in cur.fetchall()]
         except:
             stats["daily_usage"] = []
+
+        # Lead pipeline KPIs
+        try:
+            cur.execute("SELECT COUNT(*) as count FROM customer_leads")
+            stats["total_leads"] = cur.fetchone()["count"]
+
+            cur.execute("SELECT COUNT(*) as count FROM customer_leads WHERE status = 'new'")
+            stats["new_leads"] = cur.fetchone()["count"]
+
+            cur.execute(
+                """
+                SELECT COUNT(*) as count
+                FROM customer_leads
+                WHERE status IN ('new', 'contacted', 'qualified')
+                """
+            )
+            stats["open_leads"] = cur.fetchone()["count"]
+
+            cur.execute(
+                """
+                SELECT COUNT(*) as count
+                FROM customer_leads
+                WHERE status = 'new'
+                  AND created_at < NOW() - INTERVAL '15 minutes'
+                """
+            )
+            overdue_new = cur.fetchone()["count"]
+
+            cur.execute(
+                """
+                SELECT COUNT(*) as count
+                FROM customer_leads
+                WHERE status = 'contacted'
+                  AND updated_at < NOW() - INTERVAL '2 hours'
+                """
+            )
+            overdue_contacted = cur.fetchone()["count"]
+
+            cur.execute(
+                """
+                SELECT COUNT(*) as count
+                FROM customer_leads
+                WHERE status = 'qualified'
+                  AND updated_at < NOW() - INTERVAL '24 hours'
+                """
+            )
+            overdue_qualified = cur.fetchone()["count"]
+
+            stats["overdue_leads"] = overdue_new + overdue_contacted + overdue_qualified
+        except Exception:
+            stats["total_leads"] = 0
+            stats["new_leads"] = 0
+            stats["open_leads"] = 0
+            stats["overdue_leads"] = 0
         
         return stats
 
@@ -515,14 +573,18 @@ async def list_leads(
             SELECT
                 l.id, l.source, l.full_name, l.company_name, l.email, l.phone,
                 l.ai_level, l.needs, l.detail, l.status, l.note,
+                l.assigned_to,
                 l.converted_company_id, l.converted_user_id, l.converted_at,
                 l.created_at, l.updated_at,
                 c.name as converted_company_name,
                 u.full_name as converted_user_name,
-                u.email as converted_user_email
+                u.email as converted_user_email,
+                assignee.full_name as assignee_name,
+                assignee.email as assignee_email
             FROM customer_leads l
             LEFT JOIN companies c ON c.id = l.converted_company_id
             LEFT JOIN users u ON u.id = l.converted_user_id
+            LEFT JOIN users assignee ON assignee.id = l.assigned_to
             WHERE 1=1
         """
         params: List[Any] = []
@@ -553,15 +615,113 @@ async def list_leads(
                 lead["converted_company_id"] = str(lead["converted_company_id"])
             if lead.get("converted_user_id"):
                 lead["converted_user_id"] = str(lead["converted_user_id"])
+            if lead.get("assigned_to"):
+                lead["assigned_to"] = str(lead["assigned_to"])
             if lead.get("created_at"):
                 lead["created_at"] = lead["created_at"].isoformat()
             if lead.get("updated_at"):
                 lead["updated_at"] = lead["updated_at"].isoformat()
             if lead.get("converted_at"):
                 lead["converted_at"] = lead["converted_at"].isoformat()
+
+            # SLA model inspired by CRM lead lifecycle operations.
+            now = datetime.utcnow()
+            anchor = row.get("updated_at") if row.get("status") in {"contacted", "qualified"} else row.get("created_at")
+            sla_target_minutes = None
+            if row.get("status") == "new":
+                sla_target_minutes = 15
+            elif row.get("status") == "contacted":
+                sla_target_minutes = 120
+            elif row.get("status") == "qualified":
+                sla_target_minutes = 1440
+
+            if anchor:
+                age_minutes = int((now - anchor.replace(tzinfo=None)).total_seconds() // 60)
+            else:
+                age_minutes = 0
+
+            lead["sla_age_minutes"] = age_minutes
+            lead["sla_target_minutes"] = sla_target_minutes
+            if sla_target_minutes is None:
+                lead["sla_state"] = "n/a"
+            elif age_minutes > sla_target_minutes:
+                lead["sla_state"] = "overdue"
+            else:
+                lead["sla_state"] = "on_track"
             leads.append(lead)
 
         return {"leads": leads}
+
+
+@router.get("/leads/assignees")
+async def list_lead_assignees(admin: Dict = Depends(require_superadmin)):
+    """List active users eligible for lead assignment."""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            """
+            SELECT id, full_name, email, role
+            FROM users
+            WHERE is_active = true
+              AND role IN ('superadmin', 'admin', 'owner')
+            ORDER BY
+              CASE role WHEN 'superadmin' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END,
+              created_at DESC
+            LIMIT 200
+            """
+        )
+        assignees = []
+        for row in cur.fetchall():
+            item = dict(row)
+            item["id"] = str(item["id"])
+            assignees.append(item)
+        return {"assignees": assignees}
+
+
+@router.put("/leads/{lead_id}/assign")
+async def assign_lead(
+    lead_id: str,
+    body: LeadAssignRequest,
+    admin: Dict = Depends(require_superadmin),
+):
+    """Assign lead to an operator (or clear assignment)."""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        assignee_id = body.assigned_to_user_id
+        if assignee_id:
+            cur.execute(
+                "SELECT id FROM users WHERE id::text = %s AND is_active = true",
+                (assignee_id,),
+            )
+            if not cur.fetchone():
+                raise HTTPException(404, "Người phụ trách không tồn tại hoặc không active")
+
+        cur.execute(
+            """
+            UPDATE customer_leads
+            SET assigned_to = %s,
+                updated_at = now(),
+                note = COALESCE(note, %s)
+            WHERE id::text = %s
+            RETURNING id, assigned_to, updated_at
+            """,
+            (
+                assignee_id,
+                f"Assigned by {admin.get('email', 'superadmin')}",
+                lead_id,
+            ),
+        )
+        updated = cur.fetchone()
+        if not updated:
+            raise HTTPException(404, "Lead không tồn tại")
+
+        conn.commit()
+        return {
+            "id": str(updated["id"]),
+            "assigned_to": str(updated["assigned_to"]) if updated.get("assigned_to") else None,
+            "updated_at": updated["updated_at"].isoformat() if updated.get("updated_at") else None,
+        }
 
 
 @router.put("/leads/{lead_id}/status")
