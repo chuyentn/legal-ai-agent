@@ -298,6 +298,72 @@
         .cta-banner h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 800; margin-bottom: 1rem; }
         .cta-banner p { color: var(--text-secondary); max-width: 520px; margin: 0 auto 2rem; font-size: 1rem; }
 
+        /* ===== CONTACT ===== */
+        .contact-section {
+            background: linear-gradient(180deg, #0d0d16, var(--bg-base));
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 1.5rem; }
+        .contact-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .contact-card h3 { font-size: 1.15rem; margin-bottom: 0.65rem; }
+        .contact-card p { color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem; }
+        .contact-points { list-style: none; display: grid; gap: 0.6rem; margin-bottom: 1rem; }
+        .contact-points li {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+        .contact-points li::before { content: '•'; position: absolute; left: 0; color: var(--accent); }
+        .contact-channels { display: grid; gap: 0.5rem; font-size: 0.9rem; }
+        .contact-channels a { color: var(--accent); text-decoration: none; }
+        .contact-channels a:hover { text-decoration: underline; }
+
+        .contact-form { display: grid; gap: 0.9rem; }
+        .contact-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+        .field { display: grid; gap: 0.35rem; }
+        .field label { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #0f1020;
+            color: var(--text);
+            padding: 0.7rem 0.85rem;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .field textarea { min-height: 120px; resize: vertical; }
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .need-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+        .need-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #0f1020;
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+        }
+        .need-item input { width: auto; }
+        .contact-note { font-size: 0.82rem; color: var(--text-muted); }
+        .contact-status { font-size: 0.86rem; color: var(--green); min-height: 1.2rem; }
+
         /* ===== FOOTER ===== */
         footer { padding: 3rem 0 2rem; border-top: 1px solid var(--border); }
         .footer-inner {
@@ -321,6 +387,9 @@
             .steps-container { flex-direction: column; align-items: center; }
             .step-arrow { transform: rotate(90deg); }
             .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+            .contact-grid { grid-template-columns: 1fr; }
+            .contact-row { grid-template-columns: 1fr; }
+            .need-grid { grid-template-columns: 1fr; }
             section { padding: 3.5rem 0; }
             .footer-inner { flex-direction: column; text-align: center; }
         }
@@ -348,6 +417,7 @@
             <li><a href="#features">Tính năng</a></li>
             <li><a href="#how-it-works">Cách hoạt động</a></li>
             <li><a href="#pricing">Bảng giá</a></li>
+            <li><a href="#contact">Liên hệ</a></li>
             <li><a href="/static/app.html" class="nav-cta">Bắt đầu miễn phí →</a></li>
         </ul>
     </div>
@@ -505,6 +575,90 @@
     </div>
 </section>
 
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+    <div class="container">
+        <div class="reveal">
+            <p class="section-label">Liên hệ</p>
+            <h2 class="section-title">Tư vấn chuyển đổi số AI cho Công ty Luật</h2>
+            <p class="section-subtitle">Thiết kế lộ trình phù hợp cho văn phòng luật chưa ứng dụng AI: bắt đầu nhỏ, an toàn dữ liệu, đo được hiệu quả theo từng tháng.</p>
+        </div>
+        <div class="contact-grid">
+            <div class="contact-card reveal">
+                <h3>Gói tư vấn theo thực trạng vận hành</h3>
+                <p>Chúng tôi tập trung vào các nhu cầu thường gặp của Công ty Luật khi bắt đầu chuyển đổi số với AI.</p>
+                <ul class="contact-points">
+                    <li>Chuẩn hóa quy trình tiếp nhận hồ sơ và quản lý tiến độ xử lý vụ việc.</li>
+                    <li>Tự động hóa rà soát hợp đồng và tra cứu pháp lý nội bộ.</li>
+                    <li>Thiết lập kho tri thức pháp lý riêng, kiểm soát quyền truy cập theo vai trò.</li>
+                    <li>Đào tạo đội ngũ luật sư sử dụng AI đúng chuẩn nghề nghiệp và bảo mật.</li>
+                </ul>
+                <div class="contact-channels">
+                    <div>Email: <a href="mailto:contact@legal-ai.vn">contact@legal-ai.vn</a></div>
+                    <div>Hotline: <a href="tel:0989890022">0989 890 022</a></div>
+                    <div>Zalo: <a href="https://zalo.me/0989890022" target="_blank" rel="noopener">Chat với tư vấn viên</a></div>
+                </div>
+            </div>
+
+            <div class="contact-card reveal">
+                <h3>Gửi nhu cầu triển khai</h3>
+                <form id="contactForm" class="contact-form">
+                    <div class="contact-row">
+                        <div class="field">
+                            <label for="fullName">Họ và tên</label>
+                            <input id="fullName" name="full_name" type="text" required placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="field">
+                            <label for="lawFirm">Tên Công ty Luật</label>
+                            <input id="lawFirm" name="law_firm" type="text" required placeholder="Công ty Luật ABC">
+                        </div>
+                    </div>
+
+                    <div class="contact-row">
+                        <div class="field">
+                            <label for="email">Email công việc</label>
+                            <input id="email" name="email" type="email" required placeholder="contact@lawfirm.vn">
+                        </div>
+                        <div class="field">
+                            <label for="phone">Số điện thoại</label>
+                            <input id="phone" name="phone" type="tel" required placeholder="09xx xxx xxx">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="aiLevel">Mức độ sẵn sàng AI hiện tại</label>
+                        <select id="aiLevel" name="ai_level" required>
+                            <option value="">Chọn hiện trạng</option>
+                            <option value="chua-dung-ai">Chưa dùng AI trong quy trình</option>
+                            <option value="dung-rieng-le">Đang dùng AI rời rạc theo cá nhân</option>
+                            <option value="dang-thi-diem">Đang thí điểm AI cho một số nhóm việc</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Nhu cầu ưu tiên (chọn nhiều)</label>
+                        <div class="need-grid">
+                            <label class="need-item"><input type="checkbox" name="needs" value="Ra soat hop dong AI"> Rà soát hợp đồng AI</label>
+                            <label class="need-item"><input type="checkbox" name="needs" value="Kho tri thuc phap ly noi bo"> Kho tri thức pháp lý nội bộ</label>
+                            <label class="need-item"><input type="checkbox" name="needs" value="Quan ly quy trinh xu ly ho so"> Quản lý quy trình hồ sơ</label>
+                            <label class="need-item"><input type="checkbox" name="needs" value="Dao tao su dung AI cho luat su"> Đào tạo AI cho luật sư</label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="detail">Mô tả ngắn bài toán hiện tại</label>
+                        <textarea id="detail" name="detail" placeholder="Ví dụ: mỗi tháng rà soát khoảng 200 hợp đồng, mất nhiều thời gian tổng hợp rủi ro và theo dõi thay đổi..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Gửi yêu cầu tư vấn</button>
+                    <div class="contact-note">Yêu cầu sẽ được gửi theo định dạng B2B để ưu tiên xử lý cho doanh nghiệp.</div>
+                    <div id="contactStatus" class="contact-status" aria-live="polite"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CTA BANNER -->
 <section class="cta-banner">
     <div class="container reveal">
@@ -525,7 +679,7 @@
             <ul class="footer-links">
                 <li><a href="#features">Tính năng</a></li>
                 <li><a href="#pricing">Bảng giá</a></li>
-                <li><a href="mailto:contact@legal-ai.vn">Liên hệ</a></li>
+                <li><a href="#contact">Liên hệ</a></li>
                 <li><a href="#">Điều khoản</a></li>
             </ul>
             <div class="footer-copy">© 2026 AI Legal Agent. Made with ❤️ in Vietnam</div>
@@ -545,6 +699,86 @@
     document.querySelectorAll('#navLinks a').forEach(a => {
         a.addEventListener('click', () => document.getElementById('navLinks').classList.remove('open'));
     });
+
+    // Contact form: submit to backend -> webhook; fallback to mail client if needed
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        const openMailClient = (payload) => {
+            const subject = `[B2B Legal AI] ${payload.lawFirm} - Yeu cau tu van chuyen doi so`;
+            const body = [
+                'YEU CAU TU VAN CHUYEN DOI SO AI CHO CONG TY LUAT',
+                '',
+                `Ho va ten: ${payload.fullName}`,
+                `Cong ty luat: ${payload.lawFirm}`,
+                `Email: ${payload.email}`,
+                `So dien thoai: ${payload.phone}`,
+                `Hien trang AI: ${payload.aiLevel}`,
+                `Nhu cau uu tien: ${payload.needs.length ? payload.needs.join(', ') : 'Chua chon'}`,
+                '',
+                'Mo ta bai toan:',
+                payload.detail || 'Chua cung cap',
+            ].join('\n');
+            window.location.href = `mailto:contact@legal-ai.vn?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        };
+
+        contactForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(contactForm);
+            const needs = formData.getAll('needs');
+            const payload = {
+                fullName: (formData.get('full_name') || '').toString().trim(),
+                lawFirm: (formData.get('law_firm') || '').toString().trim(),
+                email: (formData.get('email') || '').toString().trim(),
+                phone: (formData.get('phone') || '').toString().trim(),
+                aiLevel: (formData.get('ai_level') || '').toString().trim(),
+                detail: (formData.get('detail') || '').toString().trim(),
+                needs,
+            };
+
+            const statusEl = document.getElementById('contactStatus');
+            if (!payload.fullName || !payload.lawFirm || !payload.email || !payload.phone || !payload.aiLevel) {
+                statusEl.textContent = 'Vui lòng điền đầy đủ thông tin bắt buộc.';
+                return;
+            }
+
+            statusEl.textContent = 'Dang gui yeu cau...';
+            fetch('/v1/contact/lead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: payload.fullName,
+                    law_firm: payload.lawFirm,
+                    email: payload.email,
+                    phone: payload.phone,
+                    ai_level: payload.aiLevel,
+                    needs: payload.needs,
+                    detail: payload.detail,
+                    source: 'legal-ai-landing',
+                }),
+            })
+                .then(async (response) => {
+                    if (!response.ok) {
+                        let message = 'Gui that bai';
+                        try {
+                            const err = await response.json();
+                            message = err.detail || message;
+                        } catch (_) {
+                            // Keep default message.
+                        }
+                        throw new Error(message);
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    statusEl.textContent = 'Da gui yeu cau thanh cong. Team se lien he ban som.';
+                    contactForm.reset();
+                })
+                .catch((error) => {
+                    statusEl.textContent = `Khong gui duoc qua he thong (${error.message}). Dang mo email de ban gui thu cong.`;
+                    openMailClient(payload);
+                });
+        });
+    }
 
     // Intersection Observer for reveal
     const observer = new IntersectionObserver((entries) => {

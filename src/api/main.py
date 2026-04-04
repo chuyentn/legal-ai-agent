@@ -58,7 +58,7 @@ from .security_utils import validate_jwt_secret, sanitize_log, rate_limiter as g
 JWT_SECRET = validate_jwt_secret()
 
 # Import new routes
-from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates, crawler, llm_oauth, pricing, platform_admin
+from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates, crawler, llm_oauth, pricing, platform_admin, contact
 # from .middleware.logging import PlatformLoggingMiddleware  # disabled for deploy
 
 # Import agent (initialized after DB functions are defined)
@@ -160,6 +160,7 @@ app.include_router(crawler.router)
 app.include_router(llm_oauth.router)
 app.include_router(pricing.router)
 app.include_router(platform_admin.router)
+app.include_router(contact.router)
 
 # Startup event - seed templates
 @app.on_event("startup")

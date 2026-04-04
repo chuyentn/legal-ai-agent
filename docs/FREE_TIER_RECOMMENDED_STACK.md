@@ -100,6 +100,8 @@ UPLOAD_DIR=/tmp/legal-ai-agent-uploads
 - `GOOGLE_APPS_SCRIPT_WEBHOOK_URL`
 - `GOOGLE_SHEET_EDIT_URL`
 
+Note: Contact lead form on landing page uses `GOOGLE_APPS_SCRIPT_WEBHOOK_URL` to forward submissions to Google Sheet via Apps Script.
+
 ## Common naming pitfalls
 
 1. Use `SUPABASE_JWT_SECRET` (not `JWT_SECRET`).
