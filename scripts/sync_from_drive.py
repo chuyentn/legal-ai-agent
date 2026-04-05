@@ -10,7 +10,12 @@ FOLDER_ID = os.environ.get('LEGAL_FOLDER_ID', '')
 OUTPUT_DIR = './data/van_ban_phap_ly/'
 
 def get_drive_service():
-    creds_data = json.loads(open('credentials.json').read())
+    # Đọc credentials từ ENV VARIABLE (không dùng file)
+    creds_json = os.environ.get('GOOGLE_CREDENTIALS', '')
+    if not creds_json:
+        print("❌ GOOGLE_CREDENTIALS chưa được set!")
+        exit(1)
+    creds_data = json.loads(creds_json)
     creds = service_account.Credentials.from_service_account_info(
         creds_data, scopes=SCOPES)
     return build('drive', 'v3', credentials=creds)
@@ -20,10 +25,9 @@ def download_folder(service, folder_id, local_path):
     query = f"'{folder_id}' in parents and trashed=false"
     results = service.files().list(
         q=query, fields="files(id, name, mimeType)").execute()
-    
+
     for file in results.get('files', []):
         name, fid, mime = file['name'], file['id'], file['mimeType']
-        
         if mime == 'application/vnd.google-apps.folder':
             download_folder(service, fid, os.path.join(local_path, name))
         else:
@@ -45,7 +49,6 @@ if __name__ == '__main__':
     if not FOLDER_ID:
         print("❌ LEGAL_FOLDER_ID chưa được set!")
         exit(1)
-    
     print(f"🚀 Bắt đầu sync từ folder: {FOLDER_ID}")
     service = get_drive_service()
     download_folder(service, FOLDER_ID, OUTPUT_DIR)
