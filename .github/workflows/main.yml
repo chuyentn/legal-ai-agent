@@ -2,15 +2,15 @@ name: 🔄 Sync Legal Docs from Google Drive
 
 on:
   schedule:
-    - cron: '0 18 * * *'   # Chạy 1 AM Việt Nam (UTC+7 = 18:00 UTC)
-  workflow_dispatch:         # Nút chạy thủ công trên GitHub UI
+    - cron: '0 18 * * *'
+  workflow_dispatch:
 
 jobs:
   sync-legal-data:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← thêm dòng này
-    
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: 📥 Checkout repo
         uses: actions/checkout@v4
@@ -29,20 +29,16 @@ jobs:
             google-auth-oauthlib \
             pymupdf
 
-      - name: 🔑 Setup Google credentials
-        run: |
-          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
-
       - name: 📂 Run sync script
         env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           LEGAL_FOLDER_ID: ${{ secrets.LEGAL_FOLDER_ID }}
         run: python scripts/sync_from_drive.py
 
       - name: 📤 Commit & push new docs
         run: |
-          git config --global user.name  "LegalAI Bot"
+          git config --global user.name "LegalAI Bot"
           git config --global user.email "bot@legalai.vn"
-          git add data/
-          git diff --staged --quiet || \
-            git commit -m "🔄 Auto-sync legal docs $(date +'%Y-%m-%d %H:%M')" && \
-            git push
+          git add data/ || true
+          git diff --staged --quiet || git commit -m "🔄 Auto-sync legal docs $(date +'%Y-%m-%d %H:%M')"
+          git push || true
