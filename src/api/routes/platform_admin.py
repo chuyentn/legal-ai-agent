@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from psycopg2.extras import RealDictCursor
 import json
 from ..middleware.auth import get_current_user, get_db
+from ...services.file_storage import test_google_drive_connector
 
 router = APIRouter(prefix="/v1/platform", tags=["platform-admin"])
 
@@ -69,6 +70,15 @@ class PlatformSettings(BaseModel):
     maintenance_mode: Optional[bool] = None
     maintenance_message: Optional[str] = None
     feature_flags: Optional[Dict] = None
+
+
+class GoogleDriveConnectorUpdate(BaseModel):
+    service_account_json: Dict[str, Any]
+    root_folder_id: Optional[str] = None
+    auto_backup: bool = True
+    realtime_sync: bool = True
+    is_default: bool = True
+    is_active: bool = True
 
 # ============================================
 # DASHBOARD
@@ -348,6 +358,140 @@ async def get_company_detail(company_id: str, admin: Dict = Depends(require_supe
             company["usage_history"] = []
         
         return company
+
+
+@router.get("/companies/{company_id}/storage-connectors")
+async def get_company_storage_connectors(company_id: str, admin: Dict = Depends(require_superadmin)):
+    """List storage connectors configured for a tenant."""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            """
+            SELECT id, provider, is_active, is_default, config, created_at, updated_at
+            FROM company_storage_connections
+            WHERE company_id = %s
+            ORDER BY is_default DESC, updated_at DESC
+            """,
+            (company_id,),
+        )
+        rows = cur.fetchall()
+
+    connectors = []
+    for row in rows:
+        item = dict(row)
+        config = item.get("config") or {}
+        item["id"] = str(item["id"])
+        item["has_service_account"] = bool(config.get("service_account_json"))
+        item["root_folder_id"] = config.get("root_folder_id")
+        item["auto_backup"] = bool(config.get("auto_backup", True))
+        item["realtime_sync"] = bool(config.get("realtime_sync", True))
+        item.pop("config", None)
+        if item.get("created_at"):
+            item["created_at"] = item["created_at"].isoformat()
+        if item.get("updated_at"):
+            item["updated_at"] = item["updated_at"].isoformat()
+        connectors.append(item)
+
+    return {"connectors": connectors}
+
+
+@router.put("/companies/{company_id}/storage-connectors/google-drive")
+async def upsert_google_drive_connector(
+    company_id: str,
+    payload: GoogleDriveConnectorUpdate,
+    admin: Dict = Depends(require_superadmin),
+):
+    """Upsert Google Drive connector for a tenant (service account + folder isolation)."""
+    with get_db() as conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT id FROM companies WHERE id = %s", (company_id,))
+        if not cur.fetchone():
+            raise HTTPException(404, "Công ty không tồn tại")
+
+        config = {
+            "service_account_json": payload.service_account_json,
+            "root_folder_id": payload.root_folder_id,
+            "auto_backup": payload.auto_backup,
+            "realtime_sync": payload.realtime_sync,
+        }
+
+        if payload.is_default:
+            cur.execute(
+                """
+                UPDATE company_storage_connections
+                SET is_default = false, updated_at = now()
+                WHERE company_id = %s
+                """,
+                (company_id,),
+            )
+
+        cur.execute(
+            """
+            INSERT INTO company_storage_connections (
+                company_id, provider, is_active, is_default, config, created_at, updated_at
+            )
+            VALUES (%s, 'google_drive', %s, %s, %s::jsonb, now(), now())
+            ON CONFLICT (company_id, provider)
+            DO UPDATE SET
+                is_active = EXCLUDED.is_active,
+                is_default = EXCLUDED.is_default,
+                config = EXCLUDED.config,
+                updated_at = now()
+            RETURNING id, provider, is_active, is_default, created_at, updated_at
+            """,
+            (
+                company_id,
+                payload.is_active,
+                payload.is_default,
+                json.dumps(config, ensure_ascii=False),
+            ),
+        )
+        connector = dict(cur.fetchone())
+
+        try:
+            cur.execute(
+                """
+                INSERT INTO platform_logs (user_id, action, target_type, target_id, details)
+                VALUES (%s, 'upsert_storage_connector', 'company', %s, %s)
+                """,
+                (
+                    admin["id"],
+                    company_id,
+                    json.dumps(
+                        {
+                            "provider": "google_drive",
+                            "is_default": payload.is_default,
+                            "is_active": payload.is_active,
+                            "has_service_account": True,
+                            "root_folder_id": payload.root_folder_id,
+                        },
+                        ensure_ascii=False,
+                    ),
+                ),
+            )
+        except Exception:
+            pass
+
+        conn.commit()
+
+    connector["id"] = str(connector["id"])
+    if connector.get("created_at"):
+        connector["created_at"] = connector["created_at"].isoformat()
+    if connector.get("updated_at"):
+        connector["updated_at"] = connector["updated_at"].isoformat()
+    connector["provider"] = "google_drive"
+    connector["message"] = "Google Drive connector đã được cấu hình cho tenant"
+    return connector
+
+
+@router.post("/companies/{company_id}/storage-connectors/google-drive/test")
+async def test_company_google_drive_connector(company_id: str, admin: Dict = Depends(require_superadmin)):
+    """Test tenant Google Drive connector and validate isolated folder access."""
+    result = await test_google_drive_connector(company_id)
+    if not result.get("ok"):
+        raise HTTPException(400, result.get("error", "Google Drive connector test failed"))
+    return result
 
 @router.put("/companies/{company_id}")
 async def update_company(

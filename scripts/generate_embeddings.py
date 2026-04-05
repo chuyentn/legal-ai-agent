@@ -1,14 +1,26 @@
 import os
-"""Generate embeddings for law_chunks using local GPU model"""
-import psycopg2
-import numpy as np
-from sentence_transformers import SentenceTransformer
+"""Generate embeddings for law_chunks using local model"""
 import time
+import psycopg2
+from dotenv import load_dotenv
+from sentence_transformers import SentenceTransformer
+
+load_dotenv()
+
+host = os.getenv("SUPABASE_DB_HOST", "localhost")
+is_pooler = "pooler" in host.lower()
+
+# Avoid Windows TLS issues when downloading HF models
+os.environ.setdefault("HF_HUB_DISABLE_SSL_VERIFICATION", "1")
+os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "10")
+os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "30")
 
 DB_CONFIG = {
-    "host": os.getenv("SUPABASE_DB_HOST", "localhost"),
-    "port": 5432, "dbname": "postgres",
-    "user": "postgres", "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
+    "host": host,
+    "port": 6543 if is_pooler else 5432,
+    "dbname": "postgres",
+    "user": "postgres.cjkrsnqdsfucngmrsnpm" if is_pooler else "postgres",
+    "password": os.getenv("SUPABASE_DB_PASSWORD", ""),
     "sslmode": "require"
 }
 
@@ -21,10 +33,17 @@ print("Loading model...")
 # BAAI/bge-m3: 1024 dims  
 # We need 1536 (OpenAI compatible) OR we change the DB column
 
-# Let's use a model and adjust the DB vector dimension
-model = SentenceTransformer('BAAI/bge-m3', device='cuda')
-test = model.encode(["test"])
-print(f"Model dim: {test.shape[1]}")
+# Use GPU if available, otherwise CPU
+device = "cuda" if os.getenv("CUDA_VISIBLE_DEVICES") else "cpu"
+model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
+print(f"Loading model: {model_name} on {device}...", flush=True)
+try:
+    model = SentenceTransformer(model_name, device=device)
+    test = model.encode(["test"], show_progress_bar=False)
+    print(f"Model dim: {test.shape[1]}", flush=True)
+except Exception as e:
+    print(f"Failed to load model: {e}", flush=True)
+    raise
 
 # Update DB vector column if needed
 conn = psycopg2.connect(**DB_CONFIG)
@@ -38,9 +57,12 @@ if dim != 1536:
     cur.execute("DROP INDEX IF EXISTS idx_law_chunks_embedding;")
     cur.execute("DROP INDEX IF EXISTS idx_company_chunks_embedding;")
     cur.execute(f"ALTER TABLE law_chunks ALTER COLUMN embedding TYPE vector({dim});")
-    cur.execute(f"ALTER TABLE company_chunks ALTER COLUMN embedding TYPE vector({dim});")
-    cur.execute(f"CREATE INDEX idx_law_chunks_embedding ON law_chunks USING hnsw (embedding vector_cosine_ops);")
-    cur.execute(f"CREATE INDEX idx_company_chunks_embedding ON company_chunks USING hnsw (embedding vector_cosine_ops);")
+    # company_chunks may not exist in this environment
+    cur.execute("SELECT to_regclass('public.company_chunks')")
+    if cur.fetchone()[0]:
+        cur.execute(f"ALTER TABLE company_chunks ALTER COLUMN embedding TYPE vector({dim});")
+        cur.execute("CREATE INDEX idx_company_chunks_embedding ON company_chunks USING hnsw (embedding vector_cosine_ops);")
+    cur.execute("CREATE INDEX idx_law_chunks_embedding ON law_chunks USING hnsw (embedding vector_cosine_ops);")
     print(f"  ✅ Updated to {dim} dimensions")
 
 # Get chunks without embeddings

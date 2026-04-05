@@ -153,41 +153,44 @@ async def upload_document(
         )
     
     try:
-        # FIX 3: Pass sanitized unique_name to save_upload_file
-        file_path, file_size = save_upload_file(file, str(current_user["company_id"]), unique_name)
-        full_path = UPLOAD_DIR / file_path
-        
-        # Extract text based on file type
+        # Use per-tenant storage connector
+        from src.services import file_storage
+        content = await file.read()
+        upload_result = await file_storage.upload_file(content, str(current_user["company_id"]), file.filename)
+        file_path = upload_result.get("storage_path")
+        file_size = len(content)
+        storage_provider = upload_result.get("provider")
+        storage_content_type = upload_result.get("content_type")
+        status = 'uploaded'
         extracted_text = None
         page_count = None
-        status = 'uploaded'
-        
-        if file.content_type == "application/pdf":
-            extracted_text, page_count = extract_text_from_pdf(full_path)
-            status = 'analyzed'
-        
-        elif file.content_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]:
-            extracted_text = extract_text_from_docx(full_path)
-            status = 'analyzed'
-        
-        elif file.content_type == "text/plain":
-            with open(full_path, 'r', encoding='utf-8') as f:
-                extracted_text = f.read()
-            status = 'analyzed'
-        
-        elif file.content_type in ["image/jpeg", "image/png", "image/jpg"]:
-            # Image files need OCR (Tesseract not available in production)
-            status = 'pending_ocr'
-            extracted_text = "⚠️ OCR requires Tesseract (not available in production yet). Image file saved but text extraction pending."
-        
+        # Extract text if possible (PDF, DOCX, TXT)
+        import tempfile
+        file_ext = Path(file.filename).suffix.lower()
+        with tempfile.NamedTemporaryFile(delete=True, suffix=file_ext) as tmp:
+            tmp.write(content)
+            tmp.flush()
+            if file.content_type == "application/pdf":
+                from src.api.routes.documents import extract_text_from_pdf
+                extracted_text, page_count = extract_text_from_pdf(tmp.name)
+                status = 'analyzed'
+            elif file.content_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]:
+                from src.api.routes.documents import extract_text_from_docx
+                extracted_text = extract_text_from_docx(tmp.name)
+                status = 'analyzed'
+            elif file.content_type == "text/plain":
+                extracted_text = content.decode('utf-8', errors='ignore')
+                status = 'analyzed'
+            elif file.content_type in ["image/jpeg", "image/png", "image/jpg"]:
+                status = 'pending_ocr'
+                extracted_text = "⚠️ OCR requires Tesseract (not available in production yet). Image file saved but text extraction pending."
         # Insert into database
         with get_db() as conn:
             cur = conn.cursor(cursor_factory=RealDictCursor)
-            
             cur.execute("""
                 INSERT INTO documents 
-                (company_id, uploaded_by, name, file_path, file_size, mime_type, doc_type, status, extracted_text, page_count)
-                VALUES (%s, %s, %s, %s, %s, %s, %s::doc_type, %s::doc_status, %s, %s)
+                (company_id, uploaded_by, name, file_path, file_size, mime_type, doc_type, status, extracted_text, page_count, storage_provider, storage_content_type)
+                VALUES (%s, %s, %s, %s, %s, %s, %s::doc_type, %s::doc_status, %s, %s, %s, %s)
                 RETURNING id, name, file_path, file_size, mime_type, doc_type, status, page_count, created_at
             """, (
                 current_user["company_id"],
@@ -199,12 +202,12 @@ async def upload_document(
                 doc_type,
                 status,
                 extracted_text,
-                page_count
+                page_count,
+                storage_provider,
+                storage_content_type
             ))
-            
             document = dict(cur.fetchone())
             conn.commit()
-        
         return {
             "message": "Document uploaded and processed successfully",
             "document": {
@@ -218,10 +221,9 @@ async def upload_document(
                 "created_at": document["created_at"].isoformat()
             }
         }
-    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-
+        print(f"Upload error: {e}")
+        raise HTTPException(status_code=500, detail="Tải file thất bại. Vui lòng thử lại")
 @router.get("")
 async def list_documents(
     limit: int = Query(50, ge=1, le=100),
@@ -546,7 +548,9 @@ async def edit_docx(
             }
             
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Edit failed: {str(e)}")
+            # Don't expose internal error details
+            print(f"Edit error: {e}")
+            raise HTTPException(status_code=500, detail="Chỉnh sửa tài liệu thất bại. Vui lòng thử lại")
 
 @router.post("/{document_id}/analyze")
 async def analyze_document(
@@ -643,7 +647,9 @@ VĂN BẢN:
             }
         
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+            # Don't expose internal error details
+            print(f"Analysis error: {e}")
+            raise HTTPException(status_code=500, detail="Phân tích tài liệu thất bại. Vui lòng thử lại")
 
 @router.post("/compare")
 async def compare_documents(
@@ -724,4 +730,6 @@ VĂN BẢN 2 ({doc2['name']}):
             }
         
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+            # Don't expose internal error details
+            print(f"Comparison error: {e}")
+            raise HTTPException(status_code=500, detail="So sánh tài liệu thất bại. Vui lòng thử lại")

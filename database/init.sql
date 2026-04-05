@@ -402,6 +402,21 @@ CREATE TABLE IF NOT EXISTS platform_settings (
     PRIMARY KEY (key)
 );
 
+-- Table: company_storage_connections
+CREATE TABLE IF NOT EXISTS company_storage_connections (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    provider VARCHAR(50) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    is_default BOOLEAN DEFAULT false,
+    config JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (id),
+    UNIQUE (company_id, provider),
+    CHECK (provider IN ('supabase', 'google_drive', 'onedrive'))
+);
+
 -- Table: usage_logs
 CREATE TABLE IF NOT EXISTS usage_logs (
     id UUID DEFAULT gen_random_uuid() NOT NULL,
@@ -477,6 +492,7 @@ CREATE INDEX IF NOT EXISTS idx_users_company_id ON users(company_id);
 -- Usage logs (for analytics)
 CREATE INDEX IF NOT EXISTS idx_usage_logs_company_id ON usage_logs(company_id);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_created_at ON usage_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_company_storage_connections_company_id ON company_storage_connections(company_id);
 
 -- ============================================================
 -- SEED DATA (Default templates, settings, etc.)

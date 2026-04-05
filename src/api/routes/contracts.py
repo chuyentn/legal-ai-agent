@@ -327,10 +327,12 @@ async def create_contract(
     start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
     end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
     
-    # Handle file upload
+    # Handle file upload (per-tenant storage)
     file_path = None
     file_type = None
     extracted_text = None
+    storage_provider = None
+    storage_content_type = None
     
     if file:
         # Validate file extension
@@ -340,31 +342,31 @@ async def create_contract(
                 status_code=400,
                 detail=f"File type not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
             )
-        
-        # Save file
-        file_id = str(uuid.uuid4())
-        file_name = f"{file_id}{file_ext}"
-        file_path = str(UPLOAD_DIR / file_name)
-        
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
+        content = await file.read()
+        # Import file_storage and upload
+        from src.services import file_storage
+        upload_result = await file_storage.upload_file(content, str(current_user["company_id"]), file.filename)
+        file_path = upload_result.get("storage_path")
+        storage_provider = upload_result.get("provider")
+        storage_content_type = upload_result.get("content_type")
         file_type = file_ext
-        
-        # Extract text from uploaded file
-        extracted_text = extract_file_text(file_path, file_ext, content)
+        # Extract text from uploaded file (if possible)
+        # For Google Drive/Supabase, need to save temp file for extraction
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=True, suffix=file_ext) as tmp:
+            tmp.write(content)
+            tmp.flush()
+            extracted_text = extract_file_text(tmp.name, file_ext, content)
     
     # Insert into database
     with get_db() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        
         cur.execute("""
             INSERT INTO contracts (
                 company_id, uploaded_by, name, contract_type, parties,
-                start_date, end_date, file_path, file_type, extracted_text, notes
+                start_date, end_date, file_path, file_type, extracted_text, notes, storage_provider, storage_content_type
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING *
         """, (
             current_user["company_id"],
@@ -377,19 +379,18 @@ async def create_contract(
             file_path,
             file_type,
             extracted_text,
-            notes
+            notes,
+            storage_provider,
+            storage_content_type
         ))
-        
         contract = dict(cur.fetchone())
         conn.commit()
-        
         # Audit log for upload
         try:
             from ..main import log_audit
             log_audit(str(current_user["company_id"]), str(current_user.get("id")), "upload", "contract", str(contract["id"]))
         except Exception:
             pass
-        
         return contract
 
 @router.get("")

@@ -102,6 +102,8 @@ async def submit_contact_lead(payload: ContactLeadRequest, request: Request):
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Không gửi được lead tới webhook: {exc}")
+        # Don't expose internal error details
+        print(f"Webhook error: {exc}")
+        raise HTTPException(status_code=502, detail="Không gửi được lead tới webhook. Vui lòng thử lại sau")
 
     return {"ok": True, "message": "Lead đã được gửi thành công."}

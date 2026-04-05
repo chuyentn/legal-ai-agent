@@ -57,7 +57,7 @@
 - **Backend:** Python 3.11+, FastAPI, Celery
 - **Database:** Supabase (Postgres + pgvector + Auth + Storage)
 - **LLM:** Claude 3.5 Sonnet (Anthropic API)
-- **Embedding:** OpenAI text-embedding-3-small (MVP) → BGE-M3 (scale)
+- **Embedding:** OpenAI text-embedding-3-small (MVP) → BGE-M3 (scale) | tạm dùng sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 (384-dim) cho data HF
 - **OCR:** Surya (Vietnamese support)
 - **Queue:** Redis
 - **Frontend:** Next.js 14+ (dashboard)

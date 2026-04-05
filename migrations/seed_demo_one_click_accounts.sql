@@ -87,6 +87,37 @@ SET company_id = EXCLUDED.company_id,
     password_hash = EXCLUDED.password_hash,
     is_active = true;
 
+-- 3.5) Seed Superadmin full quyền account
+WITH c AS (
+    SELECT id FROM companies WHERE slug = 'coach-legal-demo' LIMIT 1
+)
+INSERT INTO users (
+    company_id,
+    role,
+    full_name,
+    email,
+    password_hash,
+    is_active,
+    preferences,
+    user_settings
+)
+SELECT
+    c.id,
+    'superadmin'::user_role,
+    'Data Phuan Superadmin',
+    'dataphuan@gmail.com',
+    crypt('Demolegal@123', gen_salt('bf', 10)),
+    true,
+    '{}'::jsonb,
+    '{}'::jsonb
+FROM c
+ON CONFLICT (email) DO UPDATE
+SET company_id = EXCLUDED.company_id,
+    role = 'superadmin'::user_role,
+    full_name = EXCLUDED.full_name,
+    password_hash = EXCLUDED.password_hash,
+    is_active = true;
+
 COMMIT;
 
 -- 4) Verify output
@@ -100,5 +131,5 @@ SELECT
     c.used_quota
 FROM users u
 LEFT JOIN companies c ON c.id = u.company_id
-WHERE lower(u.email) IN ('adminlegal@coach.io.vn', 'luatsu@coach.io.vn')
+WHERE lower(u.email) IN ('adminlegal@coach.io.vn', 'luatsu@coach.io.vn', 'dataphuan@gmail.com')
 ORDER BY u.email;

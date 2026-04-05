@@ -1205,8 +1205,21 @@
             });
 
             if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'API Error');
+                let message = 'Yeu cau that bai. Vui long thu lai.';
+                try {
+                    const err = await res.json();
+                    const detail = (err && err.detail) ? String(err.detail) : '';
+                    if (res.status === 401 || res.status === 403) {
+                        message = 'Ban can dang nhap lai hoac khong du quyen truy cap.';
+                    } else if (res.status === 429) {
+                        message = 'He thong dang gioi han tan suat. Vui long thu lai sau.';
+                    } else if (res.status >= 500) {
+                        message = 'Loi he thong tam thoi. Vui long thu lai.';
+                    } else if (detail && !/render|\/tmp|\/opt|traceback|storage|database|password|key/i.test(detail)) {
+                        message = detail;
+                    }
+                } catch (_) {}
+                throw new Error(message);
             }
 
             return res.json();

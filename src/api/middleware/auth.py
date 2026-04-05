@@ -35,7 +35,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise RuntimeError(
-        "DATABASE_URL is not set. Please configure it in Render Environment."
+        "DATABASE_URL is not set. Please configure server environment variables."
     )
 
 @contextmanager

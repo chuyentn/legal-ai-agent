@@ -42,7 +42,9 @@ async def paypal_checkout(
         )
         return {"approval_url": url}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Don't expose internal error details
+        print(f"PayPal checkout error: {e}")
+        raise HTTPException(status_code=400, detail="Thời gian thanh toán thất bại. Vui lòng thử lại")
 
 
 @router.post("/paypal/capture")
@@ -62,7 +64,9 @@ async def paypal_capture(
             "plan_id": plan_id,
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Don't expose internal error details
+        print(f"PayPal capture error: {e}")
+        raise HTTPException(status_code=400, detail="Xác nhận thanh toán thất bại. Vui lòng thử lại")
 
 
 @router.post("/momo/checkout")
@@ -81,7 +85,9 @@ async def momo_checkout(
         )
         return {"payUrl": pay_url}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Don't expose internal error details
+        print(f"MoMo checkout error: {e}")
+        raise HTTPException(status_code=400, detail="Thời gian thanh toán thất bại. Vui lòng thử lại")
 
 
 @router.post("/momo/callback")
