@@ -214,6 +214,56 @@
         .auth-switch { text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-muted); }
         .auth-switch a { color: var(--accent); text-decoration: none; font-weight: 500; }
 
+        .demo-experience {
+            margin-top: 1rem;
+            padding: 0.9rem;
+            border: 1px solid rgba(129,140,248,0.35);
+            border-radius: 12px;
+            background: rgba(99,102,241,0.08);
+        }
+        .demo-experience-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-active);
+            margin-bottom: 0.65rem;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.55rem;
+            margin-bottom: 0.5rem;
+        }
+        .demo-card {
+            border: 1px solid var(--border-active);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            color: var(--text-active);
+            font-size: 0.82rem;
+            text-align: left;
+            padding: 0.55rem 0.65rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .demo-card:hover {
+            border-color: var(--accent);
+            background: rgba(129,140,248,0.16);
+            transform: translateY(-1px);
+        }
+        .demo-card-label {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .demo-card-email {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+        .demo-note {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
         /* ===== MAIN 3-PANEL LAYOUT ===== */
         .app-layout { display: flex; height: 100vh; width: 100vw; }
 
@@ -1590,6 +1640,21 @@
                 <button type="submit" class="btn btn-primary">Đăng nhập</button>
             </form>
             <div class="auth-switch">Chưa có tài khoản? <a href="#" onclick="showRegister(); return false;">Đăng ký ngay</a></div>
+
+            <div class="demo-experience">
+                <div class="demo-experience-title">⚡ Trải nghiệm nhanh (1 chạm)</div>
+                <div class="demo-grid">
+                    <button type="button" class="demo-card" onclick="fillDemoAccount('adminlegal@coach.io.vn', 'CEO Admin')">
+                        <div class="demo-card-label">🧑‍💼 CEO Admin</div>
+                        <div class="demo-card-email">adminlegal@coach.io.vn</div>
+                    </button>
+                    <button type="button" class="demo-card" onclick="fillDemoAccount('luatsu@coach.io.vn', 'Chuyên gia Luật sư')">
+                        <div class="demo-card-label">⚖️ Chuyên gia Luật sư</div>
+                        <div class="demo-card-email">luatsu@coach.io.vn</div>
+                    </button>
+                </div>
+                <div class="demo-note">Bấm 1 chạm để điền sẵn email demo. Nhập mật khẩu demo do quản trị hệ thống cấp để đăng nhập.</div>
+            </div>
         </div>
     </div>
 
@@ -3472,6 +3537,14 @@ console.log(await resp.json());</code></pre>
                     showToast('Đăng nhập thành công!', 'success');
                 } else { showToast('Email hoặc mật khẩu không đúng', 'error'); }
             } catch (e) { showToast('Có lỗi xảy ra', 'error'); }
+        }
+
+        function fillDemoAccount(email, roleLabel) {
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+            emailInput.value = email;
+            passwordInput.focus();
+            showToast(`Đã điền tài khoản ${roleLabel}. Vui lòng nhập mật khẩu demo.`, 'info');
         }
 
         async function handleRegister(event) {
