@@ -2515,11 +2515,17 @@
                             <button class="storage-pill active" data-provider="google_drive" onclick="switchStorageProvider('google_drive', this)">
                                 <span class="pill-icon">📁</span> Google Drive <span class="pill-dot"></span>
                             </button>
-                            <button class="storage-pill" data-provider="supabase" onclick="switchStorageProvider('supabase', this)">
-                                <span class="pill-icon">⚡</span> Supabase <span class="pill-dot"></span>
+                            <button class="storage-pill" data-provider="onedrive" onclick="switchStorageProvider('onedrive', this)">
+                                <span class="pill-icon">☁️</span> OneDrive <span class="pill-dot"></span>
                             </button>
-                            <button class="storage-pill" data-provider="local" onclick="switchStorageProvider('local', this)">
-                                <span class="pill-icon">💾</span> Local <span class="pill-dot"></span>
+                            <button class="storage-pill" data-provider="dropbox" onclick="switchStorageProvider('dropbox', this)">
+                                <span class="pill-icon">📦</span> Dropbox <span class="pill-dot"></span>
+                            </button>
+                            <button class="storage-pill" data-provider="box" onclick="switchStorageProvider('box', this)">
+                                <span class="pill-icon">🏢</span> Box <span class="pill-dot"></span>
+                            </button>
+                            <button class="storage-pill" data-provider="gofile" onclick="switchStorageProvider('gofile', this)">
+                                <span class="pill-icon">🚀</span> GoFile <span class="pill-dot"></span>
                             </button>
                         </div>
 
@@ -2545,26 +2551,43 @@
                             </div>
                         </div>
 
-                        <!-- Supabase Config -->
-                        <div id="storageConfig_supabase" class="storage-config-panel">
-                            <div class="storage-info-grid" style="grid-template-columns:1fr;">
-                                <div class="storage-info-item"><span class="info-label">Provider</span><span class="info-value">Supabase Storage (mặc định)</span></div>
-                                <div class="storage-info-item"><span class="info-label">Bucket</span><span class="info-value" id="supabaseBucket">documents</span></div>
-                                <div class="storage-info-item"><span class="info-label">Trạng thái</span><span class="info-value" id="supabaseStatus" style="color:var(--success);">✅ Hoạt động</span></div>
-                            </div>
-                            <div style="margin-top:0.75rem;padding:10px;background:rgba(99,102,241,0.06);border-radius:8px;border-left:3px solid var(--accent);">
-                                <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;">Supabase Storage được cấu hình qua biến môi trường <code style="font-size:0.72rem;">SUPABASE_URL</code> và <code style="font-size:0.72rem;">SUPABASE_SERVICE_KEY</code>. Đây là provider mặc định cho hệ thống.</div>
+                        <!-- OneDrive Config -->
+                        <div id="storageConfig_onedrive" class="storage-config-panel">
+                            <div style="text-align:center;padding:1.5rem 1rem;background:rgba(255,255,255,0.02);border:1px dashed var(--border);border-radius:8px;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.5;">☁️</div>
+                                <div style="font-size:0.85rem;color:var(--text);font-weight:500;margin-bottom:0.25rem;">Microsoft OneDrive API</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">Tính năng đang được phát triển nâng cấp tích hợp Microsoft 365.</div>
+                                <div style="margin-top:0.75rem;"><span style="font-size:0.7rem;padding:2px 8px;background:rgba(99,102,241,0.1);color:var(--accent);border-radius:12px;">Sắp ra mắt</span></div>
                             </div>
                         </div>
 
-                        <!-- Local Config -->
-                        <div id="storageConfig_local" class="storage-config-panel">
-                            <div class="storage-info-grid" style="grid-template-columns:1fr;">
-                                <div class="storage-info-item"><span class="info-label">Thư mục lưu trữ</span><span class="info-value">/tmp/legal-ai-agent-uploads/</span></div>
-                                <div class="storage-info-item"><span class="info-label">Trạng thái</span><span class="info-value" id="localStorageStatus">⚠️ Chỉ dùng cho Development</span></div>
+                        <!-- Dropbox Config -->
+                        <div id="storageConfig_dropbox" class="storage-config-panel">
+                            <div style="text-align:center;padding:1.5rem 1rem;background:rgba(255,255,255,0.02);border:1px dashed var(--border);border-radius:8px;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.5;">📦</div>
+                                <div style="font-size:0.85rem;color:var(--text);font-weight:500;margin-bottom:0.25rem;">Dropbox API</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">Tính năng đang được phát triển cho doanh nghiệp.</div>
+                                <div style="margin-top:0.75rem;"><span style="font-size:0.7rem;padding:2px 8px;background:rgba(99,102,241,0.1);color:var(--accent);border-radius:12px;">Sắp ra mắt</span></div>
                             </div>
-                            <div style="margin-top:0.75rem;padding:10px;background:rgba(251,191,36,0.06);border-radius:8px;border-left:3px solid var(--warning);">
-                                <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;">⚠️ Local storage chỉ khả dụng trong môi trường <strong>Development</strong>. Trong Production, local fallback bị tắt trừ khi được bật thủ công qua <code style="font-size:0.72rem;">ALLOW_LOCAL_STORAGE_FALLBACK=true</code>.</div>
+                        </div>
+
+                        <!-- Box Config -->
+                        <div id="storageConfig_box" class="storage-config-panel">
+                            <div style="text-align:center;padding:1.5rem 1rem;background:rgba(255,255,255,0.02);border:1px dashed var(--border);border-radius:8px;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.5;">🏢</div>
+                                <div style="font-size:0.85rem;color:var(--text);font-weight:500;margin-bottom:0.25rem;">Box Enterprise API</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">Lưu trữ tuân thủ bảo mật doanh nghiệp mở rộng.</div>
+                                <div style="margin-top:0.75rem;"><span style="font-size:0.7rem;padding:2px 8px;background:rgba(99,102,241,0.1);color:var(--accent);border-radius:12px;">Sắp ra mắt</span></div>
+                            </div>
+                        </div>
+
+                        <!-- GoFile Config -->
+                        <div id="storageConfig_gofile" class="storage-config-panel">
+                            <div style="text-align:center;padding:1.5rem 1rem;background:rgba(255,255,255,0.02);border:1px dashed var(--border);border-radius:8px;">
+                                <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.5;">🚀</div>
+                                <div style="font-size:0.85rem;color:var(--text);font-weight:500;margin-bottom:0.25rem;">GoFile Unlimited</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">Giải pháp file hosting không giới hạn dung lượng.</div>
+                                <div style="margin-top:0.75rem;"><span style="font-size:0.7rem;padding:2px 8px;background:rgba(99,102,241,0.1);color:var(--accent);border-radius:12px;">Sắp ra mắt</span></div>
                             </div>
                         </div>
 
@@ -5454,17 +5477,19 @@ console.log(await resp.json());</code></pre>
                     _activeConnectorId = null;
                     statusEl.innerHTML = '<div class="storage-status-bar disconnected"><span class="status-icon">⚪</span> Chưa kết nối Google Drive. Nhập Service Account JSON để bắt đầu.</div>';
                     connectBtn.innerHTML = '🔗 Kết nối';
+                    connectBtn.style.display = 'inline-flex';
                     disconnectBtn.style.display = 'none';
                     document.getElementById('storageQuotaSection').style.display = 'none';
                 }
-            } else if (_activeStorageProvider === 'supabase') {
-                statusEl.innerHTML = '<div class="storage-status-bar connected"><span class="status-icon">✅</span> Supabase Storage đang hoạt động (provider mặc định hệ thống)</div>';
-                connectBtn.style.display = 'none';
-                disconnectBtn.style.display = 'none';
-                document.getElementById('storageQuotaSection').style.display = 'none';
-            } else if (_activeStorageProvider === 'local') {
-                statusEl.innerHTML = '<div class="storage-status-bar disconnected"><span class="status-icon">⚠️</span> Local storage chỉ khả dụng trong Development</div>';
-                connectBtn.style.display = 'none';
+            } else {
+                // Other providers (OneDrive, Dropbox, etc.)
+                let pName = _activeStorageProvider.charAt(0).toUpperCase() + _activeStorageProvider.slice(1);
+                if (_activeStorageProvider === 'onedrive') pName = 'OneDrive';
+                if (_activeStorageProvider === 'gofile') pName = 'GoFile';
+                
+                statusEl.innerHTML = '<div class="storage-status-bar disconnected"><span class="status-icon">⏳</span> API của ' + pName + ' đang được phát triển. Sắp cập nhật!</div>';
+                connectBtn.style.display = 'inline-flex';
+                connectBtn.innerHTML = '🔗 Đăng ký báo trước';
                 disconnectBtn.style.display = 'none';
                 document.getElementById('storageQuotaSection').style.display = 'none';
             }
@@ -5479,20 +5504,13 @@ console.log(await resp.json());</code></pre>
             document.querySelectorAll('.storage-config-panel').forEach(function(panel) { panel.classList.remove('active'); });
             var configPanel = document.getElementById('storageConfig_' + provider);
             if (configPanel) configPanel.classList.add('active');
-            // Show/hide connect button for applicable providers
-            var connectBtn = document.getElementById('btnConnectStorage');
-            if (provider === 'google_drive') {
-                connectBtn.style.display = 'inline-flex';
-            } else {
-                connectBtn.style.display = 'none';
-            }
             // Re-render status
             renderStorageConnectorState();
         }
 
         async function connectStorage() {
             if (_activeStorageProvider !== 'google_drive') {
-                showToast('Chỉ hỗ trợ cấu hình Google Drive từ giao diện', 'info');
+                showToast('Tính năng đăng ký sớm cấu hình ' + _activeStorageProvider.toUpperCase() + ' đã được ghi nhận!', 'success');
                 return;
             }
             var serviceAccountRaw = document.getElementById('gdriveServiceAccount').value.trim();
@@ -5597,22 +5615,7 @@ console.log(await resp.json());</code></pre>
             var statusEl = document.getElementById('storageActionStatus');
             statusEl.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> <span style="color:var(--text-muted);">Đang test...</span>';
 
-            if (_activeStorageProvider === 'supabase') {
-                // Quick health check
-                try {
-                    var res = await fetch('/v1/health');
-                    if (res.ok) {
-                        statusEl.innerHTML = '<span style="color:var(--success);">✅ Supabase OK</span>';
-                        showToast('Supabase Storage hoạt động bình thường', 'success');
-                    } else {
-                        statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi</span>';
-                        showToast('Supabase không phản hồi', 'error');
-                    }
-                } catch (e) {
-                    statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi kết nối</span>';
-                    showToast('Không thể kết nối: ' + e.message, 'error');
-                }
-            } else if (_activeStorageProvider === 'google_drive') {
+            if (_activeStorageProvider === 'google_drive') {
                 if (!_activeConnectorId) {
                     statusEl.innerHTML = '<span style="color:var(--warning);">⚠️ Chưa kết nối</span>';
                     showToast('Cần kết nối Google Drive trước khi test', 'warning');
@@ -5641,8 +5644,9 @@ console.log(await resp.json());</code></pre>
                     showToast('Test thất bại: ' + e.message, 'error');
                 }
             } else {
-                statusEl.innerHTML = '<span style="color:var(--warning);">⚠️ Local — Chỉ dùng Dev</span>';
-                showToast('Local storage không cần test kết nối', 'info');
+                // Coming soon providers
+                statusEl.innerHTML = '<span style="color:var(--warning);">⏳ Chưa ra mắt</span>';
+                showToast('Kết nối này chưa khả dụng để test', 'info');
             }
             setTimeout(function() { statusEl.innerHTML = ''; }, 5000);
         }
