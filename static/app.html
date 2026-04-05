@@ -216,79 +216,164 @@
 
         .demo-experience {
             margin-top: 1rem;
-            padding: 0.9rem;
-            border: 1px solid rgba(129,140,248,0.35);
-            border-radius: 12px;
-            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(129,140,248,0.38);
+            border-radius: 14px;
+            background:
+                linear-gradient(155deg, rgba(99,102,241,0.16) 0%, rgba(129,140,248,0.05) 52%, rgba(15,15,23,0.62) 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+            padding: 0.95rem;
+        }
+        .demo-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
         }
         .demo-experience-title {
-            font-size: 0.9rem;
-            font-weight: 700;
+            font-size: 0.92rem;
+            font-weight: 800;
             color: var(--text-active);
-            margin-bottom: 0.65rem;
+            letter-spacing: 0.01em;
         }
-        .demo-grid {
+        .demo-kicker {
+            padding: 0.2rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            color: #e0e7ff;
+            border: 1px solid rgba(165,180,252,0.5);
+            background: rgba(67,56,202,0.34);
+            white-space: nowrap;
+        }
+        .demo-description {
+            margin-bottom: 0.75rem;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+        .demo-account-grid,
+        .demo-action-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0.55rem;
-            margin-bottom: 0.5rem;
         }
-        .demo-card {
-            border: 1px solid var(--border-active);
-            border-radius: 10px;
-            background: rgba(255,255,255,0.04);
+        .demo-action-grid {
+            margin-top: 0.55rem;
+            margin-bottom: 0.55rem;
+        }
+        .demo-account-card,
+        .demo-action-btn {
+            border-radius: 11px;
+            border: 1px solid rgba(148,163,184,0.32);
+            background: rgba(255,255,255,0.045);
             color: var(--text-active);
-            font-size: 0.82rem;
             text-align: left;
-            padding: 0.55rem 0.65rem;
             cursor: pointer;
             font-family: inherit;
-            transition: all 0.2s;
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
         }
-        .demo-card:hover {
-            border-color: var(--accent);
-            background: rgba(129,140,248,0.16);
+        .demo-account-card {
+            padding: 0.62rem 0.68rem;
+        }
+        .demo-account-card:hover,
+        .demo-account-card.active {
+            border-color: rgba(129,140,248,0.9);
+            background: rgba(129,140,248,0.2);
             transform: translateY(-1px);
         }
-        .demo-card-label {
+        .demo-account-title {
+            font-size: 0.78rem;
             font-weight: 700;
-            margin-bottom: 2px;
+            margin-bottom: 0.16rem;
         }
-        .demo-card-email {
-            font-size: 0.74rem;
+        .demo-account-email {
+            font-size: 0.72rem;
             color: var(--text-secondary);
+            word-break: break-all;
         }
-        .demo-note {
-            font-size: 0.74rem;
+        .demo-action-btn {
+            padding: 0.58rem 0.64rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.35rem;
+            font-size: 0.77rem;
+            font-weight: 700;
+        }
+        .demo-action-btn:hover {
+            border-color: rgba(129,140,248,0.78);
+            background: rgba(99,102,241,0.18);
+            transform: translateY(-1px);
+        }
+        .demo-action-btn:disabled {
+            opacity: 0.66;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .demo-action-meta {
+            font-size: 0.68rem;
             color: var(--text-muted);
-            line-height: 1.45;
+            font-weight: 600;
         }
         .demo-pass {
-            margin-top: 0.5rem;
-            padding: 0.45rem 0.55rem;
-            border: 1px dashed rgba(129,140,248,0.45);
-            border-radius: 8px;
-            font-size: 0.75rem;
+            margin-top: 0.12rem;
+            padding: 0.5rem 0.6rem;
+            border: 1px dashed rgba(129,140,248,0.58);
+            border-radius: 9px;
+            font-size: 0.74rem;
             color: var(--text-secondary);
-            background: rgba(99,102,241,0.08);
+            background: rgba(99,102,241,0.09);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
         }
         .demo-pass strong {
-            color: #c7d2fe;
+            color: #dbe4ff;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+        }
+        .demo-pass-copy {
+            border: 1px solid rgba(148,163,184,0.5);
+            background: rgba(255,255,255,0.07);
+            color: var(--text-active);
+            border-radius: 7px;
+            padding: 0.24rem 0.44rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .demo-pass-copy:hover {
+            border-color: rgba(129,140,248,0.9);
+            background: rgba(129,140,248,0.2);
+        }
+        .demo-note {
+            margin-top: 0.48rem;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.45;
         }
         .demo-links {
             margin-top: 0.55rem;
             display: grid;
-            gap: 0.35rem;
+            gap: 0.34rem;
         }
         .demo-link {
-            color: #a5b4fc;
-            font-size: 0.74rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            width: fit-content;
+            color: #c7d2fe;
+            font-size: 0.72rem;
+            font-weight: 600;
             text-decoration: none;
+            border-bottom: 1px dashed rgba(165,180,252,0.5);
         }
         .demo-link:hover {
-            text-decoration: underline;
+            color: #e0e7ff;
+            border-bottom-color: rgba(224,231,255,0.85);
         }
 
         /* ===== MAIN 3-PANEL LAYOUT ===== */
@@ -498,7 +583,36 @@
         .settings-modal-content { max-width: 600px; }
         .settings-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
         .settings-card-title { font-size: 1rem; font-weight: 600; color: var(--text-active); margin-bottom: 0.75rem; }
+        .settings-card-subtitle { font-size: 0.78rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 0.75rem; }
         .settings-form { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        /* Storage Connection */
+        .storage-provider-pills { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+        .storage-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg-elevated); color: var(--text-muted); font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s ease; }
+        .storage-pill:hover { border-color: var(--border-active); color: var(--text); background: rgba(255,255,255,0.06); }
+        .storage-pill.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); box-shadow: 0 0 0 3px rgba(99,102,241,0.08); }
+        .storage-pill .pill-icon { font-size: 1rem; }
+        .storage-pill .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+        .storage-pill.connected .pill-dot { background: var(--success); box-shadow: 0 0 6px rgba(74,222,128,0.4); }
+        .storage-config-panel { display: none; animation: fadeIn 0.2s ease; }
+        .storage-config-panel.active { display: block; }
+        .storage-status-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; margin-top: 0.75rem; font-size: 0.8rem; font-weight: 500; animation: fadeIn 0.2s ease; }
+        .storage-status-bar.connected { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25); color: var(--success); }
+        .storage-status-bar.disconnected { background: rgba(148,163,184,0.08); border: 1px solid var(--border); color: var(--text-muted); }
+        .storage-status-bar.error { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25); color: var(--danger); }
+        .storage-status-bar .status-icon { font-size: 1rem; }
+        .storage-actions-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .storage-quota-bar { margin-top: 0.75rem; }
+        .storage-quota-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; }
+        .storage-quota-track { height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+        .storage-quota-fill { height: 100%; border-radius: 3px; background: var(--accent-gradient); transition: width 0.4s ease; }
+        .storage-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 0.75rem; }
+        .storage-info-item { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .storage-info-item .info-label { color: var(--text-muted); }
+        .storage-info-item .info-value { color: var(--text-active); font-weight: 500; }
+        .storage-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+        .storage-toggle-row label { font-size: 0.82rem; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .storage-toggle-row input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
 
         /* Status bar */
         .status-bar { height: 24px; background: var(--bg-statusbar); display: flex; align-items: center; padding: 0 var(--space-4); font-size: var(--font-xs); color: white; flex-shrink: 0; gap: 12px; justify-content: space-between; }
@@ -1518,6 +1632,11 @@
             .batch-upload-content { padding: 16px; }
             .onboarding-wizard { padding: 20px; }
             .command-palette { width: 95vw; }
+            .auth-container { padding: 1rem; }
+            .auth-box { max-width: 100%; padding: 1.5rem 1.15rem; border-radius: 16px; }
+            .demo-account-grid,
+            .demo-action-grid { grid-template-columns: 1fr; }
+            .demo-pass { align-items: flex-start; flex-direction: column; }
         }
 
         /* ===== DIFF VIEW STYLES ===== */
@@ -1669,32 +1788,54 @@
             <div class="auth-switch">Chưa có tài khoản? <a href="#" onclick="showRegister(); return false;">Đăng ký ngay</a></div>
 
             <div class="demo-experience">
-                <div class="demo-experience-title">⚡ Trải nghiệm nhanh (1 chạm)</div>
-                <div class="demo-grid">
-                    <button type="button" class="demo-card" onclick="fillDemoAccount('adminlegal@coach.io.vn', 'CEO Admin')">
-                        <div class="demo-card-label">🧑‍💼 CEO Admin</div>
-                        <div class="demo-card-email">adminlegal@coach.io.vn</div>
+                <div class="demo-head">
+                    <div class="demo-experience-title">Trải nghiệm tài khoản demo</div>
+                    <div class="demo-kicker">1 cham</div>
+                </div>
+                <div class="demo-description">Chon vai tro de dien nhanh tai khoan, hoac dang nhap ngay chi voi 1 nut bam.</div>
+
+                <div class="demo-account-grid">
+                    <button
+                        type="button"
+                        class="demo-account-card"
+                        data-demo-account="ceo"
+                        onclick="fillDemoAccount('ceo')"
+                    >
+                        <div class="demo-account-title">CEO Admin</div>
+                        <div class="demo-account-email">adminlegal@coach.io.vn</div>
                     </button>
-                    <button type="button" class="demo-card" onclick="fillDemoAccount('luatsu@coach.io.vn', 'Chuyên gia Luật sư')">
-                        <div class="demo-card-label">⚖️ Chuyên gia Luật sư</div>
-                        <div class="demo-card-email">luatsu@coach.io.vn</div>
+                    <button
+                        type="button"
+                        class="demo-account-card"
+                        data-demo-account="lawyer"
+                        onclick="fillDemoAccount('lawyer')"
+                    >
+                        <div class="demo-account-title">Chuyen gia Luat su</div>
+                        <div class="demo-account-email">luatsu@coach.io.vn</div>
                     </button>
                 </div>
-                <div class="demo-grid" style="margin-top:0;">
-                    <button type="button" class="demo-card" onclick="autoLoginDemo('ceo')">
-                        <div class="demo-card-label">🚀 Auto Login CEO</div>
-                        <div class="demo-card-email">1 chạm đăng nhập</div>
+
+                <div class="demo-action-grid">
+                    <button type="button" class="demo-action-btn" onclick="autoLoginDemo('ceo', this)">
+                        <span>Auto Login CEO</span>
+                        <span class="demo-action-meta">1 cham</span>
                     </button>
-                    <button type="button" class="demo-card" onclick="autoLoginDemo('lawyer')">
-                        <div class="demo-card-label">🚀 Auto Login Luật sư</div>
-                        <div class="demo-card-email">1 chạm đăng nhập</div>
+                    <button type="button" class="demo-action-btn" onclick="autoLoginDemo('lawyer', this)">
+                        <span>Auto Login Luat su</span>
+                        <span class="demo-action-meta">1 cham</span>
                     </button>
                 </div>
-                <div class="demo-note">Bấm 1 chạm để điền sẵn email demo. Nhập mật khẩu demo do quản trị hệ thống cấp để đăng nhập.</div>
-                <div class="demo-pass">Pass demo chung: <strong>Demolegal@123</strong></div>
+
+                <div class="demo-pass">
+                    <span>Mat khau demo: <strong>Demolegal@123</strong></span>
+                    <button type="button" class="demo-pass-copy" onclick="copyDemoPassword()">Copy</button>
+                </div>
+
+                <div class="demo-note">Meo: Bam vao the vai tro de dien email truoc, sau do nhap mat khau demo va Dang nhap.</div>
+
                 <div class="demo-links">
-                    <a class="demo-link" href="/static/app.html?demo=ceo">Link tự động đăng nhập CEO Admin</a>
-                    <a class="demo-link" href="/static/app.html?demo=lawyer">Link tự động đăng nhập Chuyên gia Luật sư</a>
+                    <a class="demo-link" href="/static/app.html?demo=ceo">Link auto login CEO</a>
+                    <a class="demo-link" href="/static/app.html?demo=lawyer">Link auto login Luat su</a>
                 </div>
             </div>
         </div>
@@ -2362,6 +2503,98 @@
                             </label>
                         </div>
                         <button class="btn btn-secondary btn-small" style="margin-top:0.75rem;" onclick="saveNotifPrefs()">💾 Lưu thông báo</button>
+                    </div>
+
+                    <!-- Storage Connection -->
+                    <div class="settings-card" id="storageConnectionCard">
+                        <div class="settings-card-title">☁️ Kết nối Lưu trữ</div>
+                        <div class="settings-card-subtitle">Thiết lập đồng bộ file sao lưu tự động lên đám mây</div>
+
+                        <!-- Provider Selector Pills -->
+                        <div class="storage-provider-pills" id="storageProviderPills">
+                            <button class="storage-pill active" data-provider="google_drive" onclick="switchStorageProvider('google_drive', this)">
+                                <span class="pill-icon">📁</span> Google Drive <span class="pill-dot"></span>
+                            </button>
+                            <button class="storage-pill" data-provider="supabase" onclick="switchStorageProvider('supabase', this)">
+                                <span class="pill-icon">⚡</span> Supabase <span class="pill-dot"></span>
+                            </button>
+                            <button class="storage-pill" data-provider="local" onclick="switchStorageProvider('local', this)">
+                                <span class="pill-icon">💾</span> Local <span class="pill-dot"></span>
+                            </button>
+                        </div>
+
+                        <!-- Google Drive Config -->
+                        <div id="storageConfig_google_drive" class="storage-config-panel active">
+                            <div class="form-group">
+                                <label class="form-label">Service Account JSON</label>
+                                <textarea class="form-input" id="gdriveServiceAccount" rows="3" placeholder='{"type":"service_account","project_id":"..."}' style="font-family:monospace;font-size:0.75rem;resize:vertical;"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ID Thư mục Google Drive lưu trữ</label>
+                                <div style="display:flex;gap:0.5rem;">
+                                    <input type="text" class="form-input" id="gdriveFolderId" placeholder="1a_Je1VuTA_mqQAMgMUQlrAfpxJZzfMZn" style="flex:1;">
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;margin-top:0.5rem;">
+                                <div class="storage-toggle-row">
+                                    <label><input type="checkbox" id="gdriveAutoBackup" checked> Tự động sao lưu khi upload</label>
+                                </div>
+                                <div class="storage-toggle-row">
+                                    <label><input type="checkbox" id="gdriveRealtimeSync" checked> Đồng bộ realtime</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Supabase Config -->
+                        <div id="storageConfig_supabase" class="storage-config-panel">
+                            <div class="storage-info-grid" style="grid-template-columns:1fr;">
+                                <div class="storage-info-item"><span class="info-label">Provider</span><span class="info-value">Supabase Storage (mặc định)</span></div>
+                                <div class="storage-info-item"><span class="info-label">Bucket</span><span class="info-value" id="supabaseBucket">documents</span></div>
+                                <div class="storage-info-item"><span class="info-label">Trạng thái</span><span class="info-value" id="supabaseStatus" style="color:var(--success);">✅ Hoạt động</span></div>
+                            </div>
+                            <div style="margin-top:0.75rem;padding:10px;background:rgba(99,102,241,0.06);border-radius:8px;border-left:3px solid var(--accent);">
+                                <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;">Supabase Storage được cấu hình qua biến môi trường <code style="font-size:0.72rem;">SUPABASE_URL</code> và <code style="font-size:0.72rem;">SUPABASE_SERVICE_KEY</code>. Đây là provider mặc định cho hệ thống.</div>
+                            </div>
+                        </div>
+
+                        <!-- Local Config -->
+                        <div id="storageConfig_local" class="storage-config-panel">
+                            <div class="storage-info-grid" style="grid-template-columns:1fr;">
+                                <div class="storage-info-item"><span class="info-label">Thư mục lưu trữ</span><span class="info-value">/tmp/legal-ai-agent-uploads/</span></div>
+                                <div class="storage-info-item"><span class="info-label">Trạng thái</span><span class="info-value" id="localStorageStatus">⚠️ Chỉ dùng cho Development</span></div>
+                            </div>
+                            <div style="margin-top:0.75rem;padding:10px;background:rgba(251,191,36,0.06);border-radius:8px;border-left:3px solid var(--warning);">
+                                <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;">⚠️ Local storage chỉ khả dụng trong môi trường <strong>Development</strong>. Trong Production, local fallback bị tắt trừ khi được bật thủ công qua <code style="font-size:0.72rem;">ALLOW_LOCAL_STORAGE_FALLBACK=true</code>.</div>
+                            </div>
+                        </div>
+
+                        <!-- Connection Status -->
+                        <div id="storageConnectionStatus"></div>
+
+                        <!-- Storage Quota -->
+                        <div class="storage-quota-bar" id="storageQuotaSection" style="display:none;">
+                            <div class="storage-quota-label">
+                                <span id="storageQuotaUsed">0 MB</span>
+                                <span id="storageQuotaTotal">— / Unlimited</span>
+                            </div>
+                            <div class="storage-quota-track">
+                                <div class="storage-quota-fill" id="storageQuotaFill" style="width:0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="storage-actions-row">
+                            <button class="btn btn-primary btn-small" id="btnConnectStorage" onclick="connectStorage()">
+                                🔗 Kết nối
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="testStorageConnection()">
+                                🔌 Test kết nối
+                            </button>
+                            <button class="btn btn-small" id="btnDisconnectStorage" style="display:none;background:var(--danger);color:white;border:none;" onclick="disconnectStorage()">
+                                ⚡ Ngắt kết nối
+                            </button>
+                            <div id="storageActionStatus" style="font-size:0.75rem;margin-left:0.25rem;"></div>
+                        </div>
                     </div>
 
                     <!-- LLM Provider Settings -->
@@ -3598,25 +3831,66 @@ console.log(await resp.json());</code></pre>
             await loginWithCredentials(email, password);
         }
 
+        function markDemoSelection(accountKey) {
+            document.querySelectorAll('.demo-account-card').forEach((el) => {
+                el.classList.toggle('active', el.getAttribute('data-demo-account') === accountKey);
+            });
+        }
+
         function fillDemoAccount(email, roleLabel) {
             const emailInput = document.getElementById('loginEmail');
             const passwordInput = document.getElementById('loginPassword');
-            emailInput.value = email;
+
+            let resolvedEmail = email;
+            let resolvedLabel = roleLabel;
+
+            if (DEMO_ACCOUNTS[email]) {
+                resolvedEmail = DEMO_ACCOUNTS[email].email;
+                resolvedLabel = DEMO_ACCOUNTS[email].label;
+                markDemoSelection(email);
+            }
+
+            emailInput.value = resolvedEmail;
             passwordInput.focus();
-            showToast(`Đã điền tài khoản ${roleLabel}. Vui lòng nhập mật khẩu demo.`, 'info');
+            showToast(`Da dien tai khoan ${resolvedLabel}. Vui long nhap mat khau demo.`, 'info');
         }
 
-        async function autoLoginDemo(accountKey) {
+        async function copyDemoPassword() {
+            try {
+                await navigator.clipboard.writeText(DEMO_PASSWORD);
+                showToast('Da copy mat khau demo', 'success');
+            } catch (e) {
+                showToast('Khong the copy. Vui long copy thu cong.', 'warning');
+            }
+        }
+
+        async function autoLoginDemo(accountKey, triggerBtn = null) {
             const account = DEMO_ACCOUNTS[accountKey];
             if (!account) {
                 showToast('Không tìm thấy tài khoản demo', 'error');
                 return;
             }
 
+            markDemoSelection(accountKey);
+
+            let originalText = '';
+            if (triggerBtn) {
+                originalText = triggerBtn.innerHTML;
+                triggerBtn.disabled = true;
+                triggerBtn.innerHTML = '<span>Dang xu ly...</span><span class="demo-action-meta">...</span>';
+            }
+
             document.getElementById('loginEmail').value = account.email;
             document.getElementById('loginPassword').value = DEMO_PASSWORD;
             showToast(`Đang đăng nhập tự động: ${account.label}...`, 'info');
-            await loginWithCredentials(account.email, DEMO_PASSWORD, `Đăng nhập demo ${account.label} thành công!`);
+            try {
+                await loginWithCredentials(account.email, DEMO_PASSWORD, `Dang nhap demo ${account.label} thanh cong!`);
+            } finally {
+                if (triggerBtn) {
+                    triggerBtn.disabled = false;
+                    triggerBtn.innerHTML = originalText;
+                }
+            }
         }
 
         function runDemoAutoLoginFromQuery() {
@@ -3647,7 +3921,11 @@ console.log(await resp.json());</code></pre>
                     showToast('Đăng ký thành công!', 'success');
                 } else {
                     const err = await response.json().catch(() => ({}));
-                    showToast(err.detail || 'Đăng ký thất bại', 'error');
+                    const rawDetail = err && err.detail ? String(err.detail) : '';
+                    const safeDetail = rawDetail && !/render|\/tmp|\/opt|traceback|storage|database|password|key/i.test(rawDetail)
+                        ? rawDetail
+                        : 'Đăng ký thất bại. Vui lòng thử lại.';
+                    showToast(safeDetail, 'error');
                 }
             } catch (e) { showToast('Có lỗi xảy ra', 'error'); }
         }
@@ -5058,6 +5336,8 @@ console.log(await resp.json());</code></pre>
             document.getElementById('settingsCreated').textContent = currentUser?.created || new Date().toLocaleDateString('vi-VN');
             // Load LLM settings
             loadLLMSettings();
+            // Load storage connectors
+            loadStorageConnectors();
         }
         async function saveSettings(event) {
             event.preventDefault();
@@ -5110,6 +5390,261 @@ console.log(await resp.json());</code></pre>
             const a = document.createElement('a'); a.href = url; a.download = 'contracts-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
             URL.revokeObjectURL(url);
             showToast('Đã xuất dữ liệu hợp đồng', 'success');
+        }
+
+        // ===== STORAGE CONNECTORS =====
+        let _storageConnectors = [];
+        let _activeStorageProvider = 'google_drive';
+        let _activeConnectorId = null;
+
+        async function loadStorageConnectors() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const res = await fetch('/v1/storage/connectors/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (res.ok) {
+                    const data = await res.json();
+                    _storageConnectors = data.connectors || [];
+                    renderStorageConnectorState();
+                }
+            } catch (e) { console.warn('Load storage connectors error:', e); }
+        }
+
+        function renderStorageConnectorState() {
+            // Mark connected pills
+            document.querySelectorAll('.storage-pill').forEach(function(pill) {
+                const provider = pill.dataset.provider;
+                const conn = _storageConnectors.find(function(c) { return c.provider === provider && c.is_active; });
+                if (conn) {
+                    pill.classList.add('connected');
+                } else {
+                    pill.classList.remove('connected');
+                }
+            });
+
+            // Render active provider status
+            const activeConn = _storageConnectors.find(function(c) { return c.provider === _activeStorageProvider && c.is_active; });
+            const statusEl = document.getElementById('storageConnectionStatus');
+            const connectBtn = document.getElementById('btnConnectStorage');
+            const disconnectBtn = document.getElementById('btnDisconnectStorage');
+
+            if (_activeStorageProvider === 'google_drive') {
+                if (activeConn) {
+                    _activeConnectorId = activeConn.id;
+                    statusEl.innerHTML = '<div class="storage-status-bar connected"><span class="status-icon">✅</span> Đã kết nối tài khoản Google Drive thành công! Hệ thống sẽ tự động upload bản sao lưu.</div>';
+                    connectBtn.innerHTML = '💾 Cập nhật';
+                    disconnectBtn.style.display = 'inline-flex';
+                    // Populate fields if data exists
+                    if (activeConn.root_folder_id) {
+                        document.getElementById('gdriveFolderId').value = activeConn.root_folder_id;
+                    }
+                    if (activeConn.auto_backup !== undefined) {
+                        document.getElementById('gdriveAutoBackup').checked = activeConn.auto_backup;
+                    }
+                    if (activeConn.realtime_sync !== undefined) {
+                        document.getElementById('gdriveRealtimeSync').checked = activeConn.realtime_sync;
+                    }
+                    // Show quota section
+                    const quotaSection = document.getElementById('storageQuotaSection');
+                    quotaSection.style.display = 'block';
+                    document.getElementById('storageQuotaUsed').textContent = '— MB đã dùng';
+                    document.getElementById('storageQuotaTotal').textContent = '15 GB (Google Drive free)';
+                    document.getElementById('storageQuotaFill').style.width = '0%';
+                } else {
+                    _activeConnectorId = null;
+                    statusEl.innerHTML = '<div class="storage-status-bar disconnected"><span class="status-icon">⚪</span> Chưa kết nối Google Drive. Nhập Service Account JSON để bắt đầu.</div>';
+                    connectBtn.innerHTML = '🔗 Kết nối';
+                    disconnectBtn.style.display = 'none';
+                    document.getElementById('storageQuotaSection').style.display = 'none';
+                }
+            } else if (_activeStorageProvider === 'supabase') {
+                statusEl.innerHTML = '<div class="storage-status-bar connected"><span class="status-icon">✅</span> Supabase Storage đang hoạt động (provider mặc định hệ thống)</div>';
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'none';
+                document.getElementById('storageQuotaSection').style.display = 'none';
+            } else if (_activeStorageProvider === 'local') {
+                statusEl.innerHTML = '<div class="storage-status-bar disconnected"><span class="status-icon">⚠️</span> Local storage chỉ khả dụng trong Development</div>';
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'none';
+                document.getElementById('storageQuotaSection').style.display = 'none';
+            }
+        }
+
+        function switchStorageProvider(provider, btn) {
+            _activeStorageProvider = provider;
+            // Update pill states
+            document.querySelectorAll('.storage-pill').forEach(function(p) { p.classList.remove('active'); });
+            if (btn) btn.classList.add('active');
+            // Show/hide config panels
+            document.querySelectorAll('.storage-config-panel').forEach(function(panel) { panel.classList.remove('active'); });
+            var configPanel = document.getElementById('storageConfig_' + provider);
+            if (configPanel) configPanel.classList.add('active');
+            // Show/hide connect button for applicable providers
+            var connectBtn = document.getElementById('btnConnectStorage');
+            if (provider === 'google_drive') {
+                connectBtn.style.display = 'inline-flex';
+            } else {
+                connectBtn.style.display = 'none';
+            }
+            // Re-render status
+            renderStorageConnectorState();
+        }
+
+        async function connectStorage() {
+            if (_activeStorageProvider !== 'google_drive') {
+                showToast('Chỉ hỗ trợ cấu hình Google Drive từ giao diện', 'info');
+                return;
+            }
+            var serviceAccountRaw = document.getElementById('gdriveServiceAccount').value.trim();
+            var folderId = document.getElementById('gdriveFolderId').value.trim();
+            var autoBackup = document.getElementById('gdriveAutoBackup').checked;
+            var realtimeSync = document.getElementById('gdriveRealtimeSync').checked;
+
+            // Validate service account JSON
+            var serviceAccountJson;
+            if (!serviceAccountRaw && _activeConnectorId) {
+                // Updating folder/settings only — no new service account
+                showToast('Cần nhập Service Account JSON để kết nối mới', 'warning');
+                return;
+            }
+            if (!serviceAccountRaw) {
+                showToast('Vui lòng nhập Service Account JSON', 'warning');
+                return;
+            }
+            try {
+                serviceAccountJson = JSON.parse(serviceAccountRaw);
+                if (!serviceAccountJson.type || serviceAccountJson.type !== 'service_account') {
+                    showToast('JSON không hợp lệ: phải có type = service_account', 'error');
+                    return;
+                }
+            } catch (e) {
+                showToast('Service Account JSON không hợp lệ: ' + e.message, 'error');
+                return;
+            }
+
+            var statusEl = document.getElementById('storageActionStatus');
+            statusEl.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> <span style="color:var(--text-muted);">Đang kết nối...</span>';
+
+            try {
+                var token = localStorage.getItem('token');
+                var res = await fetch('/v1/storage/connectors/google-drive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        service_account_json: serviceAccountJson,
+                        root_folder_id: folderId || null,
+                        auto_backup: autoBackup,
+                        realtime_sync: realtimeSync,
+                        is_default: true,
+                        is_active: true
+                    })
+                });
+                var data = await res.json();
+                if (res.ok) {
+                    showToast('✅ Đã kết nối Google Drive thành công!', 'success');
+                    statusEl.innerHTML = '<span style="color:var(--success);">✅ Thành công</span>';
+                    // Clear sensitive field
+                    document.getElementById('gdriveServiceAccount').value = '';
+                    document.getElementById('gdriveServiceAccount').placeholder = '✅ Service account đã được lưu và mã hóa trên server';
+                    await loadStorageConnectors();
+                } else {
+                    statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi</span>';
+                    showToast('Lỗi: ' + (data.detail || JSON.stringify(data)), 'error');
+                }
+            } catch (e) {
+                statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi kết nối</span>';
+                showToast('Không thể kết nối: ' + e.message, 'error');
+            }
+            setTimeout(function() { statusEl.innerHTML = ''; }, 5000);
+        }
+
+        async function disconnectStorage() {
+            if (!_activeConnectorId) {
+                showToast('Không có kết nối để ngắt', 'warning');
+                return;
+            }
+            if (!confirm('Bạn có chắc muốn ngắt kết nối ' + _activeStorageProvider.replace('_', ' ').toUpperCase() + '?\n\nDữ liệu đã lưu trên cloud sẽ không bị xóa.')) return;
+
+            var statusEl = document.getElementById('storageActionStatus');
+            statusEl.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> <span style="color:var(--text-muted);">Đang ngắt...</span>';
+
+            try {
+                var token = localStorage.getItem('token');
+                var res = await fetch('/v1/storage/connectors/' + _activeConnectorId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    showToast('Đã ngắt kết nối', 'success');
+                    statusEl.innerHTML = '<span style="color:var(--success);">Đã ngắt</span>';
+                    document.getElementById('gdriveServiceAccount').value = '';
+                    document.getElementById('gdriveServiceAccount').placeholder = '{"type":"service_account","project_id":"..."}';
+                    document.getElementById('gdriveFolderId').value = '';
+                    _activeConnectorId = null;
+                    await loadStorageConnectors();
+                } else {
+                    showToast('Lỗi khi ngắt kết nối', 'error');
+                    statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi</span>';
+                }
+            } catch (e) {
+                showToast('Lỗi: ' + e.message, 'error');
+                statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi</span>';
+            }
+            setTimeout(function() { statusEl.innerHTML = ''; }, 5000);
+        }
+
+        async function testStorageConnection() {
+            var statusEl = document.getElementById('storageActionStatus');
+            statusEl.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> <span style="color:var(--text-muted);">Đang test...</span>';
+
+            if (_activeStorageProvider === 'supabase') {
+                // Quick health check
+                try {
+                    var res = await fetch('/v1/health');
+                    if (res.ok) {
+                        statusEl.innerHTML = '<span style="color:var(--success);">✅ Supabase OK</span>';
+                        showToast('Supabase Storage hoạt động bình thường', 'success');
+                    } else {
+                        statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi</span>';
+                        showToast('Supabase không phản hồi', 'error');
+                    }
+                } catch (e) {
+                    statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi kết nối</span>';
+                    showToast('Không thể kết nối: ' + e.message, 'error');
+                }
+            } else if (_activeStorageProvider === 'google_drive') {
+                if (!_activeConnectorId) {
+                    statusEl.innerHTML = '<span style="color:var(--warning);">⚠️ Chưa kết nối</span>';
+                    showToast('Cần kết nối Google Drive trước khi test', 'warning');
+                    setTimeout(function() { statusEl.innerHTML = ''; }, 3000);
+                    return;
+                }
+                try {
+                    var token = localStorage.getItem('token');
+                    // Use the test endpoint from file_storage
+                    var res = await fetch('/v1/storage/connectors/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                    if (res.ok) {
+                        var data = await res.json();
+                        var gdConn = (data.connectors || []).find(function(c) { return c.provider === 'google_drive' && c.is_active; });
+                        if (gdConn) {
+                            statusEl.innerHTML = '<span style="color:var(--success);">✅ Google Drive OK — Folder: ' + (gdConn.root_folder_id || 'root') + '</span>';
+                            showToast('Google Drive connector hoạt động tốt!', 'success');
+                        } else {
+                            statusEl.innerHTML = '<span style="color:var(--danger);">❌ Không tìm thấy connector</span>';
+                            showToast('Google Drive connector không active', 'error');
+                        }
+                    } else {
+                        statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi API</span>';
+                    }
+                } catch (e) {
+                    statusEl.innerHTML = '<span style="color:var(--danger);">❌ Lỗi</span>';
+                    showToast('Test thất bại: ' + e.message, 'error');
+                }
+            } else {
+                statusEl.innerHTML = '<span style="color:var(--warning);">⚠️ Local — Chỉ dùng Dev</span>';
+                showToast('Local storage không cần test kết nối', 'info');
+            }
+            setTimeout(function() { statusEl.innerHTML = ''; }, 5000);
         }
 
         // ===== LLM PROVIDER SETTINGS =====

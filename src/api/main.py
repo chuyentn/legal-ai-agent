@@ -57,7 +57,7 @@ from .security_utils import validate_jwt_secret, sanitize_log, rate_limiter as g
 JWT_SECRET = validate_jwt_secret()
 
 # Import new routes
-from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates, crawler, llm_oauth, pricing, platform_admin, contact
+from .routes import auth, company, keys, usage, chats, documents, admin, contracts, templates, crawler, llm_oauth, pricing, platform_admin, contact, storage_connectors
 # from .middleware.logging import PlatformLoggingMiddleware  # disabled for deploy
 
 # Import agent (initialized after DB functions are defined)
@@ -66,10 +66,19 @@ from ..agents import legal_agent
 # Import LLM Provider Manager
 from ..services.llm_provider import LLMProviderManager
 
+# Disable debug endpoints in production
+ENV = os.getenv("ENVIRONMENT", "production").lower()
+docs_url = "/docs" if ENV == "development" else None
+redoc_url = "/redoc" if ENV == "development" else None
+openapi_url = "/openapi.json" if ENV == "development" else None
+
 app = FastAPI(
     title="Legal AI Agent API",
     description="AI-powered Vietnamese Legal Assistant - Tư vấn pháp luật, soạn thảo văn bản, rà soát hợp đồng",
-    version="2.0.0"
+    version="2.0.0",
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
 )
 
 # Logging middleware disabled for production deploy
@@ -146,6 +155,27 @@ app.include_router(llm_oauth.router)
 app.include_router(pricing.router)
 app.include_router(platform_admin.router)
 app.include_router(contact.router)
+app.include_router(storage_connectors.router)
+
+# Global exception handler - never expose internal errors in production
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions and don't expose details in production"""
+    if ENV == "development":
+        # Show full error in dev mode
+        return {
+            "error": str(exc),
+            "detail": type(exc).__name__,
+            "path": str(request.url.path)
+        }
+    else:
+        # Generic message in production
+        print(f"Unhandled exception: {type(exc).__name__}: {str(exc)[:100]}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Lỗi hệ thống tạm thời, vui lòng thử lại sau"}
+        )
 
 # Startup event - seed templates
 @app.on_event("startup")
@@ -154,6 +184,7 @@ async def startup_event():
     templates.seed_default_templates()
     ensure_audit_table()
     ensure_customer_leads_table()
+    ensure_storage_connections_table()
 
 # Static files
 static_dir = pathlib.Path(__file__).parent.parent.parent / "static"
@@ -294,6 +325,44 @@ def ensure_customer_leads_table():
             conn.commit()
     except Exception as e:
         print(f"Customer leads table error: {e}")
+
+
+def ensure_storage_connections_table():
+    """Ensure per-tenant storage connector table exists."""
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS company_storage_connections (
+                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+                    provider VARCHAR(50) NOT NULL CHECK (provider IN ('supabase', 'google_drive', 'onedrive')),
+                    is_active BOOLEAN NOT NULL DEFAULT true,
+                    is_default BOOLEAN NOT NULL DEFAULT false,
+                    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    UNIQUE (company_id, provider)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_company_storage_connections_company
+                ON company_storage_connections(company_id)
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_company_storage_connections_default
+                ON company_storage_connections(company_id, is_default)
+                WHERE is_active = true
+                """
+            )
+            conn.commit()
+    except Exception as e:
+        print(f"Storage connectors table error: {e}")
 
 # ============================================
 # Auth
@@ -454,7 +523,8 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
                 raise HTTPException(status_code=429, detail="Đã vượt giới hạn API, vui lòng chờ")
             elif e.response.status_code == 529:
                 raise HTTPException(status_code=503, detail="Hệ thống đang bận, vui lòng thử lại")
-            raise HTTPException(status_code=502, detail=f"Lỗi AI engine: {e.response.status_code}")
+            # Don't expose internal error details
+            raise HTTPException(status_code=502, detail="Hệ thống AI tạm thời không khả dụng, vui lòng thử lại")
         except psycopg2.Error as e:
             print(f"Database error in Claude call: {e}")
             raise HTTPException(status_code=500, detail="Lỗi kết nối database")
@@ -685,7 +755,7 @@ def extract_search_query(question: str) -> str:
     question_words = [
         r'\bbao lâu\b', r'\bbao nhiêu\b', r'\bthế nào\b', r'\bnhư thế nào\b',
         r'\blà gì\b', r'\bcó phải\b', r'\bcó được\b', r'\blà\b', r'\bcó\b',
-        r'\bkhông\b', r'\bhay không\b', r'\?', r'\.'
+        r'\bhay không\b', r'\?', r'\.'
     ]
     
     cleaned = question.lower()
@@ -865,10 +935,7 @@ def multi_query_search(question: str, domains: Optional[List[str]] = None, limit
                     JOIN law_documents ld ON ld.id = lc.law_id
                     WHERE lc.content ILIKE %s {domain_filter}
                     ORDER BY 
-                        CASE WHEN ld.title LIKE 'Bo Luat%%' OR ld.title LIKE 'Bộ luật%%' THEN 0
-                             WHEN ld.title LIKE 'Luat %%' OR ld.title LIKE 'Luật %%' THEN 1
-                             WHEN ld.title LIKE 'Nghi dinh%%' OR ld.title LIKE 'Nghị định%%' THEN 2
-                             ELSE 3 END,
+                        CASE WHEN ld.title LIKE 'Bo Luat%%' THEN 0 WHEN ld.title LIKE 'Luat%%' THEN 1 ELSE 2 END
                         length(lc.content) DESC
                     LIMIT {limit}
                 """, params)
@@ -1129,7 +1196,7 @@ async def download_document(doc_id: str, company: dict = Depends(verify_api_key)
         
         # Try to download from Supabase Storage first, fallback to local
         try:
-            file_bytes = await download_file(storage_path)
+            file_bytes = await download_file(storage_path, company_id=str(company["company_id"]))
             
             return StreamingResponse(
                 BytesIO(file_bytes),
@@ -1186,7 +1253,7 @@ async def preview_document(doc_id: str, company: dict = Depends(verify_api_key))
         
         # Download file from storage
         try:
-            file_bytes = await download_file(storage_path)
+            file_bytes = await download_file(storage_path, company_id=str(company["company_id"]))
         except Exception as e:
             print(f"Download for preview error: {e}")
             raise HTTPException(status_code=404, detail="File not found")
@@ -1206,7 +1273,7 @@ async def preview_document(doc_id: str, company: dict = Depends(verify_api_key))
 
         except Exception as e:
             print(f"PDF conversion error: {e}")
-            raise HTTPException(status_code=500, detail=f"Cannot convert to PDF: {str(e)}")
+            raise HTTPException(status_code=500, detail="Cannot convert to PDF")
 
         finally:
             # Cleanup temp files
@@ -1264,7 +1331,7 @@ async def edit_docx_endpoint(doc_id: str, edits: dict = Body(...), company: dict
         
         # Download from Supabase Storage
         try:
-            file_bytes = await download_file(storage_path)
+            file_bytes = await download_file(storage_path, company_id=str(company["company_id"]))
         except Exception as e:
             print(f"Download error: {e}")
             raise HTTPException(status_code=404, detail="Original file not found")
@@ -1321,7 +1388,7 @@ async def edit_docx_endpoint(doc_id: str, edits: dict = Body(...), company: dict
             
         except Exception as e:
             print(f"Edit error: {e}")
-            raise HTTPException(status_code=500, detail=f"Edit failed: {str(e)}")
+            raise HTTPException(status_code=500, detail="Edit failed")
         
         finally:
             # Cleanup temp files
@@ -2697,8 +2764,8 @@ async def search_chat_history(
                         "answer": r["content"] if r.get("role") == "assistant" else None,
                         "created_at": r.get("created_at"),
                         "session_id": r.get("session_id"),
-                        "response_time_ms": None,
-                        "citations_count": None
+                        "response_time": r.get("response_time_ms"),
+                        "citations_count": r.get("citations_count")
                     })
     except Exception as e:
         print(f"Search chat error: {e}")
