@@ -11,28 +11,19 @@ INSERT INTO companies (
     slug,
     plan,
     monthly_quota,
-    used_quota,
-    is_active,
-    metadata,
-    settings
+    used_quota
 )
 VALUES (
     'Coach Legal Demo',
     'coach-legal-demo',
     'enterprise'::plan_type,
     100000,
-    0,
-    true,
-    '{"demo_full_access": true, "seed": "one_click_login"}'::jsonb,
-    '{}'::jsonb
+    0
 )
 ON CONFLICT (slug) DO UPDATE
 SET plan = 'enterprise'::plan_type,
     monthly_quota = 100000,
-    used_quota = 0,
-    is_active = true,
-    metadata = COALESCE(companies.metadata, '{}'::jsonb) || '{"demo_full_access": true, "seed": "one_click_login"}'::jsonb,
-    updated_at = now();
+    used_quota = 0;
 
 -- 2) Seed CEO Admin demo account
 WITH c AS (
@@ -106,8 +97,7 @@ SELECT
     c.name AS company_name,
     c.plan,
     c.monthly_quota,
-    c.used_quota,
-    c.is_active AS company_active
+    c.used_quota
 FROM users u
 LEFT JOIN companies c ON c.id = u.company_id
 WHERE lower(u.email) IN ('adminlegal@coach.io.vn', 'luatsu@coach.io.vn')
