@@ -327,7 +327,20 @@
             border-radius: 100px; text-transform: uppercase; letter-spacing: 0.05em;
         }
         .price-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .price-amount { font-size: 2.2rem; font-weight: 900; margin-bottom: 0.25rem; }
+        .price-amount {
+            font-size: 2.2rem;
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.015em;
+            line-height: 1.12;
+        }
+        .price-amount--text {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+            color: #f1f5f9;
+            letter-spacing: -0.01em;
+        }
         .price-amount .currency { font-size: 1rem; font-weight: 600; color: var(--text-secondary); }
         .price-period { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem; }
         .price-features { list-style: none; margin-bottom: 2rem; flex: 1; }
@@ -620,7 +633,7 @@
             <!-- Free -->
             <div class="price-card">
                 <h3>Free</h3>
-                <div class="price-amount">Miễn phí</div>
+                <div class="price-amount price-amount--text">Miễn phí</div>
                 <div class="price-period">Bắt đầu ngay</div>
                 <ul class="price-features">
                     <li><span class="check">✓</span> 10 câu hỏi / ngày</li>
@@ -649,7 +662,7 @@
             <!-- Enterprise -->
             <div class="price-card">
                 <h3>Enterprise</h3>
-                <div class="price-amount">Liên hệ</div>
+                <div class="price-amount price-amount--text">Liên hệ</div>
                 <div class="price-period">Tùy chỉnh theo nhu cầu</div>
                 <ul class="price-features">
                     <li><span class="check">✓</span> Không giới hạn câu hỏi</li>
@@ -658,7 +671,7 @@
                     <li><span class="check">✓</span> SSO & bảo mật nâng cao</li>
                     <li><span class="check">✓</span> Dedicated account manager</li>
                 </ul>
-                <a href="mailto:contact@coach.io.vn" class="btn btn-ghost">Liên hệ tư vấn</a>
+                <a href="#contact" class="btn btn-ghost">Liên hệ tư vấn</a>
             </div>
         </div>
     </div>
