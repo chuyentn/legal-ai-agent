@@ -263,6 +263,33 @@
             color: var(--text-muted);
             line-height: 1.45;
         }
+        .demo-pass {
+            margin-top: 0.5rem;
+            padding: 0.45rem 0.55rem;
+            border: 1px dashed rgba(129,140,248,0.45);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: rgba(99,102,241,0.08);
+        }
+        .demo-pass strong {
+            color: #c7d2fe;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .demo-links {
+            margin-top: 0.55rem;
+            display: grid;
+            gap: 0.35rem;
+        }
+        .demo-link {
+            color: #a5b4fc;
+            font-size: 0.74rem;
+            text-decoration: none;
+        }
+        .demo-link:hover {
+            text-decoration: underline;
+        }
 
         /* ===== MAIN 3-PANEL LAYOUT ===== */
         .app-layout { display: flex; height: 100vh; width: 100vw; }
@@ -1653,7 +1680,22 @@
                         <div class="demo-card-email">luatsu@coach.io.vn</div>
                     </button>
                 </div>
+                <div class="demo-grid" style="margin-top:0;">
+                    <button type="button" class="demo-card" onclick="autoLoginDemo('ceo')">
+                        <div class="demo-card-label">🚀 Auto Login CEO</div>
+                        <div class="demo-card-email">1 chạm đăng nhập</div>
+                    </button>
+                    <button type="button" class="demo-card" onclick="autoLoginDemo('lawyer')">
+                        <div class="demo-card-label">🚀 Auto Login Luật sư</div>
+                        <div class="demo-card-email">1 chạm đăng nhập</div>
+                    </button>
+                </div>
                 <div class="demo-note">Bấm 1 chạm để điền sẵn email demo. Nhập mật khẩu demo do quản trị hệ thống cấp để đăng nhập.</div>
+                <div class="demo-pass">Pass demo chung: <strong>Demolegal@123</strong></div>
+                <div class="demo-links">
+                    <a class="demo-link" href="/static/app.html?demo=ceo">Link tự động đăng nhập CEO Admin</a>
+                    <a class="demo-link" href="/static/app.html?demo=lawyer">Link tự động đăng nhập Chuyên gia Luật sư</a>
+                </div>
             </div>
         </div>
     </div>
@@ -3499,10 +3541,19 @@ console.log(await resp.json());</code></pre>
         function initHighlightJS() { hljs.configure({ ignoreUnescapedHTML: true }); }
 
         // ===== AUTH =====
+        const DEMO_PASSWORD = 'Demolegal@123';
+        const DEMO_ACCOUNTS = {
+            ceo: { email: 'adminlegal@coach.io.vn', label: 'CEO Admin' },
+            lawyer: { email: 'luatsu@coach.io.vn', label: 'Chuyên gia Luật sư' },
+        };
+
         function checkAuth() {
             const token = localStorage.getItem('token');
             if (token) fetchUserProfile(token);
-            else showLogin();
+            else {
+                showLogin();
+                runDemoAutoLoginFromQuery();
+            }
         }
 
         async function fetchUserProfile(token) {
@@ -3519,10 +3570,7 @@ console.log(await resp.json());</code></pre>
             } catch (e) { console.error('Profile fetch error:', e); showLogin(); }
         }
 
-        async function handleLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+        async function loginWithCredentials(email, password, successMessage = 'Đăng nhập thành công!') {
             try {
                 const response = await fetch('/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
                 if (response.ok) {
@@ -3534,9 +3582,20 @@ console.log(await resp.json());</code></pre>
                     try { loadChatHistory(); } catch(e) {}
                     loadContracts();
                     loadDocuments();
-                    showToast('Đăng nhập thành công!', 'success');
-                } else { showToast('Email hoặc mật khẩu không đúng', 'error'); }
+                    showToast(successMessage, 'success');
+                    return true;
+                }
+                showToast('Email hoặc mật khẩu không đúng', 'error');
+                return false;
             } catch (e) { showToast('Có lỗi xảy ra', 'error'); }
+            return false;
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            await loginWithCredentials(email, password);
         }
 
         function fillDemoAccount(email, roleLabel) {
@@ -3545,6 +3604,31 @@ console.log(await resp.json());</code></pre>
             emailInput.value = email;
             passwordInput.focus();
             showToast(`Đã điền tài khoản ${roleLabel}. Vui lòng nhập mật khẩu demo.`, 'info');
+        }
+
+        async function autoLoginDemo(accountKey) {
+            const account = DEMO_ACCOUNTS[accountKey];
+            if (!account) {
+                showToast('Không tìm thấy tài khoản demo', 'error');
+                return;
+            }
+
+            document.getElementById('loginEmail').value = account.email;
+            document.getElementById('loginPassword').value = DEMO_PASSWORD;
+            showToast(`Đang đăng nhập tự động: ${account.label}...`, 'info');
+            await loginWithCredentials(account.email, DEMO_PASSWORD, `Đăng nhập demo ${account.label} thành công!`);
+        }
+
+        function runDemoAutoLoginFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            const demoKey = params.get('demo');
+            if (!demoKey || !DEMO_ACCOUNTS[demoKey]) return;
+
+            autoLoginDemo(demoKey);
+
+            // Keep URL clean after auto login attempt.
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
         }
 
         async function handleRegister(event) {
